@@ -329,12 +329,21 @@
   .modal p  { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-  /* File overlay */
-  .file-overlay { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
-  .file-overlay.open { display: flex; }
-  .file-overlay h2 { font-size: 22px; font-weight: 700; color: #fff; }
-  .file-overlay p { font-size: 14px; color: #555; text-align: center; max-width: 340px; line-height: 1.6; }
-  .file-overlay-actions { display: flex; gap: 12px; }
+  /* Setup overlay */
+  .setup-overlay { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  .setup-overlay.open { display: flex; }
+  .setup-overlay h2 { font-size: 22px; font-weight: 700; color: #fff; }
+  .setup-overlay p { font-size: 13px; color: #555; text-align: center; max-width: 360px; line-height: 1.6; }
+  .setup-card { background: #111; border: 1px solid #1e1e1e; border-radius: 16px; padding: 24px; width: 360px; display: flex; flex-direction: column; gap: 12px; }
+  .setup-card .field label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: .4px; }
+  .setup-card .field input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 8px 10px; color: #e0e0e0; font-size: 13px; outline: none; width: 100%; transition: border-color .15s; font-family: monospace; }
+  .setup-card .field input:focus { border-color: #fe2c55; }
+  .setup-actions { display: flex; gap: 8px; }
+  .setup-actions .btn { flex: 1; }
+  .setup-hint { font-size: 11px; color: #444; line-height: 1.5; }
+  .setup-hint a { color: #555; }
+  .saving-indicator { display: none; font-size: 11px; color: #444; padding: 4px 8px; }
+  .saving-indicator.visible { display: block; }
 
   @media (max-width: 800px) {
     .form-row-1 { grid-template-columns: 1fr 1fr; }
@@ -347,13 +356,24 @@
 
 <div id="tt"></div>
 
-<div class="file-overlay open" id="fileOverlay">
+<div class="setup-overlay open" id="setupOverlay">
   <div style="font-size:40px">📊</div>
-  <h2>TikTok Tracker</h2>
-  <p>Выбери существующий файл данных или создай новый — все видео будут сохраняться туда.</p>
-  <div class="file-overlay-actions">
-    <button class="btn btn-ghost" onclick="openExistingFile()">Открыть файл</button>
-    <button class="btn btn-primary" onclick="createNewFile()">Создать новый</button>
+  <h2>Vidos Tracker</h2>
+  <p>Введи API-ключ с <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> — данные будут храниться там в облаке.</p>
+  <div class="setup-card">
+    <div class="field">
+      <label>Master Key</label>
+      <input type="password" id="setupKey" placeholder="$2a$10$..." />
+    </div>
+    <div class="field" id="binIdField" style="display:none">
+      <label>Bin ID (если уже есть)</label>
+      <input type="text" id="setupBinId" placeholder="64f3a..." />
+    </div>
+    <div class="setup-actions">
+      <button class="btn btn-ghost" onclick="toggleBinIdField()">Подключить существующий</button>
+      <button class="btn btn-primary" id="setupBtn" onclick="setupConnect()">Создать новый</button>
+    </div>
+    <div class="setup-hint">Регистрация на jsonbin.io → API Keys → скопируй Master Key.<br>Бесплатно, 10 000 запросов/месяц.</div>
   </div>
 </div>
 
@@ -372,10 +392,11 @@
   <h1>Tik<span>Tok</span> Tracker</h1>
   <div class="file-status" id="fileStatus">
     <span class="dot"></span>
-    <span id="fileStatusText">файл не открыт</span>
+    <span id="fileStatusText">не подключено</span>
   </div>
   <div class="header-actions">
-    <button class="btn btn-ghost btn-sm" onclick="openExistingFile()">Открыть другой файл</button>
+    <span class="saving-indicator" id="savingIndicator">сохранение...</span>
+    <button class="btn btn-ghost btn-sm" onclick="openSetup()">Настройки</button>
   </div>
 </header>
 
@@ -578,62 +599,118 @@
 </main>
 
 <script>
-let fileHandle = null;
 let data = { entries: [] };
 let deleteTarget = null;
 let currentTab = 'tracker';
 let editingId = null;
+let apiKey = '';
+let binId  = '';
 
-// ── File I/O ──────────────────────────────────────────────
+const JSONBIN = 'https://api.jsonbin.io/v3/b';
 
-async function openExistingFile() {
+// ── JSONBin I/O ───────────────────────────────────────────
+
+function openSetup() {
+  document.getElementById('setupOverlay').classList.add('open');
+}
+
+function closeSetup() {
+  document.getElementById('setupOverlay').classList.remove('open');
+}
+
+let binIdMode = false;
+function toggleBinIdField() {
+  binIdMode = !binIdMode;
+  document.getElementById('binIdField').style.display = binIdMode ? '' : 'none';
+  document.getElementById('setupBtn').textContent = binIdMode ? 'Подключить' : 'Создать новый';
+  document.querySelector('#setupOverlay .setup-actions .btn-ghost').textContent = binIdMode ? '← Назад' : 'Подключить существующий';
+}
+
+async function setupConnect() {
+  const key = document.getElementById('setupKey').value.trim();
+  if (!key) { document.getElementById('setupKey').focus(); return; }
+
+  const btn = document.getElementById('setupBtn');
+  btn.textContent = '...';
+  btn.disabled = true;
+
   try {
-    [fileHandle] = await window.showOpenFilePicker({
-      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
-    });
-    const file = await fileHandle.getFile();
-    const text = await file.text();
-    try { data = JSON.parse(text); } catch { data = { entries: [] }; }
-    if (!data.entries) data.entries = [];
-    closeOverlay();
-    updateFileStatus();
+    if (binIdMode) {
+      const bid = document.getElementById('setupBinId').value.trim();
+      if (!bid) { document.getElementById('setupBinId').focus(); btn.textContent = 'Подключить'; btn.disabled = false; return; }
+      apiKey = key; binId = bid;
+      const res = await fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey } });
+      if (!res.ok) throw new Error('Bin не найден или ключ неверный');
+      const json = await res.json();
+      data = json.record || { entries: [] };
+      if (!data.entries) data.entries = [];
+    } else {
+      apiKey = key;
+      const res = await fetch(JSONBIN, {
+        method: 'POST',
+        headers: { 'X-Master-Key': apiKey, 'Content-Type': 'application/json', 'X-Bin-Name': 'vidos-tracker', 'X-Private': 'true' },
+        body: JSON.stringify({ entries: [] })
+      });
+      if (!res.ok) throw new Error('Ошибка создания. Проверь ключ.');
+      const json = await res.json();
+      binId = json.metadata.id;
+      data = { entries: [] };
+    }
+    localStorage.setItem('vt_key', apiKey);
+    localStorage.setItem('vt_bin', binId);
+    closeSetup();
+    updateStatus();
     renderAll();
   } catch (e) {
-    if (e.name !== 'AbortError') alert('Не удалось открыть файл: ' + e.message);
+    alert(e.message);
+  } finally {
+    btn.textContent = binIdMode ? 'Подключить' : 'Создать новый';
+    btn.disabled = false;
   }
 }
 
-async function createNewFile() {
+async function saveData() {
+  if (!apiKey || !binId) return;
+  const ind = document.getElementById('savingIndicator');
+  ind.classList.add('visible');
   try {
-    fileHandle = await window.showSaveFilePicker({
-      suggestedName: 'tiktok-data.json',
-      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+    await fetch(`${JSONBIN}/${binId}`, {
+      method: 'PUT',
+      headers: { 'X-Master-Key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
     });
-    data = { entries: [] };
-    await saveFile();
-    closeOverlay();
-    updateFileStatus();
-    renderAll();
-  } catch (e) {
-    if (e.name !== 'AbortError') alert('Не удалось создать файл: ' + e.message);
+  } finally {
+    setTimeout(() => ind.classList.remove('visible'), 800);
   }
 }
 
-async function saveFile() {
-  if (!fileHandle) return;
-  const writable = await fileHandle.createWritable();
-  await writable.write(JSON.stringify(data, null, 2));
-  await writable.close();
-}
-
-function closeOverlay() { document.getElementById('fileOverlay').classList.remove('open'); }
-
-function updateFileStatus() {
-  const el = document.getElementById('fileStatus');
+function updateStatus() {
+  const el  = document.getElementById('fileStatus');
   const txt = document.getElementById('fileStatusText');
-  if (fileHandle) { el.classList.add('connected'); txt.textContent = fileHandle.name; }
-  else { el.classList.remove('connected'); txt.textContent = 'файл не открыт'; }
+  if (binId) { el.classList.add('connected'); txt.textContent = 'bin: ' + binId.slice(0, 8) + '…'; }
+  else       { el.classList.remove('connected'); txt.textContent = 'не подключено'; }
 }
+
+// Restore session from localStorage
+(function init() {
+  const k = localStorage.getItem('vt_key');
+  const b = localStorage.getItem('vt_bin');
+  if (!k || !b) return;
+  apiKey = k; binId = b;
+  fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey } })
+    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(json => {
+      data = json.record || { entries: [] };
+      if (!data.entries) data.entries = [];
+      closeSetup();
+      updateStatus();
+      renderAll();
+    })
+    .catch(() => {
+      localStorage.removeItem('vt_key');
+      localStorage.removeItem('vt_bin');
+    });
+})();
 
 // ── Tabs ──────────────────────────────────────────────────
 
@@ -722,7 +799,7 @@ function addEntry() {
   const fields = readForm();
   if (!fields.title) { document.getElementById('fTitle').focus(); return; }
   data.entries.unshift({ id: Date.now(), ...fields });
-  saveFile();
+  saveData();
   clearForm();
   renderAll();
 }
@@ -759,7 +836,7 @@ function saveEdit() {
   if (!fields.title) { document.getElementById('fTitle').focus(); return; }
   const idx = data.entries.findIndex(x => x.id === editingId);
   if (idx !== -1) data.entries[idx] = { id: editingId, ...fields };
-  saveFile();
+  saveData();
   cancelEdit();
   renderAll();
 }
@@ -795,7 +872,7 @@ function closeDeleteModal() {
 function confirmDelete() {
   if (deleteTarget === null) return;
   data.entries = data.entries.filter(e => e.id !== deleteTarget);
-  saveFile();
+  saveData();
   renderAll();
   closeDeleteModal();
 }
