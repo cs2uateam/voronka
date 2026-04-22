@@ -234,7 +234,7 @@
 </div>
 
 <!-- Setup overlay -->
-<div class="setup-ov open" id="setupOv">
+<div class="setup-ov" id="setupOv">
   <div style="font-size:40px">📊</div>
   <h2>Vidos Аналитик</h2>
   <p>Введи API-ключ с <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> — данные хранятся в облаке.</p>
@@ -572,14 +572,21 @@ function setLoadingMsg(msg, sub) {
   }
   apiKey = k; binId = b;
   setLoadingMsg('Подключение...', 'Загружаем данные из JSONBin');
+  const t0 = Date.now();
   fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey } })
     .then(r => { if (!r.ok) throw new Error('Ошибка сервера: ' + r.status); return r.json(); })
     .then(json => {
       const rec = json.record || {};
       data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] } };
-      hideLoading();
-      updateConn();
-      renderAll();
+      // минимум 600мс чтобы загрузка была заметна
+      const wait = Math.max(0, 600 - (Date.now() - t0));
+      setLoadingMsg('Готово ✓', 'Данные загружены');
+      setTimeout(() => {
+        hideLoading();
+        document.getElementById('setupOv').classList.remove('open');
+        updateConn();
+        renderAll();
+      }, wait);
     })
     .catch(e => {
       setLoadingMsg('Не удалось подключиться', e.message || 'Проверь соединение');
