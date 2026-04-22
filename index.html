@@ -3,190 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TikTok Tracker</title>
+<title>Vidos Аналитик</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #0a0a0a;
-    color: #e0e0e0;
-    min-height: 100vh;
-  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; }
 
-  header {
-    background: #111;
-    border-bottom: 1px solid #222;
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
+  /* Header */
+  header { background: #111; border-bottom: 1px solid #1e1e1e; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  header h1 { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  .conn-status { font-size: 12px; color: #555; display: flex; align-items: center; gap: 7px; }
+  .conn-status .dot { width: 7px; height: 7px; border-radius: 50%; background: #333; flex-shrink: 0; }
+  .conn-status.on .dot { background: #25d366; }
+  .conn-status.on { color: #777; }
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .saving { display: none; font-size: 11px; color: #444; }
+  .saving.vis { display: block; }
 
-  header h1 { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
-  header h1 span { color: #fe2c55; }
-
-  .file-status { font-size: 12px; color: #555; display: flex; align-items: center; gap: 8px; }
-  .file-status .dot { width: 7px; height: 7px; border-radius: 50%; background: #333; flex-shrink: 0; }
-  .file-status.connected .dot { background: #25d366; }
-  .file-status.connected { color: #888; }
-
+  /* Buttons */
   .btn { padding: 7px 14px; border-radius: 8px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity .15s; }
   .btn:hover { opacity: .8; }
-  .btn-primary { background: #fe2c55; color: #fff; }
+  .btn-primary { background: var(--pc, #fe2c55); color: #fff; }
   .btn-ghost { background: #1e1e1e; color: #ccc; border: 1px solid #2e2e2e; }
   .btn-sm { padding: 5px 10px; font-size: 12px; }
 
-  .header-actions { display: flex; gap: 8px; align-items: center; }
+  main { padding: 20px 24px; max-width: 1340px; margin: 0 auto; }
 
-  main { padding: 24px; max-width: 1300px; margin: 0 auto; }
+  /* Platform tabs */
+  .platform-tabs { display: flex; gap: 6px; margin-bottom: 18px; }
+  .ptab {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 18px; border-radius: 10px; border: 1px solid #1e1e1e;
+    background: #111; color: #555; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+  }
+  .ptab .picon { font-size: 15px; }
+  .ptab:hover { border-color: #333; color: #888; }
+  .ptab.active { border-color: var(--pc); color: #fff; background: #111; box-shadow: 0 0 0 1px var(--pc) inset; }
+
+  /* View tabs */
+  .view-tabs { display: flex; gap: 4px; background: #0a0a0a; border: 1px solid #1e1e1e; border-radius: 10px; padding: 3px; margin-bottom: 18px; }
+  .vtab { flex: 1; padding: 8px 16px; border-radius: 7px; border: none; background: none; color: #555; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; text-align: center; }
+  .vtab.active { background: #1e1e1e; color: #e0e0e0; }
+  .vtab:hover:not(.active) { color: #999; }
 
   /* Stats */
-  .stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  .stat-card { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 14px 16px; }
-  .stat-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #555; margin-bottom: 5px; }
-  .stat-card .value { font-size: 20px; font-weight: 700; color: #fff; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .stat-card { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 13px 15px; cursor: help; }
+  .stat-card .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #555; margin-bottom: 5px; }
+  .stat-card .val { font-size: 19px; font-weight: 700; color: #fff; }
   .stat-card .sub { font-size: 10px; color: #444; margin-top: 2px; }
 
-  /* Tabs */
-  .tabs {
-    display: flex;
-    gap: 4px;
-    background: #0a0a0a;
-    border: 1px solid #1e1e1e;
-    border-radius: 10px;
-    padding: 3px;
-    margin-bottom: 20px;
-  }
-
-  .tab { flex: 1; padding: 8px 16px; border-radius: 7px; border: none; background: none; color: #555; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; text-align: center; }
-  .tab.active { background: #1e1e1e; color: #e0e0e0; }
-  .tab:hover:not(.active) { color: #999; }
-
   /* Add form */
-  .add-section { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; }
-  .add-section h2 { font-size: 11px; font-weight: 600; color: #555; margin-bottom: 14px; text-transform: uppercase; letter-spacing: .5px; }
+  .add-section { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 18px 20px; margin-bottom: 18px; transition: border-color .2s, background .2s; }
+  .add-section.editing { border-color: #6b8cff44; background: #0d0d18; }
+  .add-section .sh { font-size: 10px; font-weight: 600; color: #555; margin-bottom: 13px; text-transform: uppercase; letter-spacing: .5px; }
+  .edit-notice { display: none; font-size: 12px; color: #6b8cff; margin-bottom: 11px; padding: 7px 10px; background: #0d0d1e; border: 1px solid #6b8cff33; border-radius: 7px; align-items: center; gap: 8px; }
+  .edit-notice.vis { display: flex; }
 
-  .form-row { display: grid; gap: 10px; margin-bottom: 10px; }
-  .form-row-1 { grid-template-columns: 2fr 1fr 1fr 1fr; }
-  .form-row-2 { grid-template-columns: repeat(6, 1fr); }
-  .form-row-3 { grid-template-columns: repeat(2, 1fr) repeat(3, 1fr) auto; }
+  .fgrid { display: grid; gap: 10px; margin-bottom: 10px; }
+  .fg-top    { grid-template-columns: 2fr 1fr 1fr 1fr; }
+  .fg-mid    { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); }
+  .fg-bottom { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) auto; align-items: end; }
 
   .field { display: flex; flex-direction: column; gap: 4px; }
   .field label { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: .4px; }
-  .field input, .field select {
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 8px;
-    padding: 7px 10px;
-    color: #e0e0e0;
-    font-size: 13px;
-    outline: none;
-    transition: border-color .15s;
-    width: 100%;
-  }
-  .field input:focus, .field select:focus { border-color: #fe2c55; }
+  .field input, .field select { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 7px 10px; color: #e0e0e0; font-size: 13px; outline: none; transition: border-color .15s; width: 100%; }
+  .field input:focus, .field select:focus { border-color: var(--pc, #fe2c55); }
   .field select option { background: #1a1a1a; }
 
   /* Table */
   .table-section { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; overflow: hidden; }
-
-  .section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 18px;
-    border-bottom: 1px solid #1e1e1e;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .section-header h2 { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .5px; }
-
+  .sec-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid #1e1e1e; gap: 12px; flex-wrap: wrap; }
+  .sec-head h2 { font-size: 10px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .5px; }
   .filters { display: flex; gap: 8px; flex-wrap: wrap; }
-  .filters select, .filters input {
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 7px;
-    padding: 5px 9px;
-    color: #ccc;
-    font-size: 12px;
-    outline: none;
-  }
-
-  .table-wrap { overflow-x: auto; }
-
-  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 900px; }
-
-  thead th {
-    padding: 9px 12px;
-    text-align: left;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: .4px;
-    color: #444;
-    border-bottom: 1px solid #1a1a1a;
-    white-space: nowrap;
-  }
-
+  .filters select, .filters input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 7px; padding: 5px 9px; color: #ccc; font-size: 12px; outline: none; }
+  .twrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 800px; }
+  thead th { padding: 9px 11px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: #444; border-bottom: 1px solid #1a1a1a; white-space: nowrap; }
   tbody tr { border-bottom: 1px solid #161616; transition: background .1s; }
   tbody tr:hover { background: #161616; }
   tbody tr:last-child { border-bottom: none; }
-
-  td { padding: 10px 12px; vertical-align: middle; }
-
-  td.title-cell { max-width: 200px; }
-
-  .title-text {
-    font-weight: 500;
-    color: #ddd;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 180px;
-    display: block;
-  }
-
-  .tag {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .3px;
-    margin-top: 3px;
-  }
-
-  .tag-fomo       { background: #2a0d1a; color: #fe2c55; }
-  .tag-meme       { background: #1a1a3e; color: #6b8cff; }
-  .tag-обучающий  { background: #2a1e0a; color: #f0a030; }
-  .tag-ugc        { background: #1a2a1a; color: #5cdb5c; }
-
-  .hook-tag {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 9px;
-    color: #666;
-    background: #1a1a1a;
-    white-space: nowrap;
-  }
-
+  td { padding: 9px 11px; vertical-align: middle; }
+  td.tc { max-width: 190px; }
+  .tt { font-weight: 500; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; display: block; }
   .num { color: #ccc; font-variant-numeric: tabular-nums; }
 
+  /* Tags */
+  .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin-top: 3px; }
+  /* TikTok */
+  .tag-fomo      { background: #2a0d1a; color: #fe2c55; }
+  .tag-meme      { background: #1a1a3e; color: #6b8cff; }
+  .tag-обучающий { background: #2a1e0a; color: #f0a030; }
+  .tag-ugc       { background: #1a2a1a; color: #5cdb5c; }
+  /* YouTube */
+  .tag-shorts    { background: #2a0a0a; color: #ff4444; }
+  .tag-long      { background: #1a1a2a; color: #8888ff; }
+  .tag-tutorial  { background: #2a1e0a; color: #f0a030; }
+  .tag-влог      { background: #1a2a1a; color: #5cdb5c; }
+  .tag-обзор     { background: #1e1a2a; color: #cc88ff; }
+  /* Instagram */
+  .tag-reels     { background: #2a0a1e; color: #e1306c; }
+  .tag-фото      { background: #1a1a3e; color: #6b8cff; }
+  .tag-карусель  { background: #2a1e0a; color: #f0a030; }
+  .tag-story     { background: #1a2a2a; color: #26c6da; }
+
+  .hook-tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; color: #555; background: #1a1a1a; white-space: nowrap; }
+
+  /* Badges */
   .er-badge { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; }
-  .er-high  { background: #0d2b0d; color: #4caf50; }
-  .er-mid   { background: #2b1f0d; color: #ff9800; }
-  .er-low   { background: #2b0d0d; color: #f44336; }
+  .er-high { background: #0d2b0d; color: #4caf50; }
+  .er-mid  { background: #2b1f0d; color: #ff9800; }
+  .er-low  { background: #2b0d0d; color: #f44336; }
 
   .cr-badge { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; }
   .cr-great { background: #0d2b0d; color: #4caf50; }
@@ -194,113 +122,50 @@
   .cr-mid   { background: #2b1f0d; color: #ff9800; }
   .cr-low   { background: #2b0d0d; color: #f44336; }
 
-  /* Performance tier */
   .tier { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
   .tier-viral { background: #2a0a1e; color: #fe2c55; border: 1px solid #5a1a3e; }
   .tier-good  { background: #0d2b0d; color: #4caf50; }
   .tier-ok    { background: #2b1f0d; color: #ff9800; }
   .tier-flop  { background: #1a1a1a; color: #555; }
 
-  .edit-btn {
-    background: none; border: none; color: #2a2a2a; cursor: pointer;
-    font-size: 14px; padding: 3px 5px; border-radius: 5px;
-    transition: color .15s, background .15s;
-  }
+  .edit-btn { background: none; border: none; color: #2a2a2a; cursor: pointer; font-size: 14px; padding: 3px 5px; border-radius: 5px; transition: color .15s, background .15s; }
   .edit-btn:hover { color: #6b8cff; background: #0d0d1e; }
-
-  .del-btn {
-    background: none; border: none; color: #2a2a2a; cursor: pointer;
-    font-size: 14px; padding: 3px 5px; border-radius: 5px;
-    transition: color .15s, background .15s;
-  }
-  .del-btn:hover { color: #fe2c55; background: #1e1010; }
-
-  .add-section.editing {
-    border-color: #6b8cff44;
-    background: #0d0d18;
-  }
-
-  .edit-notice {
-    display: none;
-    font-size: 12px;
-    color: #6b8cff;
-    margin-bottom: 12px;
-    padding: 7px 10px;
-    background: #0d0d1e;
-    border: 1px solid #6b8cff33;
-    border-radius: 7px;
-  }
-
-  .edit-notice.visible { display: flex; align-items: center; gap: 8px; }
-
-  /* Tooltip */
-  #tt {
-    display: none;
-    position: fixed;
-    z-index: 9999;
-    background: #1c1c1c;
-    border: 1px solid #2e2e2e;
-    color: #bbb;
-    padding: 9px 12px;
-    border-radius: 9px;
-    font-size: 12px;
-    line-height: 1.55;
-    max-width: 260px;
-    pointer-events: none;
-    box-shadow: 0 6px 20px rgba(0,0,0,.6);
-  }
-
-  [data-tip] { cursor: help; }
+  .del-btn  { background: none; border: none; color: #2a2a2a; cursor: pointer; font-size: 14px; padding: 3px 5px; border-radius: 5px; transition: color .15s, background .15s; }
+  .del-btn:hover  { color: #fe2c55; background: #1e1010; }
 
   .empty { padding: 48px 20px; text-align: center; color: #333; font-size: 14px; }
   .empty .icon { font-size: 36px; margin-bottom: 12px; }
 
-  /* Funnel section */
-  .funnel-section { display: none; }
-  .funnel-section.visible { display: block; }
+  /* Funnel */
+  .funnel-sec { display: none; }
+  .funnel-sec.vis { display: block; }
 
-  /* Algorithm signals */
-  .signals-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 10px;
-    margin-bottom: 20px;
-  }
+  .signals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .sig-card { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 13px 15px; cursor: help; }
+  .sig-card .sl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #444; margin-bottom: 4px; }
+  .sig-card .sv { font-size: 18px; font-weight: 700; margin-bottom: 2px; }
+  .sig-card .sb { font-size: 10px; }
+  .s-great { color: #4caf50; } .s-good { color: #8bc34a; } .s-mid { color: #ff9800; } .s-low { color: #f44336; } .s-none { color: #444; }
 
-  .signal-card { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 14px 16px; }
-  .signal-card .s-label { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #444; margin-bottom: 4px; }
-  .signal-card .s-value { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 2px; }
-  .signal-card .s-bench { font-size: 10px; }
-  .s-great { color: #4caf50; }
-  .s-good  { color: #8bc34a; }
-  .s-mid   { color: #ff9800; }
-  .s-low   { color: #f44336; }
-  .s-none  { color: #444; }
+  .fcats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .fcat-card { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 17px; }
+  .fcat-card h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #555; margin-bottom: 2px; }
+  .fcat-card .cnt { font-size: 10px; color: #333; margin-bottom: 13px; }
 
-  /* Category funnel cards */
-  .funnel-cats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-  }
+  .fsteps { display: flex; flex-direction: column; gap: 7px; }
+  .fstep { display: flex; flex-direction: column; gap: 3px; }
+  .fstep-lbl { display: flex; justify-content: space-between; font-size: 11px; color: #555; }
+  .fstep-lbl .pct { color: #888; font-weight: 600; }
+  .fstep-lbl .bench { font-size: 10px; color: #333; }
+  .fbar-track { height: 5px; background: #1a1a1a; border-radius: 3px; overflow: hidden; }
+  .fbar-fill  { height: 100%; border-radius: 3px; transition: width .4s ease; }
 
-  .funnel-cat-card { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 18px; }
-  .funnel-cat-card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #555; margin-bottom: 2px; }
-  .funnel-cat-card .cat-count { font-size: 10px; color: #333; margin-bottom: 14px; }
-
-  .funnel-steps { display: flex; flex-direction: column; gap: 8px; }
-  .funnel-step { display: flex; flex-direction: column; gap: 3px; }
-
-  .funnel-step-label { display: flex; justify-content: space-between; font-size: 11px; color: #555; }
-  .funnel-step-label .pct { color: #888; font-weight: 600; }
-  .funnel-step-label .bench { font-size: 10px; color: #333; }
-
-  .funnel-bar-track { height: 5px; background: #1a1a1a; border-radius: 3px; overflow: hidden; }
-  .funnel-bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
-
-  .bar-views    { background: #444; }
+  .bar-views    { background: #555; }
+  .bar-imp      { background: #888; }
+  .bar-reach    { background: #888; }
   .bar-cr       { background: #25d366; }
+  .bar-ctr      { background: #25d366; }
+  .bar-dur      { background: #26c6da; }
   .bar-likes    { background: #fe2c55; }
   .bar-comments { background: #6b8cff; }
   .bar-saves    { background: #f0a030; }
@@ -308,18 +173,30 @@
   .bar-profile  { background: #26c6da; }
   .bar-follows  { background: #fff; }
 
-  /* Per-video funnel */
-  .funnel-videos-section { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; overflow: hidden; }
+  .fvids-sec { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; overflow: hidden; }
+  .fvid-row { padding: 13px 18px; border-bottom: 1px solid #161616; }
+  .fvid-row:last-child { border-bottom: none; }
+  .fvid-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+  .fvid-title { font-size: 13px; font-weight: 500; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+  .fvid-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+  .fvid-date { font-size: 11px; color: #444; }
 
-  .funnel-video-row { padding: 14px 20px; border-bottom: 1px solid #161616; }
-  .funnel-video-row:last-child { border-bottom: none; }
+  /* Tooltip */
+  #ttip { display: none; position: fixed; z-index: 9999; background: #1c1c1c; border: 1px solid #2e2e2e; color: #bbb; padding: 9px 12px; border-radius: 9px; font-size: 12px; line-height: 1.55; max-width: 260px; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+  [data-tip] { cursor: help; }
 
-  .funnel-video-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
-
-  .funnel-video-title { font-size: 13px; font-weight: 500; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
-
-  .funnel-video-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
-  .funnel-video-date { font-size: 11px; color: #444; }
+  /* Setup overlay */
+  .setup-ov { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  .setup-ov.open { display: flex; }
+  .setup-ov h2 { font-size: 22px; font-weight: 700; color: #fff; }
+  .setup-ov p  { font-size: 13px; color: #555; text-align: center; max-width: 360px; line-height: 1.6; }
+  .setup-card  { background: #111; border: 1px solid #1e1e1e; border-radius: 16px; padding: 24px; width: 360px; display: flex; flex-direction: column; gap: 12px; }
+  .setup-card .field label { font-size: 11px; color: #555; text-transform: uppercase; }
+  .setup-card .field input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 8px 10px; color: #e0e0e0; font-size: 13px; outline: none; width: 100%; font-family: monospace; }
+  .setup-actions { display: flex; gap: 8px; }
+  .setup-actions .btn { flex: 1; }
+  .setup-hint { font-size: 11px; color: #444; line-height: 1.5; }
+  .setup-hint a { color: #555; }
 
   /* Modal */
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
@@ -329,37 +206,23 @@
   .modal p  { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
-  /* Setup overlay */
-  .setup-overlay { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
-  .setup-overlay.open { display: flex; }
-  .setup-overlay h2 { font-size: 22px; font-weight: 700; color: #fff; }
-  .setup-overlay p { font-size: 13px; color: #555; text-align: center; max-width: 360px; line-height: 1.6; }
-  .setup-card { background: #111; border: 1px solid #1e1e1e; border-radius: 16px; padding: 24px; width: 360px; display: flex; flex-direction: column; gap: 12px; }
-  .setup-card .field label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: .4px; }
-  .setup-card .field input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 8px 10px; color: #e0e0e0; font-size: 13px; outline: none; width: 100%; transition: border-color .15s; font-family: monospace; }
-  .setup-card .field input:focus { border-color: #fe2c55; }
-  .setup-actions { display: flex; gap: 8px; }
-  .setup-actions .btn { flex: 1; }
-  .setup-hint { font-size: 11px; color: #444; line-height: 1.5; }
-  .setup-hint a { color: #555; }
-  .saving-indicator { display: none; font-size: 11px; color: #444; padding: 4px 8px; }
-  .saving-indicator.visible { display: block; }
-
   @media (max-width: 800px) {
-    .form-row-1 { grid-template-columns: 1fr 1fr; }
-    .form-row-2 { grid-template-columns: repeat(3, 1fr); }
-    .form-row-3 { grid-template-columns: repeat(2, 1fr); }
+    .fg-top { grid-template-columns: 1fr 1fr; }
+    .fg-mid { grid-template-columns: repeat(3, 1fr); }
+    .platform-tabs { gap: 4px; }
+    .ptab { padding: 7px 12px; font-size: 12px; }
   }
 </style>
 </head>
 <body>
 
-<div id="tt"></div>
+<div id="ttip"></div>
 
-<div class="setup-overlay open" id="setupOverlay">
+<!-- Setup overlay -->
+<div class="setup-ov open" id="setupOv">
   <div style="font-size:40px">📊</div>
-  <h2>Vidos Tracker</h2>
-  <p>Введи API-ключ с <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> — данные будут храниться там в облаке.</p>
+  <h2>Vidos Аналитик</h2>
+  <p>Введи API-ключ с <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> — данные хранятся в облаке.</p>
   <div class="setup-card">
     <div class="field">
       <label>Master Key</label>
@@ -370,80 +233,52 @@
       <input type="text" id="setupBinId" placeholder="64f3a..." />
     </div>
     <div class="setup-actions">
-      <button class="btn btn-ghost" onclick="toggleBinIdField()">Подключить существующий</button>
+      <button class="btn btn-ghost" onclick="toggleBinMode()">Подключить существующий</button>
       <button class="btn btn-primary" id="setupBtn" onclick="setupConnect()">Создать новый</button>
     </div>
-    <div class="setup-hint">Регистрация на jsonbin.io → API Keys → скопируй Master Key.<br>Бесплатно, 10 000 запросов/месяц.</div>
+    <div class="setup-hint">jsonbin.io → API Keys → Master Key.<br>Бесплатно, 10 000 запросов/месяц.</div>
   </div>
 </div>
 
-<div class="modal-bg" id="deleteModal">
+<!-- Delete modal -->
+<div class="modal-bg" id="delModal">
   <div class="modal">
     <h2>Удалить запись?</h2>
-    <p>Это действие нельзя отменить. Данные удалятся из файла.</p>
+    <p>Данные удалятся из облака. Это нельзя отменить.</p>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="closeDeleteModal()">Отмена</button>
+      <button class="btn btn-ghost" onclick="closeDelModal()">Отмена</button>
       <button class="btn btn-primary" onclick="confirmDelete()">Удалить</button>
     </div>
   </div>
 </div>
 
 <header>
-  <h1>Tik<span>Tok</span> Tracker</h1>
-  <div class="file-status" id="fileStatus">
+  <h1>Vidos Аналитик</h1>
+  <div class="conn-status" id="connStatus">
     <span class="dot"></span>
-    <span id="fileStatusText">не подключено</span>
+    <span id="connText">не подключено</span>
   </div>
-  <div class="header-actions">
-    <span class="saving-indicator" id="savingIndicator">сохранение...</span>
-    <button class="btn btn-ghost btn-sm" onclick="openSetup()">Настройки</button>
+  <div class="header-right">
+    <span class="saving" id="savingEl">сохранение...</span>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('setupOv').classList.add('open')">Настройки</button>
   </div>
 </header>
 
 <main>
-  <!-- Stats -->
-  <div class="stats">
-    <div class="stat-card">
-      <div class="label">Видео</div>
-      <div class="value" id="statTotal">0</div>
-      <div class="sub">всего записей</div>
-    </div>
-    <div class="stat-card" data-tip="Среднее число просмотров на одно видео. Само по себе не показатель качества — смотри в связке с ER и CR.">
-      <div class="label">Ср. просмотры</div>
-      <div class="value" id="statViews">—</div>
-      <div class="sub">на видео</div>
-    </div>
-    <div class="stat-card" data-tip="Engagement Rate = (лайки + комменты + репосты + сохранения) / просмотры × 100. Норма для TikTok: 4–8%. Показывает насколько контент резонирует.">
-      <div class="label">Ср. ER</div>
-      <div class="value" id="statER">—</div>
-      <div class="sub">engagement rate</div>
-    </div>
-    <div class="stat-card" data-tip="Completion Rate — средняя досматриваемость. Самый важный сигнал для алгоритма (40–50% веса). Норма >50%, для вирального распределения нужно >70%.">
-      <div class="label">Ср. CR</div>
-      <div class="value" id="statCR">—</div>
-      <div class="sub">completion rate</div>
-    </div>
-    <div class="stat-card" data-tip="Процент зрителей, сохранивших видео. Главный показатель ценности контента — saves говорят что человек хочет вернуться. Saves весят больше лайков в алгоритме. Норма: 0.5–1.5%.">
-      <div class="label">Save rate</div>
-      <div class="value" id="statSaveRate">—</div>
-      <div class="sub">ср. saves / views</div>
-    </div>
-    <div class="stat-card" data-tip="Видео с наибольшей досматриваемостью. Изучи что в нём зацепило — hook, структура, длина.">
-      <div class="label">Лучший по CR</div>
-      <div class="value" id="statBestCR">—</div>
-      <div class="sub" id="statBestCRTitle">completion rate</div>
-    </div>
-    <div class="stat-card" data-tip="Видео с наибольшим Engagement Rate. Не обязательно самое просматриваемое — но аудитория отреагировала сильнее всего.">
-      <div class="label">Лучший ER</div>
-      <div class="value" id="statBestER">—</div>
-      <div class="sub" id="statBestERTitle">по вовлечённости</div>
-    </div>
+  <!-- Platform tabs -->
+  <div class="platform-tabs" id="platformTabs">
+    <button class="ptab active" data-plat="tiktok"    onclick="switchPlatform('tiktok')">   <span class="picon">🎵</span> TikTok    </button>
+    <button class="ptab"        data-plat="youtube"   onclick="switchPlatform('youtube')">  <span class="picon">▶️</span> YouTube   </button>
+    <button class="ptab"        data-plat="instagram" onclick="switchPlatform('instagram')"><span class="picon">📸</span> Instagram </button>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab active" id="tabTracker" onclick="switchTab('tracker')">Трекер</button>
-    <button class="tab" id="tabFunnel" onclick="switchTab('funnel')">Воронка</button>
+  <!-- Stats row -->
+  <div class="stats" id="statsRow"></div>
+
+  <!-- View tabs -->
+  <div class="view-tabs">
+    <button class="vtab active" id="vtTracker" onclick="switchView('tracker')">Трекер</button>
+    <button class="vtab"        id="vtFunnel"  onclick="switchView('funnel')">Воронка</button>
   </div>
 
   <!-- Add form -->
@@ -452,227 +287,193 @@
       <span>✎ Режим редактирования</span>
       <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="cancelEdit()">Отмена</button>
     </div>
-    <h2 id="formTitle">Добавить видео</h2>
-    <div class="form-row" style="grid-template-columns:1fr auto;margin-bottom:10px">
-      <div class="field">
-        <label>Ссылка на видео (TikTok URL)</label>
-        <input type="url" id="fUrl" placeholder="https://www.tiktok.com/@..." />
-      </div>
-    </div>
-    <div class="form-row form-row-1">
-      <div class="field">
-        <label>Название / описание</label>
-        <input type="text" id="fTitle" placeholder="О чём видео..." />
-      </div>
-      <div class="field">
-        <label>Дата публикации</label>
-        <input type="date" id="fDate" />
-      </div>
-      <div class="field">
-        <label>Тип контента</label>
-        <select id="fType">
-          <option value="fomo">Fomo</option>
-          <option value="meme">Meme</option>
-          <option value="обучающий">Обучающий</option>
-          <option value="ugc">UGC</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Тип хука</label>
-        <select id="fHook">
-          <option value="вопрос">Вопрос</option>
-          <option value="контраст">Визуальный контраст</option>
-          <option value="проблема">Проблема</option>
-          <option value="тренд">Тренд/звук</option>
-          <option value="цифра">Цифра/факт</option>
-          <option value="другое">Другое</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row form-row-2">
-      <div class="field">
-        <label>👁 Просмотры</label>
-        <input type="number" id="fViews" placeholder="0" min="0" />
-      </div>
-      <div class="field">
-        <label>❤️ Лайки</label>
-        <input type="number" id="fLikes" placeholder="0" min="0" />
-      </div>
-      <div class="field">
-        <label>💬 Комменты</label>
-        <input type="number" id="fComments" placeholder="0" min="0" />
-      </div>
-      <div class="field">
-        <label>↗️ Репосты</label>
-        <input type="number" id="fShares" placeholder="0" min="0" />
-      </div>
-      <div class="field">
-        <label>🔖 Сохранения</label>
-        <input type="number" id="fSaves" placeholder="0" min="0" />
-      </div>
-      <div class="field">
-        <label>✅ Completion Rate %</label>
-        <input type="number" id="fCR" placeholder="0" min="0" max="100" />
-      </div>
-    </div>
-    <div class="form-row form-row-3">
-      <div class="field">
-        <label>👤 Визиты профиля</label>
-        <input type="number" id="fProfileVisits" placeholder="0" min="0" />
-      </div>
-      <div class="field">
-        <label>➕ Подписки с видео</label>
-        <input type="number" id="fFollows" placeholder="0" min="0" />
-      </div>
-      <div></div>
-      <div></div>
-      <div></div>
-      <div style="display:flex;align-items:flex-end">
-        <button class="btn btn-primary" style="width:100%;height:34px" id="submitBtn" onclick="submitForm()">Добавить</button>
-      </div>
-    </div>
+    <div class="sh" id="formTitle">Добавить видео</div>
+    <div id="formBody"></div>
   </div>
 
   <!-- Tracker view -->
-  <div class="table-section" id="trackerSection">
-    <div class="section-header">
-      <h2>Контент</h2>
-      <div class="filters">
-        <input type="text" id="filterSearch" placeholder="Поиск..." oninput="renderTable()" style="width:130px" />
-        <select id="filterType" onchange="renderTable()">
-          <option value="">Все типы</option>
-          <option value="fomo">Fomo</option>
-          <option value="meme">Meme</option>
-          <option value="обучающий">Обучающий</option>
-          <option value="ugc">UGC</option>
-        </select>
-        <select id="sortBy" onchange="renderTable()">
-          <option value="date_desc">Дата ↓</option>
-          <option value="date_asc">Дата ↑</option>
-          <option value="views_desc">Просмотры ↓</option>
-          <option value="er_desc">ER ↓</option>
-          <option value="cr_desc">CR ↓</option>
-          <option value="saves_desc">Сохранения ↓</option>
-        </select>
+  <div id="trackerSec">
+    <div class="table-section">
+      <div class="sec-head">
+        <h2>Контент</h2>
+        <div class="filters">
+          <input type="text" id="fSearch" placeholder="Поиск..." oninput="renderTable()" style="width:120px" />
+          <select id="fType" onchange="renderTable()"><option value="">Все типы</option></select>
+          <select id="fSort" onchange="renderTable()">
+            <option value="date_desc">Дата ↓</option>
+            <option value="date_asc">Дата ↑</option>
+            <option value="views_desc">Просмотры ↓</option>
+            <option value="er_desc">ER ↓</option>
+            <option value="cr_desc">CR/CTR ↓</option>
+            <option value="saves_desc">Сохранения ↓</option>
+          </select>
+        </div>
       </div>
-    </div>
-    <div class="table-wrap">
-      <div id="tableContainer">
-        <div class="empty"><div class="icon">📭</div>Нет данных. Открой файл и добавь первое видео.</div>
-      </div>
+      <div class="twrap"><div id="tableContainer"><div class="empty"><div class="icon">📭</div>Нет данных</div></div></div>
     </div>
   </div>
 
   <!-- Funnel view -->
-  <div class="funnel-section" id="funnelSection">
-
-    <!-- Algorithm signals -->
+  <div class="funnel-sec" id="funnelSec">
     <div class="signals-grid" id="signalsGrid"></div>
-
-    <!-- By category -->
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#444;margin-bottom:10px;">По категориям</div>
-    <div class="funnel-cats" id="funnelCats"></div>
-
-    <!-- By video -->
-    <div class="funnel-videos-section">
-      <div class="section-header">
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#444;margin-bottom:10px;">По категориям</div>
+    <div class="fcats" id="funnelCats"></div>
+    <div class="fvids-sec">
+      <div class="sec-head">
         <h2>По видео</h2>
         <div class="filters">
-          <select id="funnelFilterType" onchange="renderFunnel()">
-            <option value="">Все типы</option>
-            <option value="fomo">Fomo</option>
-            <option value="meme">Meme</option>
-            <option value="обучающий">Обучающий</option>
-            <option value="ugc">UGC</option>
-          </select>
-          <select id="funnelSort" onchange="renderFunnel()">
+          <select id="ffType" onchange="renderFunnel()"><option value="">Все типы</option></select>
+          <select id="ffSort" onchange="renderFunnel()">
             <option value="views_desc">По просмотрам ↓</option>
             <option value="date_desc">По дате ↓</option>
             <option value="er_desc">По ER ↓</option>
-            <option value="cr_desc">По CR ↓</option>
+            <option value="cr_desc">По CR/CTR ↓</option>
           </select>
         </div>
       </div>
-      <div id="funnelVideosList"></div>
+      <div id="funnelVids"></div>
     </div>
   </div>
 </main>
 
 <script>
-let data = { entries: [] };
-let deleteTarget = null;
-let currentTab = 'tracker';
+// ── Platform configs ──────────────────────────────────────
+
+const PLATS = {
+  tiktok: {
+    label: 'TikTok', color: '#fe2c55',
+    types: ['fomo','meme','обучающий','ugc'],
+    typeLabels: { fomo:'Fomo', meme:'Meme', обучающий:'Обучающий', ugc:'UGC' },
+    hooks: ['вопрос','контраст','проблема','тренд/звук','цифра/факт','другое'],
+    fields: [
+      { id:'views',           label:'👁 Просмотры',       parse:'int'   },
+      { id:'likes',           label:'❤️ Лайки',           parse:'int'   },
+      { id:'comments',        label:'💬 Комменты',        parse:'int'   },
+      { id:'shares',          label:'↗️ Репосты',         parse:'int'   },
+      { id:'saves',           label:'🔖 Сохранения',      parse:'int'   },
+      { id:'completion_rate', label:'✅ CR %',            parse:'float' },
+      { id:'profile_visits',  label:'👤 Визиты профиля',  parse:'int'   },
+      { id:'follows',         label:'➕ Подписки',        parse:'int'   },
+    ],
+    mainMetric: 'views',
+    crField: 'completion_rate',
+    crLabel: 'CR',
+    erBase: 'views',
+    funnelSteps: [
+      { key:'views',           label:'Просмотры',      cls:'bar-views',   mode:'top',   bench:null          },
+      { key:'completion_rate', label:'Досмотрели',     cls:'bar-cr',      mode:'cr',    bench:'норма >50%'  },
+      { key:'likes',           label:'Лайки',          cls:'bar-likes',   mode:'ratio', bench:'норма 5-10%' },
+      { key:'comments',        label:'Комменты',       cls:'bar-comments',mode:'ratio', bench:'норма 0.5-1.5%'},
+      { key:'saves',           label:'Сохранения',     cls:'bar-saves',   mode:'ratio', bench:'норма 0.5-1.5%'},
+      { key:'shares',          label:'Репосты',        cls:'bar-shares',  mode:'ratio', bench:'норма 0.1-0.3%'},
+      { key:'profile_visits',  label:'Визиты профиля', cls:'bar-profile', mode:'ratio', bench:'норма 1-3%'  },
+      { key:'follows',         label:'Подписки',       cls:'bar-follows', mode:'ratio', bench:'норма 0.1-0.3%'},
+    ],
+    signals: [
+      { key:'cr',    label:'Avg CR',          bench:'Хорошо >50% · Отлично >70%', good:50, great:70, tip:'Completion Rate — % досмотревших до конца. Главный алгоритмический сигнал (40–50% веса). Ниже 50% — широкого распределения не будет.' },
+      { key:'slr',   label:'Save:Like ratio', bench:'Хорошо >0.2 · Отлично >0.5', good:.2, great:.5, tip:'Отношение сохранений к лайкам. Saves = намерение вернуться. Высокое значение = контент реально ценный.' },
+      { key:'shlr',  label:'Share:Like ratio',bench:'Хорошо >0.1 · Отлично >0.3', good:.1, great:.3, tip:'Репосты весят ×3 от лайков в алгоритме TikTok.' },
+      { key:'pvr',   label:'Profile Visit %', bench:'Хорошо >1% · Отлично >3%',  good:1,  great:3,  tip:'% зрителей, перешедших на профиль. Разница между вирусным развлечением и контентом, который строит аудиторию.' },
+      { key:'fc',    label:'Follow Conv.',    bench:'Хорошо >10% · Отлично >20%', good:10, great:20, tip:'% посетителей профиля, которые подписались.' },
+    ],
+  },
+
+  youtube: {
+    label: 'YouTube', color: '#ff0000',
+    types: ['shorts','long','tutorial','влог','обзор'],
+    typeLabels: { shorts:'Shorts', long:'Long-form', tutorial:'Tutorial', влог:'Влог', обзор:'Обзор' },
+    hooks: ['вопрос','шок/контраст','обещание','список топ-N','история','другое'],
+    fields: [
+      { id:'impressions',  label:'📊 Импрессии',       parse:'int'   },
+      { id:'views',        label:'👁 Просмотры',        parse:'int'   },
+      { id:'ctr',          label:'🎯 CTR %',            parse:'float' },
+      { id:'avg_duration', label:'⏱ Ср. просмотр %',   parse:'float' },
+      { id:'likes',        label:'❤️ Лайки',           parse:'int'   },
+      { id:'comments',     label:'💬 Комменты',         parse:'int'   },
+      { id:'shares',       label:'↗️ Репосты',          parse:'int'   },
+      { id:'saves',        label:'🔖 В плейлист',       parse:'int'   },
+      { id:'follows',      label:'➕ Подписчики',       parse:'int'   },
+    ],
+    mainMetric: 'views',
+    crField: 'avg_duration',
+    crLabel: 'Ср. просмотр',
+    erBase: 'views',
+    funnelSteps: [
+      { key:'impressions',  label:'Импрессии',     cls:'bar-imp',     mode:'top',   bench:null          },
+      { key:'views',        label:'Просмотры',     cls:'bar-views',   mode:'imp',   bench:'норма CTR >4%'},
+      { key:'avg_duration', label:'Ср. просмотр',  cls:'bar-dur',     mode:'cr',    bench:'норма >40%'  },
+      { key:'likes',        label:'Лайки',         cls:'bar-likes',   mode:'ratio', bench:'норма 2-5%'  },
+      { key:'comments',     label:'Комменты',      cls:'bar-comments',mode:'ratio', bench:'норма 0.3-1%'},
+      { key:'saves',        label:'В плейлист',    cls:'bar-saves',   mode:'ratio', bench:'норма 0.3-1%'},
+      { key:'shares',       label:'Репосты',       cls:'bar-shares',  mode:'ratio', bench:'норма 0.1-0.3%'},
+      { key:'follows',      label:'Подписчики',    cls:'bar-follows', mode:'ratio', bench:'норма 0.3-1%'},
+    ],
+    signals: [
+      { key:'ctr',  label:'Avg CTR',          bench:'Хорошо >4% · Отлично >7%',  good:4,  great:7,  tip:'Click-Through Rate — % людей, кликнувших на видео из предложенных. Главный показатель привлекательности превью и заголовка.' },
+      { key:'dur',  label:'Avg Duration',     bench:'Хорошо >40% · Отлично >60%',good:40, great:60, tip:'Средний процент просмотра видео. Аналог CR для TikTok. Напрямую влияет на продвижение алгоритмом.' },
+      { key:'slr',  label:'Save:Like ratio',  bench:'Хорошо >0.1 · Отлично >0.3',good:.1, great:.3, tip:'Отношение сохранений в плейлист к лайкам. Saves = долгосрочная ценность контента.' },
+      { key:'fr',   label:'Follow Rate',      bench:'Хорошо >0.3% · Отлично >1%',good:.3, great:1,  tip:'% зрителей, подписавшихся после просмотра. Показывает насколько видео конвертирует в подписчиков.' },
+      { key:'er',   label:'Avg ER',           bench:'Хорошо >3% · Отлично >6%',  good:3,  great:6,  tip:'Engagement Rate = (лайки + комменты + репосты + сохранения) / просмотры × 100.' },
+    ],
+  },
+
+  instagram: {
+    label: 'Instagram', color: '#e1306c',
+    types: ['reels','фото','карусель','story'],
+    typeLabels: { reels:'Reels', фото:'Фото', карусель:'Карусель', story:'Story' },
+    hooks: ['вопрос','визуал','текст на фото','тренд','другое'],
+    fields: [
+      { id:'reach',          label:'📡 Охват (Reach)',   parse:'int'   },
+      { id:'impressions',    label:'👁 Показы',          parse:'int'   },
+      { id:'likes',          label:'❤️ Лайки',          parse:'int'   },
+      { id:'comments',       label:'💬 Комменты',        parse:'int'   },
+      { id:'saves',          label:'🔖 Сохранения',      parse:'int'   },
+      { id:'shares',         label:'↗️ Репосты/Отправки',parse:'int'   },
+      { id:'profile_visits', label:'👤 Визиты профиля',  parse:'int'   },
+      { id:'follows',        label:'➕ Подписки',        parse:'int'   },
+    ],
+    mainMetric: 'reach',
+    crField: null,
+    crLabel: null,
+    erBase: 'reach',
+    funnelSteps: [
+      { key:'reach',         label:'Охват',          cls:'bar-reach',   mode:'top',   bench:null           },
+      { key:'impressions',   label:'Показы',         cls:'bar-imp',     mode:'reach', bench:null           },
+      { key:'likes',         label:'Лайки',          cls:'bar-likes',   mode:'ratio', bench:'норма 3-8%'   },
+      { key:'comments',      label:'Комменты',       cls:'bar-comments',mode:'ratio', bench:'норма 0.3-1%' },
+      { key:'saves',         label:'Сохранения',     cls:'bar-saves',   mode:'ratio', bench:'норма 1-3%'   },
+      { key:'shares',        label:'Репосты/Отправки',cls:'bar-shares', mode:'ratio', bench:'норма 0.5-2%' },
+      { key:'profile_visits',label:'Визиты профиля', cls:'bar-profile', mode:'ratio', bench:'норма 1-5%'   },
+      { key:'follows',       label:'Подписки',       cls:'bar-follows', mode:'ratio', bench:'норма 0.1-0.5%'},
+    ],
+    signals: [
+      { key:'sr',   label:'Save Rate',       bench:'Хорошо >1% · Отлично >3%',   good:1,  great:3,  tip:'% охваченных, сохранивших пост. Главный сигнал ценности контента для Instagram.' },
+      { key:'shr',  label:'Share Rate',      bench:'Хорошо >0.5% · Отлично >2%', good:.5, great:2,  tip:'% охваченных, поделившихся постом. Главный сигнал вирусности в Instagram.' },
+      { key:'pvr',  label:'Profile Visit %', bench:'Хорошо >1% · Отлично >5%',   good:1,  great:5,  tip:'% охваченных, перешедших на профиль. Показывает насколько контент интересен лично тебе.' },
+      { key:'fc',   label:'Follow Conv.',    bench:'Хорошо >5% · Отлично >15%',  good:5,  great:15, tip:'% посетителей профиля, которые подписались. Насколько профиль убеждает остаться.' },
+      { key:'er',   label:'Avg ER',          bench:'Хорошо >3% · Отлично >6%',   good:3,  great:6,  tip:'Engagement Rate = (лайки + комменты + сохранения + репосты) / охват × 100.' },
+    ],
+  },
+};
+
+// ── State ─────────────────────────────────────────────────
+
+let data = { tiktok: { entries: [] }, youtube: { entries: [] }, instagram: { entries: [] } };
+let apiKey = '', binId = '';
+let platform = 'tiktok';
+let currentView = 'tracker';
 let editingId = null;
-let apiKey = '';
-let binId  = '';
+let deleteTarget = null;
+let binMode = false;
 
 const JSONBIN = 'https://api.jsonbin.io/v3/b';
 
 // ── JSONBin I/O ───────────────────────────────────────────
 
-function openSetup() {
-  document.getElementById('setupOverlay').classList.add('open');
-}
-
-function closeSetup() {
-  document.getElementById('setupOverlay').classList.remove('open');
-}
-
-let binIdMode = false;
-function toggleBinIdField() {
-  binIdMode = !binIdMode;
-  document.getElementById('binIdField').style.display = binIdMode ? '' : 'none';
-  document.getElementById('setupBtn').textContent = binIdMode ? 'Подключить' : 'Создать новый';
-  document.querySelector('#setupOverlay .setup-actions .btn-ghost').textContent = binIdMode ? '← Назад' : 'Подключить существующий';
-}
-
-async function setupConnect() {
-  const key = document.getElementById('setupKey').value.trim();
-  if (!key) { document.getElementById('setupKey').focus(); return; }
-
-  const btn = document.getElementById('setupBtn');
-  btn.textContent = '...';
-  btn.disabled = true;
-
-  try {
-    if (binIdMode) {
-      const bid = document.getElementById('setupBinId').value.trim();
-      if (!bid) { document.getElementById('setupBinId').focus(); btn.textContent = 'Подключить'; btn.disabled = false; return; }
-      apiKey = key; binId = bid;
-      const res = await fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey } });
-      if (!res.ok) throw new Error('Bin не найден или ключ неверный');
-      const json = await res.json();
-      data = json.record || { entries: [] };
-      if (!data.entries) data.entries = [];
-    } else {
-      apiKey = key;
-      const res = await fetch(JSONBIN, {
-        method: 'POST',
-        headers: { 'X-Master-Key': apiKey, 'Content-Type': 'application/json', 'X-Bin-Name': 'vidos-tracker', 'X-Private': 'true' },
-        body: JSON.stringify({ entries: [] })
-      });
-      if (!res.ok) throw new Error('Ошибка создания. Проверь ключ.');
-      const json = await res.json();
-      binId = json.metadata.id;
-      data = { entries: [] };
-    }
-    localStorage.setItem('vt_key', apiKey);
-    localStorage.setItem('vt_bin', binId);
-    closeSetup();
-    updateStatus();
-    renderAll();
-  } catch (e) {
-    alert(e.message);
-  } finally {
-    btn.textContent = binIdMode ? 'Подключить' : 'Создать новый';
-    btn.disabled = false;
-  }
-}
-
 async function saveData() {
   if (!apiKey || !binId) return;
-  const ind = document.getElementById('savingIndicator');
-  ind.classList.add('visible');
+  const el = document.getElementById('savingEl');
+  el.classList.add('vis');
   try {
     await fetch(`${JSONBIN}/${binId}`, {
       method: 'PUT',
@@ -680,301 +481,359 @@ async function saveData() {
       body: JSON.stringify(data)
     });
   } finally {
-    setTimeout(() => ind.classList.remove('visible'), 800);
+    setTimeout(() => el.classList.remove('vis'), 800);
   }
 }
 
-function updateStatus() {
-  const el  = document.getElementById('fileStatus');
-  const txt = document.getElementById('fileStatusText');
-  if (binId) { el.classList.add('connected'); txt.textContent = 'bin: ' + binId.slice(0, 8) + '…'; }
-  else       { el.classList.remove('connected'); txt.textContent = 'не подключено'; }
+function updateConn() {
+  const el = document.getElementById('connStatus');
+  const tx = document.getElementById('connText');
+  if (binId) { el.classList.add('on'); tx.textContent = 'bin: ' + binId.slice(0,8) + '…'; }
+  else       { el.classList.remove('on'); tx.textContent = 'не подключено'; }
 }
 
-// Restore session from localStorage
+function toggleBinMode() {
+  binMode = !binMode;
+  document.getElementById('binIdField').style.display = binMode ? '' : 'none';
+  document.getElementById('setupBtn').textContent = binMode ? 'Подключить' : 'Создать новый';
+  document.querySelector('.setup-actions .btn-ghost').textContent = binMode ? '← Назад' : 'Подключить существующий';
+}
+
+async function setupConnect() {
+  const key = document.getElementById('setupKey').value.trim();
+  if (!key) { document.getElementById('setupKey').focus(); return; }
+  const btn = document.getElementById('setupBtn');
+  btn.textContent = '...'; btn.disabled = true;
+  try {
+    if (binMode) {
+      const bid = document.getElementById('setupBinId').value.trim();
+      if (!bid) { document.getElementById('setupBinId').focus(); return; }
+      apiKey = key; binId = bid;
+      const res = await fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey } });
+      if (!res.ok) throw new Error('Bin не найден или ключ неверный');
+      const json = await res.json();
+      const rec = json.record || {};
+      // migrate old flat format
+      data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] } };
+    } else {
+      apiKey = key;
+      const res = await fetch(JSONBIN, {
+        method: 'POST',
+        headers: { 'X-Master-Key': apiKey, 'Content-Type': 'application/json', 'X-Bin-Name': 'vidos-tracker', 'X-Private': 'true' },
+        body: JSON.stringify(data)
+      });
+      if (!res.ok) throw new Error('Ошибка создания. Проверь ключ.');
+      binId = (await res.json()).metadata.id;
+    }
+    localStorage.setItem('vt_key', apiKey);
+    localStorage.setItem('vt_bin', binId);
+    document.getElementById('setupOv').classList.remove('open');
+    updateConn();
+    renderAll();
+  } catch (e) { alert(e.message); }
+  finally { btn.textContent = binMode ? 'Подключить' : 'Создать новый'; btn.disabled = false; }
+}
+
 (function init() {
   const k = localStorage.getItem('vt_key');
   const b = localStorage.getItem('vt_bin');
   if (!k || !b) return;
   apiKey = k; binId = b;
   fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey } })
-    .then(r => { if (!r.ok) throw new Error(); return r.json(); })
+    .then(r => { if (!r.ok) throw 0; return r.json(); })
     .then(json => {
-      data = json.record || { entries: [] };
-      if (!data.entries) data.entries = [];
-      closeSetup();
-      updateStatus();
+      const rec = json.record || {};
+      data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] } };
+      document.getElementById('setupOv').classList.remove('open');
+      updateConn();
       renderAll();
     })
-    .catch(() => {
-      localStorage.removeItem('vt_key');
-      localStorage.removeItem('vt_bin');
-    });
+    .catch(() => { localStorage.removeItem('vt_key'); localStorage.removeItem('vt_bin'); });
 })();
 
-// ── Tabs ──────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────
 
-function switchTab(tab) {
-  currentTab = tab;
-  document.getElementById('tabTracker').classList.toggle('active', tab === 'tracker');
-  document.getElementById('tabFunnel').classList.toggle('active', tab === 'funnel');
-  document.getElementById('addSection').style.display     = tab === 'tracker' ? '' : 'none';
-  document.getElementById('trackerSection').style.display = tab === 'tracker' ? '' : 'none';
-  document.getElementById('funnelSection').classList.toggle('visible', tab === 'funnel');
-  if (tab === 'funnel') renderFunnel();
+function p() { return PLATS[platform]; }
+function pdata() { return data[platform] || (data[platform] = { entries: [] }); }
+
+function fmt(n) {
+  if (n >= 1_000_000) return (n/1_000_000).toFixed(1)+'M';
+  if (n >= 1_000)     return (n/1_000).toFixed(1)+'K';
+  return Math.round(n).toString();
 }
 
-// ── Metrics ───────────────────────────────────────────────
-
-function er(e) {
-  if (!e.views) return 0;
-  return ((e.likes||0) + (e.comments||0) + (e.shares||0) + (e.saves||0)) / e.views * 100;
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function saveRate(e)    { return e.views ? (e.saves||0) / e.views * 100 : 0; }
-function shareRate(e)   { return e.views ? (e.shares||0) / e.views * 100 : 0; }
-function likeRate(e)    { return e.views ? (e.likes||0) / e.views * 100 : 0; }
-function pvRate(e)      { return e.views ? (e.profile_visits||0) / e.views * 100 : 0; }
-function followRate(e)  { return e.views ? (e.follows||0) / e.views * 100 : 0; }
-function followConv(e)  { return e.profile_visits ? (e.follows||0) / e.profile_visits * 100 : 0; }
-function shareLikeRatio(e) { return e.likes ? (e.shares||0) / e.likes : 0; }
-function saveLikeRatio(e)  { return e.likes ? (e.saves||0) / e.likes : 0; }
-
-function performanceTier(e) {
-  const v = e.views || 0;
-  const erV = er(e);
-  const crV = e.completion_rate || 0;
-  if (v >= 50000 || (v >= 5000 && erV >= 10) || (crV >= 70 && v >= 10000)) return 'viral';
-  if (erV >= 5 || (crV >= 60 && v >= 1000) || v >= 10000) return 'good';
-  if (erV >= 2 || v >= 500 || crV >= 40) return 'ok';
-  return 'flop';
+function erOf(e) {
+  const base = e[p().erBase] || 0;
+  if (!base) return 0;
+  return ((e.likes||0)+(e.comments||0)+(e.shares||0)+(e.saves||0)) / base * 100;
 }
 
-const TIER_LABELS = { viral: 'Viral 🔥', good: 'Good', ok: 'Ok', flop: 'Flop' };
+function crOf(e) {
+  const cf = p().crField;
+  return cf ? (e[cf] || 0) : 0;
+}
 
-function erClass(v)  { return v >= 8 ? 'er-high' : v >= 3 ? 'er-mid' : 'er-low'; }
-function crClass(v)  { return v >= 70 ? 'cr-great' : v >= 50 ? 'cr-good' : v >= 35 ? 'cr-mid' : 'cr-low'; }
+function erClass(v)  { return v>=8?'er-high':v>=3?'er-mid':'er-low'; }
+function crClass(v)  { return v>=70?'cr-great':v>=50?'cr-good':v>=35?'cr-mid':'cr-low'; }
 
-function crTip(v) {
-  if (v >= 70) return `CR ${v.toFixed(0)}% — отлично ✅ Алгоритм активно распространяет видео. Норма для вирального: >70%.`;
-  if (v >= 50) return `CR ${v.toFixed(0)}% — хорошо. Видео рассматривается для расширения. Норма: >50%.`;
-  if (v >= 35) return `CR ${v.toFixed(0)}% — средне ⚠️ Зрители уходят на середине, видео не получит широкого распределения. Норма: >50%.`;
-  return `CR ${v.toFixed(0)}% — низко 🔴 Зрители уходят очень рано. Проверь хук и первые 10 секунд. Норма: >50%.`;
+function crTip(v, lbl) {
+  if (v>=70) return `${lbl} ${v.toFixed(0)}% — отлично ✅ Алгоритм активно распространяет. Норма: >70%.`;
+  if (v>=50) return `${lbl} ${v.toFixed(0)}% — хорошо. Видео рассматривается для расширения. Норма: >50%.`;
+  if (v>=35) return `${lbl} ${v.toFixed(0)}% — средне ⚠️ Зрители уходят на середине. Норма: >50%.`;
+  return `${lbl} ${v.toFixed(0)}% — низко 🔴 Зрители уходят рано. Проверь хук и первые 10 сек. Норма: >50%.`;
 }
 
 function erTip(v) {
-  if (v >= 8) return `ER ${v.toFixed(1)}% — отлично ✅ Контент сильно резонирует с аудиторией. Норма: 4–8%.`;
-  if (v >= 4) return `ER ${v.toFixed(1)}% — норма. Хороший уровень вовлечённости. Норма: 4–8%.`;
-  if (v >= 2) return `ER ${v.toFixed(1)}% — ниже нормы ⚠️ Аудитория слабо взаимодействует. Норма: 4–8%.`;
-  return `ER ${v.toFixed(1)}% — низко 🔴 Контент не цепляет. Проверь тему, хук и CTA. Норма: 4–8%.`;
+  if (v>=8) return `ER ${v.toFixed(1)}% — отлично ✅ Норма: 4–8%.`;
+  if (v>=4) return `ER ${v.toFixed(1)}% — норма. Норма: 4–8%.`;
+  if (v>=2) return `ER ${v.toFixed(1)}% — ниже нормы ⚠️ Норма: 4–8%.`;
+  return `ER ${v.toFixed(1)}% — низко 🔴 Контент не цепляет. Норма: 4–8%.`;
 }
 
-// ── Data ──────────────────────────────────────────────────
+function perfTier(e) {
+  const v = e[p().mainMetric] || 0;
+  const erV = erOf(e);
+  const crV = crOf(e);
+  if (platform === 'youtube') {
+    if (v>=100000||(v>=10000&&erV>=5)) return 'viral';
+    if (erV>=3||(crV>=50&&v>=1000)||v>=10000) return 'good';
+    if (erV>=1||v>=500) return 'ok';
+    return 'flop';
+  }
+  if (v>=50000||(v>=5000&&erV>=10)||(crV>=70&&v>=10000)) return 'viral';
+  if (erV>=5||(crV>=60&&v>=1000)||v>=10000) return 'good';
+  if (erV>=2||v>=500||crV>=40) return 'ok';
+  return 'flop';
+}
+const TIER_LABELS = { viral:'Viral 🔥', good:'Good', ok:'Ok', flop:'Flop' };
+
+// ── Platform / View switch ────────────────────────────────
+
+function switchPlatform(plat) {
+  platform = plat;
+  document.querySelectorAll('.ptab').forEach(b => b.classList.toggle('active', b.dataset.plat === plat));
+  const pc = PLATS[plat].color;
+  document.documentElement.style.setProperty('--pc', pc);
+  rebuildTypeFilters();
+  rebuildForm();
+  renderAll();
+}
+
+function switchView(view) {
+  currentView = view;
+  document.getElementById('vtTracker').classList.toggle('active', view==='tracker');
+  document.getElementById('vtFunnel').classList.toggle('active', view==='funnel');
+  document.getElementById('addSection').style.display  = view==='tracker' ? '' : 'none';
+  document.getElementById('trackerSec').style.display  = view==='tracker' ? '' : 'none';
+  document.getElementById('funnelSec').classList.toggle('vis', view==='funnel');
+  if (view==='funnel') renderFunnel();
+}
+
+function rebuildTypeFilters() {
+  const cfg = p();
+  const opts = '<option value="">Все типы</option>' + cfg.types.map(t => `<option value="${t}">${cfg.typeLabels[t]}</option>`).join('');
+  document.getElementById('fType').innerHTML = opts;
+  document.getElementById('ffType').innerHTML = opts;
+}
+
+// ── Form ──────────────────────────────────────────────────
+
+function rebuildForm() {
+  const cfg = p();
+  const fields = cfg.fields;
+  const mid = fields.slice(0, Math.min(6, fields.length));
+  const bot = fields.slice(6);
+
+  const typeOpts = cfg.types.map(t => `<option value="${t}">${cfg.typeLabels[t]}</option>`).join('');
+  const hookOpts = cfg.hooks.map(h => `<option value="${h}">${h}</option>`).join('');
+
+  let html = `
+    <div class="fgrid" style="grid-template-columns:1fr;margin-bottom:10px">
+      <div class="field"><label>Ссылка на видео (URL)</label><input type="url" id="fUrl" placeholder="https://..." /></div>
+    </div>
+    <div class="fgrid fg-top">
+      <div class="field"><label>Название / описание</label><input type="text" id="fTitle" placeholder="О чём видео..." /></div>
+      <div class="field"><label>Дата</label><input type="date" id="fDate" /></div>
+      <div class="field"><label>Тип контента</label><select id="fType2">${typeOpts}</select></div>
+      <div class="field"><label>Тип хука</label><select id="fHook">${hookOpts}</select></div>
+    </div>
+    <div class="fgrid fg-mid">
+      ${mid.map(f => `<div class="field"><label>${f.label}</label><input type="number" id="ff_${f.id}" placeholder="0" min="0" step="${f.parse==='float'?'0.1':'1'}" /></div>`).join('')}
+    </div>`;
+
+  if (bot.length) {
+    html += `<div class="fgrid fg-bottom">
+      ${bot.map(f => `<div class="field"><label>${f.label}</label><input type="number" id="ff_${f.id}" placeholder="0" min="0" /></div>`).join('')}
+      <div><button class="btn btn-primary" style="width:100%;height:34px" id="submitBtn" onclick="submitForm()">Добавить</button></div>
+    </div>`;
+  } else {
+    html += `<div style="display:flex;justify-content:flex-end;margin-top:2px">
+      <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">Добавить</button>
+    </div>`;
+  }
+
+  document.getElementById('formBody').innerHTML = html;
+  document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+}
 
 function readForm() {
-  return {
-    title:           document.getElementById('fTitle').value.trim(),
-    url:             document.getElementById('fUrl').value.trim() || '',
-    date:            document.getElementById('fDate').value || new Date().toISOString().slice(0, 10),
-    type:            document.getElementById('fType').value,
-    hook:            document.getElementById('fHook').value,
-    views:           parseInt(document.getElementById('fViews').value)         || 0,
-    likes:           parseInt(document.getElementById('fLikes').value)         || 0,
-    comments:        parseInt(document.getElementById('fComments').value)      || 0,
-    shares:          parseInt(document.getElementById('fShares').value)        || 0,
-    saves:           parseInt(document.getElementById('fSaves').value)         || 0,
-    completion_rate: parseFloat(document.getElementById('fCR').value)         || 0,
-    profile_visits:  parseInt(document.getElementById('fProfileVisits').value) || 0,
-    follows:         parseInt(document.getElementById('fFollows').value)       || 0,
+  const cfg = p();
+  const entry = {
+    title: (document.getElementById('fTitle')?.value || '').trim(),
+    url:   (document.getElementById('fUrl')?.value   || '').trim(),
+    date:  document.getElementById('fDate')?.value   || new Date().toISOString().slice(0,10),
+    type:  document.getElementById('fType2')?.value  || cfg.types[0],
+    hook:  document.getElementById('fHook')?.value   || '',
   };
+  cfg.fields.forEach(f => {
+    const el = document.getElementById('ff_'+f.id);
+    if (!el) return;
+    entry[f.id] = f.parse === 'float' ? parseFloat(el.value)||0 : parseInt(el.value)||0;
+  });
+  return entry;
 }
 
-function submitForm() {
-  if (editingId !== null) saveEdit();
-  else addEntry();
+function clearForm() {
+  const cfg = p();
+  ['fUrl','fTitle'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
+  cfg.fields.forEach(f => { const el=document.getElementById('ff_'+f.id); if(el) el.value=''; });
 }
+
+function submitForm() { editingId !== null ? saveEdit() : addEntry(); }
 
 function addEntry() {
-  if (!fileHandle) { alert('Сначала открой или создай файл.'); return; }
+  if (!apiKey||!binId) { alert('Сначала подключи JSONBin.'); return; }
   const fields = readForm();
-  if (!fields.title) { document.getElementById('fTitle').focus(); return; }
-  data.entries.unshift({ id: Date.now(), ...fields });
-  saveData();
-  clearForm();
-  renderAll();
+  if (!fields.title) { document.getElementById('fTitle')?.focus(); return; }
+  pdata().entries.unshift({ id: Date.now(), ...fields });
+  saveData(); clearForm(); renderAll();
 }
 
 function editEntry(id) {
-  const e = data.entries.find(x => x.id === id);
+  const e = pdata().entries.find(x => x.id===id);
   if (!e) return;
   editingId = id;
-
-  document.getElementById('fUrl').value           = e.url || '';
-  document.getElementById('fTitle').value         = e.title || '';
-  document.getElementById('fDate').value          = e.date || '';
-  document.getElementById('fType').value          = e.type || 'fomo';
-  document.getElementById('fHook').value          = e.hook || 'вопрос';
-  document.getElementById('fViews').value         = e.views || '';
-  document.getElementById('fLikes').value         = e.likes || '';
-  document.getElementById('fComments').value      = e.comments || '';
-  document.getElementById('fShares').value        = e.shares || '';
-  document.getElementById('fSaves').value         = e.saves || '';
-  document.getElementById('fCR').value            = e.completion_rate || '';
-  document.getElementById('fProfileVisits').value = e.profile_visits || '';
-  document.getElementById('fFollows').value       = e.follows || '';
-
+  const set = (sel, val) => { const el=document.getElementById(sel); if(el) el.value=val||''; };
+  set('fUrl', e.url); set('fTitle', e.title); set('fDate', e.date);
+  set('fType2', e.type); set('fHook', e.hook);
+  p().fields.forEach(f => set('ff_'+f.id, e[f.id]||''));
   document.getElementById('addSection').classList.add('editing');
-  document.getElementById('editNotice').classList.add('visible');
+  document.getElementById('editNotice').classList.add('vis');
   document.getElementById('formTitle').textContent = 'Редактировать видео';
   document.getElementById('submitBtn').textContent = 'Сохранить';
-  document.getElementById('addSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.getElementById('addSection').scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 function saveEdit() {
-  if (!fileHandle) { alert('Сначала открой или создай файл.'); return; }
+  if (!apiKey||!binId) return;
   const fields = readForm();
-  if (!fields.title) { document.getElementById('fTitle').focus(); return; }
-  const idx = data.entries.findIndex(x => x.id === editingId);
-  if (idx !== -1) data.entries[idx] = { id: editingId, ...fields };
-  saveData();
-  cancelEdit();
-  renderAll();
+  if (!fields.title) { document.getElementById('fTitle')?.focus(); return; }
+  const idx = pdata().entries.findIndex(x => x.id===editingId);
+  if (idx!==-1) pdata().entries[idx] = { id: editingId, ...fields };
+  saveData(); cancelEdit(); renderAll();
 }
 
 function cancelEdit() {
-  editingId = null;
-  clearForm();
+  editingId = null; clearForm();
   document.getElementById('addSection').classList.remove('editing');
-  document.getElementById('editNotice').classList.remove('visible');
+  document.getElementById('editNotice').classList.remove('vis');
   document.getElementById('formTitle').textContent = 'Добавить видео';
   document.getElementById('submitBtn').textContent = 'Добавить';
 }
 
-function clearForm() {
-  ['fUrl','fTitle','fViews','fLikes','fComments','fShares','fSaves','fCR','fProfileVisits','fFollows'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-  document.getElementById('fDate').value = new Date().toISOString().slice(0, 10);
-}
-
 // ── Delete ────────────────────────────────────────────────
 
-function askDelete(id) {
-  deleteTarget = id;
-  document.getElementById('deleteModal').classList.add('open');
-}
-
-function closeDeleteModal() {
-  document.getElementById('deleteModal').classList.remove('open');
-  deleteTarget = null;
-}
-
+function askDelete(id) { deleteTarget=id; document.getElementById('delModal').classList.add('open'); }
+function closeDelModal() { document.getElementById('delModal').classList.remove('open'); deleteTarget=null; }
 function confirmDelete() {
-  if (deleteTarget === null) return;
-  data.entries = data.entries.filter(e => e.id !== deleteTarget);
-  saveData();
-  renderAll();
-  closeDeleteModal();
+  if (deleteTarget===null) return;
+  pdata().entries = pdata().entries.filter(e => e.id!==deleteTarget);
+  saveData(); renderAll(); closeDelModal();
 }
 
-// ── Render: Stats ─────────────────────────────────────────
-
-function fmt(n) {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
-  if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K';
-  return Math.round(n).toString();
-}
+// ── Stats ─────────────────────────────────────────────────
 
 function renderStats() {
-  const entries = data.entries;
-  document.getElementById('statTotal').textContent = entries.length;
+  const entries = pdata().entries;
+  const cfg = p();
 
-  if (!entries.length) {
-    ['statViews','statER','statCR','statSaveRate','statBestCR','statBestER'].forEach(id => {
-      document.getElementById(id).textContent = '—';
-    });
-    return;
-  }
+  const avgMain  = entries.length ? entries.reduce((s,e)=>s+(e[cfg.mainMetric]||0),0)/entries.length : 0;
+  const avgER    = entries.length ? entries.reduce((s,e)=>s+erOf(e),0)/entries.length : 0;
+  const withCR   = cfg.crField ? entries.filter(e=>e[cfg.crField]>0) : [];
+  const avgCR    = withCR.length ? withCR.reduce((s,e)=>s+e[cfg.crField],0)/withCR.length : 0;
+  const avgSR    = entries.length ? entries.reduce((s,e)=>s+(e.saves||(0))/(e[cfg.erBase]||1)*100,0)/entries.length : 0;
+  const bestCR   = withCR.length ? withCR.reduce((a,b)=>a[cfg.crField]>b[cfg.crField]?a:b) : null;
+  const bestER   = entries.length ? entries.reduce((a,b)=>erOf(a)>erOf(b)?a:b) : null;
 
-  const avgViews    = entries.reduce((s,e) => s + (e.views||0), 0) / entries.length;
-  const avgER       = entries.reduce((s,e) => s + er(e), 0) / entries.length;
-  const withCR      = entries.filter(e => e.completion_rate > 0);
-  const avgCR       = withCR.length ? withCR.reduce((s,e) => s + e.completion_rate, 0) / withCR.length : 0;
-  const avgSaveRate = entries.reduce((s,e) => s + saveRate(e), 0) / entries.length;
-  const bestCR      = withCR.length ? withCR.reduce((a,b) => a.completion_rate > b.completion_rate ? a : b) : null;
-  const bestER      = entries.reduce((a,b) => er(a) > er(b) ? a : b);
+  const crLbl = cfg.crLabel || 'CR';
 
-  document.getElementById('statViews').textContent    = fmt(avgViews);
-  document.getElementById('statER').textContent       = avgER.toFixed(1) + '%';
-  document.getElementById('statCR').textContent       = avgCR ? avgCR.toFixed(0) + '%' : '—';
-  document.getElementById('statSaveRate').textContent = avgSaveRate.toFixed(2) + '%';
-
-  if (bestCR) {
-    document.getElementById('statBestCR').textContent       = bestCR.completion_rate.toFixed(0) + '%';
-    document.getElementById('statBestCRTitle').textContent  = bestCR.title.slice(0, 20) + (bestCR.title.length > 20 ? '…' : '');
-  } else {
-    document.getElementById('statBestCR').textContent = '—';
-    document.getElementById('statBestCRTitle').textContent = 'completion rate';
-  }
-
-  document.getElementById('statBestER').textContent      = er(bestER).toFixed(1) + '%';
-  document.getElementById('statBestERTitle').textContent = bestER.title.slice(0, 20) + (bestER.title.length > 20 ? '…' : '');
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card"><div class="lbl">Видео</div><div class="val">${entries.length}</div><div class="sub">всего записей</div></div>
+    <div class="stat-card" data-tip="Среднее ${cfg.mainMetric==='reach'?'охват':'просмотров'} на видео. Само по себе не показатель качества."><div class="lbl">Ср. ${cfg.mainMetric==='reach'?'охват':'просмотры'}</div><div class="val">${entries.length?fmt(avgMain):'—'}</div><div class="sub">на видео</div></div>
+    <div class="stat-card" data-tip="Engagement Rate = (лайки + комменты + репосты + сохранения) / ${cfg.mainMetric==='reach'?'охват':'просмотры'} × 100."><div class="lbl">Ср. ER</div><div class="val">${entries.length?avgER.toFixed(1)+'%':'—'}</div><div class="sub">engagement rate</div></div>
+    ${cfg.crField ? `<div class="stat-card" data-tip="${crLbl} — ключевой алгоритмический сигнал. Норма >50%, для вирального >70%."><div class="lbl">Ср. ${crLbl}</div><div class="val">${avgCR?avgCR.toFixed(0)+'%':'—'}</div><div class="sub">по видео с данными</div></div>` : ''}
+    <div class="stat-card" data-tip="Процент зрителей, сохранивших контент. Главный показатель ценности. Норма: 0.5–1.5%."><div class="lbl">Save rate</div><div class="val">${entries.length?avgSR.toFixed(2)+'%':'—'}</div><div class="sub">ср. saves / ${cfg.mainMetric==='reach'?'reach':'views'}</div></div>
+    ${bestCR&&cfg.crField ? `<div class="stat-card" data-tip="Видео с наибольшим ${crLbl}."><div class="lbl">Лучший ${crLbl}</div><div class="val">${bestCR[cfg.crField].toFixed(0)}%</div><div class="sub">${esc(bestCR.title.slice(0,20))}${bestCR.title.length>20?'…':''}</div></div>` : ''}
+    ${bestER ? `<div class="stat-card" data-tip="Видео с наибольшим Engagement Rate."><div class="lbl">Лучший ER</div><div class="val">${erOf(bestER).toFixed(1)}%</div><div class="sub">${esc(bestER.title.slice(0,20))}${bestER.title.length>20?'…':''}</div></div>` : ''}
+  `;
 }
 
-// ── Render: Table ─────────────────────────────────────────
+// ── Table ─────────────────────────────────────────────────
 
 function renderTable() {
-  const search = document.getElementById('filterSearch').value.toLowerCase();
-  const typeF  = document.getElementById('filterType').value;
-  const sortBy = document.getElementById('sortBy').value;
+  const cfg = p();
+  const search = document.getElementById('fSearch').value.toLowerCase();
+  const typeF  = document.getElementById('fType').value;
+  const sortBy = document.getElementById('fSort').value;
 
-  let rows = [...data.entries];
-  if (search) rows = rows.filter(e => e.title.toLowerCase().includes(search));
-  if (typeF)  rows = rows.filter(e => e.type === typeF);
+  let rows = [...pdata().entries];
+  if (search) rows = rows.filter(e=>e.title.toLowerCase().includes(search));
+  if (typeF)  rows = rows.filter(e=>e.type===typeF);
 
-  rows.sort((a, b) => {
-    if (sortBy === 'date_desc')  return b.date.localeCompare(a.date);
-    if (sortBy === 'date_asc')   return a.date.localeCompare(b.date);
-    if (sortBy === 'views_desc') return b.views - a.views;
-    if (sortBy === 'er_desc')    return er(b) - er(a);
-    if (sortBy === 'cr_desc')    return (b.completion_rate||0) - (a.completion_rate||0);
-    if (sortBy === 'saves_desc') return (b.saves||0) - (a.saves||0);
+  rows.sort((a,b) => {
+    if (sortBy==='date_desc')  return b.date.localeCompare(a.date);
+    if (sortBy==='date_asc')   return a.date.localeCompare(b.date);
+    if (sortBy==='views_desc') return (b[cfg.mainMetric]||0)-(a[cfg.mainMetric]||0);
+    if (sortBy==='er_desc')    return erOf(b)-erOf(a);
+    if (sortBy==='cr_desc')    return crOf(b)-crOf(a);
+    if (sortBy==='saves_desc') return (b.saves||0)-(a.saves||0);
     return 0;
   });
 
   const container = document.getElementById('tableContainer');
+  if (!rows.length) { container.innerHTML='<div class="empty"><div class="icon">🔍</div>Ничего не найдено</div>'; return; }
 
-  if (!rows.length) {
-    container.innerHTML = '<div class="empty"><div class="icon">🔍</div>Ничего не найдено</div>';
-    return;
-  }
+  const crLbl = cfg.crLabel;
 
   const tbody = rows.map(e => {
-    const erVal  = er(e).toFixed(1);
-    const crVal  = e.completion_rate || 0;
-    const tier   = performanceTier(e);
-    const tagCls = 'tag tag-' + e.type;
-    const crStr  = crVal ? crVal.toFixed(0) + '%' : '—';
-    const pvStr  = e.profile_visits ? fmt(e.profile_visits) : '—';
-    const flStr  = e.follows ? fmt(e.follows) : '—';
+    const erVal = erOf(e).toFixed(1);
+    const crVal = crOf(e);
+    const tier  = perfTier(e);
+    const tCls  = 'tag tag-'+e.type;
+    const pvStr = e.profile_visits ? fmt(e.profile_visits) : '—';
+    const flStr = e.follows ? fmt(e.follows) : '—';
+    const main  = e[cfg.mainMetric] || 0;
+
+    const crCell = crLbl && crVal
+      ? `<span class="cr-badge ${crClass(crVal)}" data-tip="${crTip(crVal, crLbl)}">${crVal.toFixed(0)}%</span>`
+      : (crLbl ? '<span style="color:#333">—</span>' : '');
+
     return `<tr>
-      <td class="title-cell">
-        ${e.url
-          ? `<a href="${esc(e.url)}" target="_blank" rel="noopener" class="title-text" style="text-decoration:none;color:#ddd">${esc(e.title)}</a>`
-          : `<span class="title-text">${esc(e.title)}</span>`
-        }
-        <span class="${tagCls}">${TYPE_LABELS[e.type]||e.type}</span>
+      <td class="tc">
+        ${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener" class="tt" style="text-decoration:none;color:#ddd">${esc(e.title)}</a>`
+                : `<span class="tt">${esc(e.title)}</span>`}
+        <span class="${tCls}">${cfg.typeLabels[e.type]||e.type}</span>
       </td>
       <td class="num">${e.date}</td>
       <td><span class="hook-tag">${esc(e.hook||'—')}</span></td>
-      <td class="num">${fmt(e.views)}</td>
-      <td class="num">${fmt(e.likes||0)}</td>
-      <td class="num">${fmt(e.comments||0)}</td>
-      <td class="num">${fmt(e.shares||0)}</td>
-      <td class="num">${fmt(e.saves||0)}</td>
-      <td>${crVal ? `<span class="cr-badge ${crClass(crVal)}" data-tip="${crTip(crVal)}">${crStr}</span>` : '<span style="color:#333">—</span>'}</td>
-      <td class="num">${pvStr}</td>
-      <td class="num">${flStr}</td>
+      <td class="num">${fmt(main)}</td>
+      ${cfg.fields.slice(1).map(f => `<td class="num">${e[f.id]?fmt(e[f.id]):'—'}</td>`).join('')}
+      ${crLbl ? `<td>${crCell}</td>` : ''}
       <td><span class="er-badge ${erClass(parseFloat(erVal))}" data-tip="${erTip(parseFloat(erVal))}">${erVal}%</span></td>
       <td><span class="tier tier-${tier}">${TIER_LABELS[tier]}</span></td>
       <td style="white-space:nowrap">
@@ -986,252 +845,168 @@ function renderTable() {
 
   container.innerHTML = `<table>
     <thead><tr>
-      <th>Название</th>
-      <th>Дата</th>
-      <th>Хук</th>
-      <th>👁 Просмотры</th>
-      <th>❤️ Лайки</th>
-      <th>💬 Комменты</th>
-      <th>↗️ Репосты</th>
-      <th>🔖 Сохранения</th>
-      <th>✅ CR</th>
-      <th>👤 Профиль</th>
-      <th>➕ Подписки</th>
-      <th>ER</th>
-      <th>Tier</th>
-      <th></th>
+      <th>Название</th><th>Дата</th><th>Хук</th>
+      ${cfg.fields.map((f,i) => `<th>${i===0?'📊 '+cfg.typeLabels[cfg.types[0]]?.slice(0,1)+'..':''} ${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'')}</th>`).join('')}
+      ${crLbl ? `<th>${crLbl}</th>` : ''}
+      <th>ER</th><th>Tier</th><th></th>
     </tr></thead>
     <tbody>${tbody}</tbody>
   </table>`;
 }
 
-// ── Render: Funnel ────────────────────────────────────────
-
-const TYPES = ['fomo', 'meme', 'обучающий', 'ugc'];
-const TYPE_LABELS = { fomo: 'Fomo', meme: 'Meme', 'обучающий': 'Обучающий', ugc: 'UGC' };
-
-const STEPS = [
-  { key: 'views',           label: 'Просмотры',    cls: 'bar-views',   bench: null,          mode: 'views' },
-  { key: 'completion_rate', label: 'Досмотрели',   cls: 'bar-cr',      bench: 'норма >50%',  mode: 'cr'    },
-  { key: 'likes',           label: 'Лайки',        cls: 'bar-likes',   bench: 'норма 5-10%', mode: 'ratio' },
-  { key: 'comments',        label: 'Комменты',     cls: 'bar-comments',bench: 'норма 0.5-1.5%', mode: 'ratio' },
-  { key: 'saves',           label: 'Сохранения',   cls: 'bar-saves',   bench: 'норма 0.5-1.5%', mode: 'ratio' },
-  { key: 'shares',          label: 'Репосты',      cls: 'bar-shares',  bench: 'норма 0.1-0.3%', mode: 'ratio' },
-  { key: 'profile_visits',  label: 'Визиты профиля', cls: 'bar-profile', bench: 'норма 1-3%', mode: 'ratio' },
-  { key: 'follows',         label: 'Подписки',     cls: 'bar-follows', bench: 'норма 0.1-0.3%', mode: 'ratio' },
-];
+// ── Funnel ────────────────────────────────────────────────
 
 function stepsHtml(entry) {
-  const views = entry.views || 1;
-  return STEPS.map(s => {
+  const cfg = p();
+  const top = entry[cfg.funnelSteps[0].key] || 1;
+
+  return cfg.funnelSteps.map(s => {
     let pct, label;
-    if (s.mode === 'views') {
-      pct = 100;
-      label = fmt(entry.views || 0);
-    } else if (s.mode === 'cr') {
-      pct = Math.min(100, entry[s.key] || 0);
-      label = pct ? pct.toFixed(0) + '%' : '—';
-    } else {
-      const val = entry[s.key] || 0;
-      pct = Math.min(100, val / views * 100);
-      label = val ? pct.toFixed(1) + '%' : '—';
-    }
-    const benchHtml = s.bench ? `<span class="bench">${s.bench}</span>` : '';
-    return `<div class="funnel-step">
-      <div class="funnel-step-label">
-        <span>${s.label}</span>
-        <div style="display:flex;gap:8px;align-items:center">${benchHtml}<span class="pct">${label}</span></div>
-      </div>
-      <div class="funnel-bar-track">
-        <div class="funnel-bar-fill ${s.cls}" style="width:${pct}%"></div>
-      </div>
+    const val = entry[s.key] || 0;
+
+    if (s.mode==='top')   { pct=100; label=fmt(val||0); }
+    else if (s.mode==='cr')    { pct=Math.min(100,val); label=val?val.toFixed(0)+'%':'—'; }
+    else if (s.mode==='imp')   { pct=Math.min(100,top?val/top*100:0); label=val?fmt(val):'—'; }
+    else if (s.mode==='reach') { pct=Math.min(100,top?val/top*100:0); label=val?fmt(val):'—'; }
+    else { pct=Math.min(100,top?val/top*100:0); label=val?pct.toFixed(1)+'%':'—'; }
+
+    const bench = s.bench ? `<span class="bench">${s.bench}</span>` : '';
+    return `<div class="fstep">
+      <div class="fstep-lbl"><span>${s.label}</span><div style="display:flex;gap:8px;align-items:center">${bench}<span class="pct">${label}</span></div></div>
+      <div class="fbar-track"><div class="fbar-fill ${s.cls}" style="width:${pct}%"></div></div>
     </div>`;
   }).join('');
 }
 
 function renderSignals() {
-  const entries = data.entries;
+  const cfg = p();
+  const entries = pdata().entries;
   const container = document.getElementById('signalsGrid');
+  if (!entries.length) { container.innerHTML=''; return; }
 
-  if (!entries.length) { container.innerHTML = ''; return; }
+  function sval(key) {
+    if (key==='cr')   { const w=entries.filter(e=>crOf(e)>0); return w.length?w.reduce((s,e)=>s+crOf(e),0)/w.length:null; }
+    if (key==='slr')  return entries.reduce((s,e)=>s+(e.likes?(e.saves||0)/e.likes:0),0)/entries.length;
+    if (key==='shlr') return entries.reduce((s,e)=>s+(e.likes?(e.shares||0)/e.likes:0),0)/entries.length;
+    if (key==='pvr')  return entries.reduce((s,e)=>s+(e[cfg.erBase]?(e.profile_visits||0)/e[cfg.erBase]*100:0),0)/entries.length;
+    if (key==='fc')   { const w=entries.filter(e=>e.profile_visits>0); return w.length?w.reduce((s,e)=>s+(e.follows||0)/e.profile_visits*100,0)/w.length:null; }
+    if (key==='ctr')  { const w=entries.filter(e=>e.ctr>0); return w.length?w.reduce((s,e)=>s+e.ctr,0)/w.length:null; }
+    if (key==='dur')  { const w=entries.filter(e=>e.avg_duration>0); return w.length?w.reduce((s,e)=>s+e.avg_duration,0)/w.length:null; }
+    if (key==='fr')   return entries.reduce((s,e)=>s+(e.views?(e.follows||0)/e.views*100:0),0)/entries.length;
+    if (key==='er')   return entries.reduce((s,e)=>s+erOf(e),0)/entries.length;
+    if (key==='sr')   return entries.reduce((s,e)=>s+(e[cfg.erBase]?(e.saves||0)/e[cfg.erBase]*100:0),0)/entries.length;
+    if (key==='shr')  return entries.reduce((s,e)=>s+(e[cfg.erBase]?(e.shares||0)/e[cfg.erBase]*100:0),0)/entries.length;
+    return null;
+  }
 
-  const withCR  = entries.filter(e => e.completion_rate > 0);
-  const avgCR   = withCR.length ? withCR.reduce((s,e) => s + e.completion_rate, 0) / withCR.length : null;
-  const avgSLR  = entries.reduce((s,e) => s + saveLikeRatio(e), 0) / entries.length;
-  const avgSHLR = entries.reduce((s,e) => s + shareLikeRatio(e), 0) / entries.length;
-  const avgPVR  = entries.reduce((s,e) => s + pvRate(e), 0) / entries.length;
-  const withPV  = entries.filter(e => e.profile_visits > 0);
-  const avgFC   = withPV.length ? withPV.reduce((s,e) => s + followConv(e), 0) / withPV.length : null;
-
-  function scoreClass(val, good, great) {
-    if (val === null) return 's-none';
-    if (val >= great) return 's-great';
-    if (val >= good)  return 's-good';
-    if (val >= good * 0.5) return 's-mid';
+  function scls(v, good, great) {
+    if (v===null) return 's-none';
+    if (v>=great) return 's-great';
+    if (v>=good)  return 's-good';
+    if (v>=good*.5) return 's-mid';
     return 's-low';
   }
 
-  const signals = [
-    {
-      label: 'Avg Completion Rate',
-      value: avgCR !== null ? avgCR.toFixed(0) + '%' : '—',
-      bench: 'Хорошо >50% · Отлично >70%',
-      cls: scoreClass(avgCR, 50, 70),
-      tip: 'Completion Rate — % зрителей, досмотревших видео до конца. Самый важный алгоритмический сигнал (40–50% веса). Ниже 50% — видео не получит широкого распределения.',
-    },
-    {
-      label: 'Save : Like ratio',
-      value: avgSLR.toFixed(2),
-      bench: 'Хорошо >0.2 · Отлично >0.5',
-      cls: scoreClass(avgSLR, 0.2, 0.5),
-      tip: 'Отношение сохранений к лайкам. Saves = намерение вернуться, лайк = импульс. Высокое значение = контент реально ценный, строит авторитет. Saves весят больше лайков в алгоритме.',
-    },
-    {
-      label: 'Share : Like ratio',
-      value: avgSHLR.toFixed(2),
-      bench: 'Хорошо >0.1 · Отлично >0.3',
-      cls: scoreClass(avgSHLR, 0.1, 0.3),
-      tip: 'Отношение репостов к лайкам. Репосты весят ×3 от лайков в алгоритме TikTok. Высокое значение = контент вирусный, люди активно делятся.',
-    },
-    {
-      label: 'Profile Visit Rate',
-      value: avgPVR.toFixed(2) + '%',
-      bench: 'Хорошо >1% · Отлично >3%',
-      cls: scoreClass(avgPVR, 1, 3),
-      tip: '% зрителей, перешедших на твой профиль с видео. Разница между вирусным развлечением и контентом, который строит аудиторию. Высокое = контент вызвал интерес к тебе лично.',
-    },
-    {
-      label: 'Follow Conversion',
-      value: avgFC !== null ? avgFC.toFixed(0) + '%' : '—',
-      bench: 'Хорошо >10% · Отлично >20%',
-      cls: scoreClass(avgFC, 10, 20),
-      tip: '% посетителей профиля, которые подписались. Показывает насколько профиль убеждает остаться. Низкое = видео интересное, но профиль не конвертирует.',
-    },
-  ];
-
-  container.innerHTML = signals.map(s => `
-    <div class="signal-card" data-tip="${s.tip}">
-      <div class="s-label">${s.label}</div>
-      <div class="s-value ${s.cls}">${s.value}</div>
-      <div class="s-bench ${s.cls}">${s.bench}</div>
-    </div>
-  `).join('');
-}
-
-function renderFunnelCats() {
-  const container = document.getElementById('funnelCats');
-  container.innerHTML = TYPES.map(type => {
-    const entries = data.entries.filter(e => e.type === type);
-    if (!entries.length) return `<div class="funnel-cat-card">
-      <h3>${TYPE_LABELS[type]}</h3>
-      <div class="cat-count">нет видео</div>
-      <div style="color:#2a2a2a;font-size:12px;padding:8px 0">—</div>
-    </div>`;
-
-    const avg = { views: 0, likes: 0, comments: 0, shares: 0, saves: 0, profile_visits: 0, follows: 0, completion_rate: 0 };
-    const keys = Object.keys(avg);
-    entries.forEach(e => keys.forEach(k => { avg[k] += (e[k] || 0); }));
-    keys.forEach(k => { avg[k] = avg[k] / entries.length; });
-
-    return `<div class="funnel-cat-card">
-      <h3>${TYPE_LABELS[type]}</h3>
-      <div class="cat-count">${entries.length} видео · ср. ${fmt(avg.views)} просм.</div>
-      <div class="funnel-steps">${stepsHtml(avg)}</div>
+  container.innerHTML = cfg.signals.map(s => {
+    const v = sval(s.key);
+    const cls = scls(v, s.good, s.great);
+    const disp = v===null ? '—' : (s.key==='slr'||s.key==='shlr' ? v.toFixed(2) : v.toFixed(1)+'%');
+    return `<div class="sig-card" data-tip="${s.tip}">
+      <div class="sl">${s.label}</div>
+      <div class="sv ${cls}">${disp}</div>
+      <div class="sb ${cls}">${s.bench}</div>
     </div>`;
   }).join('');
 }
 
-function renderFunnelVideos() {
-  const typeF  = document.getElementById('funnelFilterType').value;
-  const sortBy = document.getElementById('funnelSort').value;
+function renderFunnelCats() {
+  const cfg = p();
+  const container = document.getElementById('funnelCats');
+  container.innerHTML = cfg.types.map(type => {
+    const entries = pdata().entries.filter(e=>e.type===type);
+    if (!entries.length) return `<div class="fcat-card"><h3>${cfg.typeLabels[type]}</h3><div class="cnt">нет видео</div><div style="color:#2a2a2a;font-size:12px">—</div></div>`;
 
-  let rows = [...data.entries];
-  if (typeF) rows = rows.filter(e => e.type === typeF);
+    const avg = {};
+    cfg.funnelSteps.forEach(s => { avg[s.key]=entries.reduce((a,e)=>a+(e[s.key]||0),0)/entries.length; });
 
-  rows.sort((a, b) => {
-    if (sortBy === 'views_desc') return (b.views||0) - (a.views||0);
-    if (sortBy === 'date_desc')  return b.date.localeCompare(a.date);
-    if (sortBy === 'er_desc')    return er(b) - er(a);
-    if (sortBy === 'cr_desc')    return (b.completion_rate||0) - (a.completion_rate||0);
+    return `<div class="fcat-card">
+      <h3>${cfg.typeLabels[type]}</h3>
+      <div class="cnt">${entries.length} видео · ср. ${fmt(avg[cfg.funnelSteps[0].key]||0)}</div>
+      <div class="fsteps">${stepsHtml(avg)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderFunnelVids() {
+  const cfg = p();
+  const typeF = document.getElementById('ffType').value;
+  const sortBy = document.getElementById('ffSort').value;
+
+  let rows = [...pdata().entries];
+  if (typeF) rows = rows.filter(e=>e.type===typeF);
+  rows.sort((a,b) => {
+    if (sortBy==='views_desc') return (b[cfg.mainMetric]||0)-(a[cfg.mainMetric]||0);
+    if (sortBy==='date_desc')  return b.date.localeCompare(a.date);
+    if (sortBy==='er_desc')    return erOf(b)-erOf(a);
+    if (sortBy==='cr_desc')    return crOf(b)-crOf(a);
     return 0;
   });
 
-  const container = document.getElementById('funnelVideosList');
-  if (!rows.length) {
-    container.innerHTML = '<div class="empty"><div class="icon">📭</div>Нет видео</div>';
-    return;
-  }
+  const container = document.getElementById('funnelVids');
+  if (!rows.length) { container.innerHTML='<div class="empty"><div class="icon">📭</div>Нет видео</div>'; return; }
 
   container.innerHTML = rows.map(e => {
-    const erVal  = er(e).toFixed(1);
-    const crVal  = e.completion_rate || 0;
-    const tier   = performanceTier(e);
-    const tagCls = 'tag tag-' + e.type;
-    return `<div class="funnel-video-row">
-      <div class="funnel-video-meta">
-        ${e.url
-          ? `<a href="${esc(e.url)}" target="_blank" rel="noopener" class="funnel-video-title" style="text-decoration:none;color:#ddd">${esc(e.title)}</a>`
-          : `<span class="funnel-video-title">${esc(e.title)}</span>`
-        }
-        <div class="funnel-video-right">
-          <span class="funnel-video-date">${e.date}</span>
-          <span class="${tagCls}">${TYPE_LABELS[e.type]||e.type}</span>
-          ${crVal ? `<span class="cr-badge ${crClass(crVal)}" data-tip="${crTip(crVal)}">${crVal.toFixed(0)}% CR</span>` : ''}
+    const erVal = erOf(e).toFixed(1);
+    const crVal = crOf(e);
+    const tier  = perfTier(e);
+    const tCls  = 'tag tag-'+e.type;
+    return `<div class="fvid-row">
+      <div class="fvid-meta">
+        ${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener" class="fvid-title" style="text-decoration:none;color:#ddd">${esc(e.title)}</a>`
+                : `<span class="fvid-title">${esc(e.title)}</span>`}
+        <div class="fvid-right">
+          <span class="fvid-date">${e.date}</span>
+          <span class="${tCls}">${cfg.typeLabels[e.type]||e.type}</span>
+          ${crVal&&cfg.crLabel ? `<span class="cr-badge ${crClass(crVal)}" data-tip="${crTip(crVal,cfg.crLabel)}">${crVal.toFixed(0)}% ${cfg.crLabel}</span>` : ''}
           <span class="er-badge ${erClass(parseFloat(erVal))}" data-tip="${erTip(parseFloat(erVal))}">${erVal}% ER</span>
           <span class="tier tier-${tier}">${TIER_LABELS[tier]}</span>
         </div>
       </div>
-      <div class="funnel-steps">${stepsHtml(e)}</div>
+      <div class="fsteps">${stepsHtml(e)}</div>
     </div>`;
   }).join('');
 }
 
-function renderFunnel() {
-  renderSignals();
-  renderFunnelCats();
-  renderFunnelVideos();
-}
+function renderFunnel() { renderSignals(); renderFunnelCats(); renderFunnelVids(); }
 
 function renderAll() {
   renderStats();
   renderTable();
-  if (currentTab === 'funnel') renderFunnel();
+  if (currentView==='funnel') renderFunnel();
 }
 
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// ── Init UI ───────────────────────────────────────────────
 
-document.getElementById('fDate').value = new Date().toISOString().slice(0, 10);
-document.getElementById('deleteModal').addEventListener('click', function(e) {
-  if (e.target === this) closeDeleteModal();
-});
+rebuildTypeFilters();
+rebuildForm();
+switchPlatform('tiktok');
 
-// ── Tooltip ───────────────────────────────────────────────
-
-const tt = document.getElementById('tt');
-
+// Tooltip
+const ttip = document.getElementById('ttip');
 document.addEventListener('mouseover', e => {
   const el = e.target.closest('[data-tip]');
   if (!el) return;
-  tt.textContent = el.dataset.tip;
-  tt.style.display = 'block';
+  ttip.textContent = el.dataset.tip;
+  ttip.style.display = 'block';
 });
-
 document.addEventListener('mousemove', e => {
-  if (tt.style.display !== 'block') return;
-  const x = e.clientX + 14;
-  const y = e.clientY + 14;
-  const w = tt.offsetWidth;
-  const h = tt.offsetHeight;
-  tt.style.left = (x + w > window.innerWidth  - 8 ? e.clientX - w - 8 : x) + 'px';
-  tt.style.top  = (y + h > window.innerHeight - 8 ? e.clientY - h - 8 : y) + 'px';
+  if (ttip.style.display!=='block') return;
+  const x=e.clientX+14, y=e.clientY+14;
+  ttip.style.left=(x+ttip.offsetWidth>window.innerWidth-8?e.clientX-ttip.offsetWidth-8:x)+'px';
+  ttip.style.top=(y+ttip.offsetHeight>window.innerHeight-8?e.clientY-ttip.offsetHeight-8:y)+'px';
 });
-
-document.addEventListener('mouseout', e => {
-  const el = e.target.closest('[data-tip]');
-  if (el) tt.style.display = 'none';
-});
+document.addEventListener('mouseout', e => { if(e.target.closest('[data-tip]')) ttip.style.display='none'; });
+document.getElementById('delModal').addEventListener('click', function(e){ if(e.target===this) closeDelModal(); });
 </script>
 </body>
 </html>
