@@ -198,6 +198,14 @@
   .setup-hint { font-size: 11px; color: #444; line-height: 1.5; }
   .setup-hint a { color: #555; }
 
+  /* Loading overlay */
+  .loading-ov { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+  .loading-ov.open { display: flex; }
+  .spinner { width: 36px; height: 36px; border: 3px solid #1e1e1e; border-top-color: var(--pc, #fe2c55); border-radius: 50%; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-msg { font-size: 14px; color: #555; }
+  .loading-sub { font-size: 12px; color: #333; }
+
   /* Modal */
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
   .modal-bg.open { display: flex; }
@@ -217,6 +225,13 @@
 <body>
 
 <div id="ttip"></div>
+
+<!-- Loading overlay -->
+<div class="loading-ov open" id="loadingOv">
+  <div class="spinner"></div>
+  <div class="loading-msg" id="loadingMsg">Подключение...</div>
+  <div class="loading-sub" id="loadingSub">Загружаем данные из JSONBin</div>
+</div>
 
 <!-- Setup overlay -->
 <div class="setup-ov open" id="setupOv">
@@ -504,6 +519,9 @@ async function setupConnect() {
   if (!key) { document.getElementById('setupKey').focus(); return; }
   const btn = document.getElementById('setupBtn');
   btn.textContent = '...'; btn.disabled = true;
+  document.getElementById('setupOv').classList.remove('open');
+  document.getElementById('loadingOv').classList.add('open');
+  setLoadingMsg(binMode ? 'Подключение к бину...' : 'Создаём новый бин...', 'Это займёт несколько секунд');
   try {
     if (binMode) {
       const bid = document.getElementById('setupBinId').value.trim();
@@ -527,28 +545,51 @@ async function setupConnect() {
     }
     localStorage.setItem('vt_key', apiKey);
     localStorage.setItem('vt_bin', binId);
-    document.getElementById('setupOv').classList.remove('open');
+    hideLoading();
     updateConn();
     renderAll();
-  } catch (e) { alert(e.message); }
+  } catch (e) {
+    hideLoading();
+    document.getElementById('setupOv').classList.add('open');
+    alert(e.message);
+  }
   finally { btn.textContent = binMode ? 'Подключить' : 'Создать новый'; btn.disabled = false; }
+}
+
+function hideLoading() { document.getElementById('loadingOv').classList.remove('open'); }
+function setLoadingMsg(msg, sub) {
+  document.getElementById('loadingMsg').textContent = msg;
+  document.getElementById('loadingSub').textContent = sub || '';
 }
 
 (function init() {
   const k = localStorage.getItem('vt_key');
   const b = localStorage.getItem('vt_bin');
-  if (!k || !b) return;
+  if (!k || !b) {
+    hideLoading();
+    document.getElementById('setupOv').classList.add('open');
+    return;
+  }
   apiKey = k; binId = b;
+  setLoadingMsg('Подключение...', 'Загружаем данные из JSONBin');
   fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey } })
-    .then(r => { if (!r.ok) throw 0; return r.json(); })
+    .then(r => { if (!r.ok) throw new Error('Ошибка сервера: ' + r.status); return r.json(); })
     .then(json => {
       const rec = json.record || {};
       data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] } };
-      document.getElementById('setupOv').classList.remove('open');
+      hideLoading();
       updateConn();
       renderAll();
     })
-    .catch(() => { localStorage.removeItem('vt_key'); localStorage.removeItem('vt_bin'); });
+    .catch(e => {
+      setLoadingMsg('Не удалось подключиться', e.message || 'Проверь соединение');
+      setTimeout(() => {
+        localStorage.removeItem('vt_key');
+        localStorage.removeItem('vt_bin');
+        hideLoading();
+        document.getElementById('setupOv').classList.add('open');
+      }, 2000);
+    });
 })();
 
 // ── Helpers ───────────────────────────────────────────────
