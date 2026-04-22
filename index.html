@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TikTok Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0a0a0a;
+    color: #e0e0e0;
+    min-height: 100vh;
+  }
+
+  header {
+    background: #111;
+    border-bottom: 1px solid #222;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  header h1 { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  header h1 span { color: #fe2c55; }
+
+  .file-status { font-size: 12px; color: #555; display: flex; align-items: center; gap: 8px; }
+  .file-status .dot { width: 7px; height: 7px; border-radius: 50%; background: #333; flex-shrink: 0; }
+  .file-status.connected .dot { background: #25d366; }
+  .file-status.connected { color: #888; }
+
+  .btn { padding: 7px 14px; border-radius: 8px; border: none; font-size: 13px; font-weight: 500; cursor: pointer; transition: opacity .15s; }
+  .btn:hover { opacity: .8; }
+  .btn-primary { background: #fe2c55; color: #fff; }
+  .btn-ghost { background: #1e1e1e; color: #ccc; border: 1px solid #2e2e2e; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+
+  main { padding: 24px; max-width: 1300px; margin: 0 auto; }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 14px 16px; }
+  .stat-card .label { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #555; margin-bottom: 5px; }
+  .stat-card .value { font-size: 20px; font-weight: 700; color: #fff; }
+  .stat-card .sub { font-size: 10px; color: #444; margin-top: 2px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: #0a0a0a;
+    border: 1px solid #1e1e1e;
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 20px;
+  }
+
+  .tab { flex: 1; padding: 8px 16px; border-radius: 7px; border: none; background: none; color: #555; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; text-align: center; }
+  .tab.active { background: #1e1e1e; color: #e0e0e0; }
+  .tab:hover:not(.active) { color: #999; }
+
+  /* Add form */
+  .add-section { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 18px 20px; margin-bottom: 20px; }
+  .add-section h2 { font-size: 11px; font-weight: 600; color: #555; margin-bottom: 14px; text-transform: uppercase; letter-spacing: .5px; }
+
+  .form-row { display: grid; gap: 10px; margin-bottom: 10px; }
+  .form-row-1 { grid-template-columns: 2fr 1fr 1fr 1fr; }
+  .form-row-2 { grid-template-columns: repeat(6, 1fr); }
+  .form-row-3 { grid-template-columns: repeat(2, 1fr) repeat(3, 1fr) auto; }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: .4px; }
+  .field input, .field select {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    padding: 7px 10px;
+    color: #e0e0e0;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s;
+    width: 100%;
+  }
+  .field input:focus, .field select:focus { border-color: #fe2c55; }
+  .field select option { background: #1a1a1a; }
+
+  /* Table */
+  .table-section { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; overflow: hidden; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #1e1e1e;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .section-header h2 { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .5px; }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filters select, .filters input {
+    background: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 7px;
+    padding: 5px 9px;
+    color: #ccc;
+    font-size: 12px;
+    outline: none;
+  }
+
+  .table-wrap { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 900px; }
+
+  thead th {
+    padding: 9px 12px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: #444;
+    border-bottom: 1px solid #1a1a1a;
+    white-space: nowrap;
+  }
+
+  tbody tr { border-bottom: 1px solid #161616; transition: background .1s; }
+  tbody tr:hover { background: #161616; }
+  tbody tr:last-child { border-bottom: none; }
+
+  td { padding: 10px 12px; vertical-align: middle; }
+
+  td.title-cell { max-width: 200px; }
+
+  .title-text {
+    font-weight: 500;
+    color: #ddd;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+    display: block;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    margin-top: 3px;
+  }
+
+  .tag-fomo       { background: #2a0d1a; color: #fe2c55; }
+  .tag-meme       { background: #1a1a3e; color: #6b8cff; }
+  .tag-обучающий  { background: #2a1e0a; color: #f0a030; }
+  .tag-ugc        { background: #1a2a1a; color: #5cdb5c; }
+
+  .hook-tag {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+    color: #666;
+    background: #1a1a1a;
+    white-space: nowrap;
+  }
+
+  .num { color: #ccc; font-variant-numeric: tabular-nums; }
+
+  .er-badge { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+  .er-high  { background: #0d2b0d; color: #4caf50; }
+  .er-mid   { background: #2b1f0d; color: #ff9800; }
+  .er-low   { background: #2b0d0d; color: #f44336; }
+
+  .cr-badge { display: inline-block; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 700; }
+  .cr-great { background: #0d2b0d; color: #4caf50; }
+  .cr-good  { background: #1a2a0d; color: #8bc34a; }
+  .cr-mid   { background: #2b1f0d; color: #ff9800; }
+  .cr-low   { background: #2b0d0d; color: #f44336; }
+
+  /* Performance tier */
+  .tier { display: inline-block; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; }
+  .tier-viral { background: #2a0a1e; color: #fe2c55; border: 1px solid #5a1a3e; }
+  .tier-good  { background: #0d2b0d; color: #4caf50; }
+  .tier-ok    { background: #2b1f0d; color: #ff9800; }
+  .tier-flop  { background: #1a1a1a; color: #555; }
+
+  .edit-btn {
+    background: none; border: none; color: #2a2a2a; cursor: pointer;
+    font-size: 14px; padding: 3px 5px; border-radius: 5px;
+    transition: color .15s, background .15s;
+  }
+  .edit-btn:hover { color: #6b8cff; background: #0d0d1e; }
+
+  .del-btn {
+    background: none; border: none; color: #2a2a2a; cursor: pointer;
+    font-size: 14px; padding: 3px 5px; border-radius: 5px;
+    transition: color .15s, background .15s;
+  }
+  .del-btn:hover { color: #fe2c55; background: #1e1010; }
+
+  .add-section.editing {
+    border-color: #6b8cff44;
+    background: #0d0d18;
+  }
+
+  .edit-notice {
+    display: none;
+    font-size: 12px;
+    color: #6b8cff;
+    margin-bottom: 12px;
+    padding: 7px 10px;
+    background: #0d0d1e;
+    border: 1px solid #6b8cff33;
+    border-radius: 7px;
+  }
+
+  .edit-notice.visible { display: flex; align-items: center; gap: 8px; }
+
+  /* Tooltip */
+  #tt {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    background: #1c1c1c;
+    border: 1px solid #2e2e2e;
+    color: #bbb;
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 12px;
+    line-height: 1.55;
+    max-width: 260px;
+    pointer-events: none;
+    box-shadow: 0 6px 20px rgba(0,0,0,.6);
+  }
+
+  [data-tip] { cursor: help; }
+
+  .empty { padding: 48px 20px; text-align: center; color: #333; font-size: 14px; }
+  .empty .icon { font-size: 36px; margin-bottom: 12px; }
+
+  /* Funnel section */
+  .funnel-section { display: none; }
+  .funnel-section.visible { display: block; }
+
+  /* Algorithm signals */
+  .signals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .signal-card { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 14px 16px; }
+  .signal-card .s-label { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #444; margin-bottom: 4px; }
+  .signal-card .s-value { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+  .signal-card .s-bench { font-size: 10px; }
+  .s-great { color: #4caf50; }
+  .s-good  { color: #8bc34a; }
+  .s-mid   { color: #ff9800; }
+  .s-low   { color: #f44336; }
+  .s-none  { color: #444; }
+
+  /* Category funnel cards */
+  .funnel-cats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .funnel-cat-card { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; padding: 18px; }
+  .funnel-cat-card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #555; margin-bottom: 2px; }
+  .funnel-cat-card .cat-count { font-size: 10px; color: #333; margin-bottom: 14px; }
+
+  .funnel-steps { display: flex; flex-direction: column; gap: 8px; }
+  .funnel-step { display: flex; flex-direction: column; gap: 3px; }
+
+  .funnel-step-label { display: flex; justify-content: space-between; font-size: 11px; color: #555; }
+  .funnel-step-label .pct { color: #888; font-weight: 600; }
+  .funnel-step-label .bench { font-size: 10px; color: #333; }
+
+  .funnel-bar-track { height: 5px; background: #1a1a1a; border-radius: 3px; overflow: hidden; }
+  .funnel-bar-fill { height: 100%; border-radius: 3px; transition: width .4s ease; }
+
+  .bar-views    { background: #444; }
+  .bar-cr       { background: #25d366; }
+  .bar-likes    { background: #fe2c55; }
+  .bar-comments { background: #6b8cff; }
+  .bar-saves    { background: #f0a030; }
+  .bar-shares   { background: #d06bff; }
+  .bar-profile  { background: #26c6da; }
+  .bar-follows  { background: #fff; }
+
+  /* Per-video funnel */
+  .funnel-videos-section { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; overflow: hidden; }
+
+  .funnel-video-row { padding: 14px 20px; border-bottom: 1px solid #161616; }
+  .funnel-video-row:last-child { border-bottom: none; }
+
+  .funnel-video-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+
+  .funnel-video-title { font-size: 13px; font-weight: 500; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+
+  .funnel-video-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; }
+  .funnel-video-date { font-size: 11px; color: #444; }
+
+  /* Modal */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #111; border: 1px solid #222; border-radius: 16px; padding: 28px; max-width: 480px; width: 90%; }
+  .modal h2 { font-size: 16px; margin-bottom: 8px; color: #fff; }
+  .modal p  { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* File overlay */
+  .file-overlay { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 20px; }
+  .file-overlay.open { display: flex; }
+  .file-overlay h2 { font-size: 22px; font-weight: 700; color: #fff; }
+  .file-overlay p { font-size: 14px; color: #555; text-align: center; max-width: 340px; line-height: 1.6; }
+  .file-overlay-actions { display: flex; gap: 12px; }
+
+  @media (max-width: 800px) {
+    .form-row-1 { grid-template-columns: 1fr 1fr; }
+    .form-row-2 { grid-template-columns: repeat(3, 1fr); }
+    .form-row-3 { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div id="tt"></div>
+
+<div class="file-overlay open" id="fileOverlay">
+  <div style="font-size:40px">📊</div>
+  <h2>TikTok Tracker</h2>
+  <p>Выбери существующий файл данных или создай новый — все видео будут сохраняться туда.</p>
+  <div class="file-overlay-actions">
+    <button class="btn btn-ghost" onclick="openExistingFile()">Открыть файл</button>
+    <button class="btn btn-primary" onclick="createNewFile()">Создать новый</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="deleteModal">
+  <div class="modal">
+    <h2>Удалить запись?</h2>
+    <p>Это действие нельзя отменить. Данные удалятся из файла.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDeleteModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="confirmDelete()">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<header>
+  <h1>Tik<span>Tok</span> Tracker</h1>
+  <div class="file-status" id="fileStatus">
+    <span class="dot"></span>
+    <span id="fileStatusText">файл не открыт</span>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" onclick="openExistingFile()">Открыть другой файл</button>
+  </div>
+</header>
+
+<main>
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="label">Видео</div>
+      <div class="value" id="statTotal">0</div>
+      <div class="sub">всего записей</div>
+    </div>
+    <div class="stat-card" data-tip="Среднее число просмотров на одно видео. Само по себе не показатель качества — смотри в связке с ER и CR.">
+      <div class="label">Ср. просмотры</div>
+      <div class="value" id="statViews">—</div>
+      <div class="sub">на видео</div>
+    </div>
+    <div class="stat-card" data-tip="Engagement Rate = (лайки + комменты + репосты + сохранения) / просмотры × 100. Норма для TikTok: 4–8%. Показывает насколько контент резонирует.">
+      <div class="label">Ср. ER</div>
+      <div class="value" id="statER">—</div>
+      <div class="sub">engagement rate</div>
+    </div>
+    <div class="stat-card" data-tip="Completion Rate — средняя досматриваемость. Самый важный сигнал для алгоритма (40–50% веса). Норма >50%, для вирального распределения нужно >70%.">
+      <div class="label">Ср. CR</div>
+      <div class="value" id="statCR">—</div>
+      <div class="sub">completion rate</div>
+    </div>
+    <div class="stat-card" data-tip="Процент зрителей, сохранивших видео. Главный показатель ценности контента — saves говорят что человек хочет вернуться. Saves весят больше лайков в алгоритме. Норма: 0.5–1.5%.">
+      <div class="label">Save rate</div>
+      <div class="value" id="statSaveRate">—</div>
+      <div class="sub">ср. saves / views</div>
+    </div>
+    <div class="stat-card" data-tip="Видео с наибольшей досматриваемостью. Изучи что в нём зацепило — hook, структура, длина.">
+      <div class="label">Лучший по CR</div>
+      <div class="value" id="statBestCR">—</div>
+      <div class="sub" id="statBestCRTitle">completion rate</div>
+    </div>
+    <div class="stat-card" data-tip="Видео с наибольшим Engagement Rate. Не обязательно самое просматриваемое — но аудитория отреагировала сильнее всего.">
+      <div class="label">Лучший ER</div>
+      <div class="value" id="statBestER">—</div>
+      <div class="sub" id="statBestERTitle">по вовлечённости</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" id="tabTracker" onclick="switchTab('tracker')">Трекер</button>
+    <button class="tab" id="tabFunnel" onclick="switchTab('funnel')">Воронка</button>
+  </div>
+
+  <!-- Add form -->
+  <div class="add-section" id="addSection">
+    <div class="edit-notice" id="editNotice">
+      <span>✎ Режим редактирования</span>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="cancelEdit()">Отмена</button>
+    </div>
+    <h2 id="formTitle">Добавить видео</h2>
+    <div class="form-row" style="grid-template-columns:1fr auto;margin-bottom:10px">
+      <div class="field">
+        <label>Ссылка на видео (TikTok URL)</label>
+        <input type="url" id="fUrl" placeholder="https://www.tiktok.com/@..." />
+      </div>
+    </div>
+    <div class="form-row form-row-1">
+      <div class="field">
+        <label>Название / описание</label>
+        <input type="text" id="fTitle" placeholder="О чём видео..." />
+      </div>
+      <div class="field">
+        <label>Дата публикации</label>
+        <input type="date" id="fDate" />
+      </div>
+      <div class="field">
+        <label>Тип контента</label>
+        <select id="fType">
+          <option value="fomo">Fomo</option>
+          <option value="meme">Meme</option>
+          <option value="обучающий">Обучающий</option>
+          <option value="ugc">UGC</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Тип хука</label>
+        <select id="fHook">
+          <option value="вопрос">Вопрос</option>
+          <option value="контраст">Визуальный контраст</option>
+          <option value="проблема">Проблема</option>
+          <option value="тренд">Тренд/звук</option>
+          <option value="цифра">Цифра/факт</option>
+          <option value="другое">Другое</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row form-row-2">
+      <div class="field">
+        <label>👁 Просмотры</label>
+        <input type="number" id="fViews" placeholder="0" min="0" />
+      </div>
+      <div class="field">
+        <label>❤️ Лайки</label>
+        <input type="number" id="fLikes" placeholder="0" min="0" />
+      </div>
+      <div class="field">
+        <label>💬 Комменты</label>
+        <input type="number" id="fComments" placeholder="0" min="0" />
+      </div>
+      <div class="field">
+        <label>↗️ Репосты</label>
+        <input type="number" id="fShares" placeholder="0" min="0" />
+      </div>
+      <div class="field">
+        <label>🔖 Сохранения</label>
+        <input type="number" id="fSaves" placeholder="0" min="0" />
+      </div>
+      <div class="field">
+        <label>✅ Completion Rate %</label>
+        <input type="number" id="fCR" placeholder="0" min="0" max="100" />
+      </div>
+    </div>
+    <div class="form-row form-row-3">
+      <div class="field">
+        <label>👤 Визиты профиля</label>
+        <input type="number" id="fProfileVisits" placeholder="0" min="0" />
+      </div>
+      <div class="field">
+        <label>➕ Подписки с видео</label>
+        <input type="number" id="fFollows" placeholder="0" min="0" />
+      </div>
+      <div></div>
+      <div></div>
+      <div></div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn btn-primary" style="width:100%;height:34px" id="submitBtn" onclick="submitForm()">Добавить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracker view -->
+  <div class="table-section" id="trackerSection">
+    <div class="section-header">
+      <h2>Контент</h2>
+      <div class="filters">
+        <input type="text" id="filterSearch" placeholder="Поиск..." oninput="renderTable()" style="width:130px" />
+        <select id="filterType" onchange="renderTable()">
+          <option value="">Все типы</option>
+          <option value="fomo">Fomo</option>
+          <option value="meme">Meme</option>
+          <option value="обучающий">Обучающий</option>
+          <option value="ugc">UGC</option>
+        </select>
+        <select id="sortBy" onchange="renderTable()">
+          <option value="date_desc">Дата ↓</option>
+          <option value="date_asc">Дата ↑</option>
+          <option value="views_desc">Просмотры ↓</option>
+          <option value="er_desc">ER ↓</option>
+          <option value="cr_desc">CR ↓</option>
+          <option value="saves_desc">Сохранения ↓</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div id="tableContainer">
+        <div class="empty"><div class="icon">📭</div>Нет данных. Открой файл и добавь первое видео.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Funnel view -->
+  <div class="funnel-section" id="funnelSection">
+
+    <!-- Algorithm signals -->
+    <div class="signals-grid" id="signalsGrid"></div>
+
+    <!-- By category -->
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#444;margin-bottom:10px;">По категориям</div>
+    <div class="funnel-cats" id="funnelCats"></div>
+
+    <!-- By video -->
+    <div class="funnel-videos-section">
+      <div class="section-header">
+        <h2>По видео</h2>
+        <div class="filters">
+          <select id="funnelFilterType" onchange="renderFunnel()">
+            <option value="">Все типы</option>
+            <option value="fomo">Fomo</option>
+            <option value="meme">Meme</option>
+            <option value="обучающий">Обучающий</option>
+            <option value="ugc">UGC</option>
+          </select>
+          <select id="funnelSort" onchange="renderFunnel()">
+            <option value="views_desc">По просмотрам ↓</option>
+            <option value="date_desc">По дате ↓</option>
+            <option value="er_desc">По ER ↓</option>
+            <option value="cr_desc">По CR ↓</option>
+          </select>
+        </div>
+      </div>
+      <div id="funnelVideosList"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+let fileHandle = null;
+let data = { entries: [] };
+let deleteTarget = null;
+let currentTab = 'tracker';
+let editingId = null;
+
+// ── File I/O ──────────────────────────────────────────────
+
+async function openExistingFile() {
+  try {
+    [fileHandle] = await window.showOpenFilePicker({
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+    });
+    const file = await fileHandle.getFile();
+    const text = await file.text();
+    try { data = JSON.parse(text); } catch { data = { entries: [] }; }
+    if (!data.entries) data.entries = [];
+    closeOverlay();
+    updateFileStatus();
+    renderAll();
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('Не удалось открыть файл: ' + e.message);
+  }
+}
+
+async function createNewFile() {
+  try {
+    fileHandle = await window.showSaveFilePicker({
+      suggestedName: 'tiktok-data.json',
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }]
+    });
+    data = { entries: [] };
+    await saveFile();
+    closeOverlay();
+    updateFileStatus();
+    renderAll();
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('Не удалось создать файл: ' + e.message);
+  }
+}
+
+async function saveFile() {
+  if (!fileHandle) return;
+  const writable = await fileHandle.createWritable();
+  await writable.write(JSON.stringify(data, null, 2));
+  await writable.close();
+}
+
+function closeOverlay() { document.getElementById('fileOverlay').classList.remove('open'); }
+
+function updateFileStatus() {
+  const el = document.getElementById('fileStatus');
+  const txt = document.getElementById('fileStatusText');
+  if (fileHandle) { el.classList.add('connected'); txt.textContent = fileHandle.name; }
+  else { el.classList.remove('connected'); txt.textContent = 'файл не открыт'; }
+}
+
+// ── Tabs ──────────────────────────────────────────────────
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabTracker').classList.toggle('active', tab === 'tracker');
+  document.getElementById('tabFunnel').classList.toggle('active', tab === 'funnel');
+  document.getElementById('addSection').style.display     = tab === 'tracker' ? '' : 'none';
+  document.getElementById('trackerSection').style.display = tab === 'tracker' ? '' : 'none';
+  document.getElementById('funnelSection').classList.toggle('visible', tab === 'funnel');
+  if (tab === 'funnel') renderFunnel();
+}
+
+// ── Metrics ───────────────────────────────────────────────
+
+function er(e) {
+  if (!e.views) return 0;
+  return ((e.likes||0) + (e.comments||0) + (e.shares||0) + (e.saves||0)) / e.views * 100;
+}
+
+function saveRate(e)    { return e.views ? (e.saves||0) / e.views * 100 : 0; }
+function shareRate(e)   { return e.views ? (e.shares||0) / e.views * 100 : 0; }
+function likeRate(e)    { return e.views ? (e.likes||0) / e.views * 100 : 0; }
+function pvRate(e)      { return e.views ? (e.profile_visits||0) / e.views * 100 : 0; }
+function followRate(e)  { return e.views ? (e.follows||0) / e.views * 100 : 0; }
+function followConv(e)  { return e.profile_visits ? (e.follows||0) / e.profile_visits * 100 : 0; }
+function shareLikeRatio(e) { return e.likes ? (e.shares||0) / e.likes : 0; }
+function saveLikeRatio(e)  { return e.likes ? (e.saves||0) / e.likes : 0; }
+
+function performanceTier(e) {
+  const v = e.views || 0;
+  const erV = er(e);
+  const crV = e.completion_rate || 0;
+  if (v >= 50000 || (v >= 5000 && erV >= 10) || (crV >= 70 && v >= 10000)) return 'viral';
+  if (erV >= 5 || (crV >= 60 && v >= 1000) || v >= 10000) return 'good';
+  if (erV >= 2 || v >= 500 || crV >= 40) return 'ok';
+  return 'flop';
+}
+
+const TIER_LABELS = { viral: 'Viral 🔥', good: 'Good', ok: 'Ok', flop: 'Flop' };
+
+function erClass(v)  { return v >= 8 ? 'er-high' : v >= 3 ? 'er-mid' : 'er-low'; }
+function crClass(v)  { return v >= 70 ? 'cr-great' : v >= 50 ? 'cr-good' : v >= 35 ? 'cr-mid' : 'cr-low'; }
+
+function crTip(v) {
+  if (v >= 70) return `CR ${v.toFixed(0)}% — отлично ✅ Алгоритм активно распространяет видео. Норма для вирального: >70%.`;
+  if (v >= 50) return `CR ${v.toFixed(0)}% — хорошо. Видео рассматривается для расширения. Норма: >50%.`;
+  if (v >= 35) return `CR ${v.toFixed(0)}% — средне ⚠️ Зрители уходят на середине, видео не получит широкого распределения. Норма: >50%.`;
+  return `CR ${v.toFixed(0)}% — низко 🔴 Зрители уходят очень рано. Проверь хук и первые 10 секунд. Норма: >50%.`;
+}
+
+function erTip(v) {
+  if (v >= 8) return `ER ${v.toFixed(1)}% — отлично ✅ Контент сильно резонирует с аудиторией. Норма: 4–8%.`;
+  if (v >= 4) return `ER ${v.toFixed(1)}% — норма. Хороший уровень вовлечённости. Норма: 4–8%.`;
+  if (v >= 2) return `ER ${v.toFixed(1)}% — ниже нормы ⚠️ Аудитория слабо взаимодействует. Норма: 4–8%.`;
+  return `ER ${v.toFixed(1)}% — низко 🔴 Контент не цепляет. Проверь тему, хук и CTA. Норма: 4–8%.`;
+}
+
+// ── Data ──────────────────────────────────────────────────
+
+function readForm() {
+  return {
+    title:           document.getElementById('fTitle').value.trim(),
+    url:             document.getElementById('fUrl').value.trim() || '',
+    date:            document.getElementById('fDate').value || new Date().toISOString().slice(0, 10),
+    type:            document.getElementById('fType').value,
+    hook:            document.getElementById('fHook').value,
+    views:           parseInt(document.getElementById('fViews').value)         || 0,
+    likes:           parseInt(document.getElementById('fLikes').value)         || 0,
+    comments:        parseInt(document.getElementById('fComments').value)      || 0,
+    shares:          parseInt(document.getElementById('fShares').value)        || 0,
+    saves:           parseInt(document.getElementById('fSaves').value)         || 0,
+    completion_rate: parseFloat(document.getElementById('fCR').value)         || 0,
+    profile_visits:  parseInt(document.getElementById('fProfileVisits').value) || 0,
+    follows:         parseInt(document.getElementById('fFollows').value)       || 0,
+  };
+}
+
+function submitForm() {
+  if (editingId !== null) saveEdit();
+  else addEntry();
+}
+
+function addEntry() {
+  if (!fileHandle) { alert('Сначала открой или создай файл.'); return; }
+  const fields = readForm();
+  if (!fields.title) { document.getElementById('fTitle').focus(); return; }
+  data.entries.unshift({ id: Date.now(), ...fields });
+  saveFile();
+  clearForm();
+  renderAll();
+}
+
+function editEntry(id) {
+  const e = data.entries.find(x => x.id === id);
+  if (!e) return;
+  editingId = id;
+
+  document.getElementById('fUrl').value           = e.url || '';
+  document.getElementById('fTitle').value         = e.title || '';
+  document.getElementById('fDate').value          = e.date || '';
+  document.getElementById('fType').value          = e.type || 'fomo';
+  document.getElementById('fHook').value          = e.hook || 'вопрос';
+  document.getElementById('fViews').value         = e.views || '';
+  document.getElementById('fLikes').value         = e.likes || '';
+  document.getElementById('fComments').value      = e.comments || '';
+  document.getElementById('fShares').value        = e.shares || '';
+  document.getElementById('fSaves').value         = e.saves || '';
+  document.getElementById('fCR').value            = e.completion_rate || '';
+  document.getElementById('fProfileVisits').value = e.profile_visits || '';
+  document.getElementById('fFollows').value       = e.follows || '';
+
+  document.getElementById('addSection').classList.add('editing');
+  document.getElementById('editNotice').classList.add('visible');
+  document.getElementById('formTitle').textContent = 'Редактировать видео';
+  document.getElementById('submitBtn').textContent = 'Сохранить';
+  document.getElementById('addSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function saveEdit() {
+  if (!fileHandle) { alert('Сначала открой или создай файл.'); return; }
+  const fields = readForm();
+  if (!fields.title) { document.getElementById('fTitle').focus(); return; }
+  const idx = data.entries.findIndex(x => x.id === editingId);
+  if (idx !== -1) data.entries[idx] = { id: editingId, ...fields };
+  saveFile();
+  cancelEdit();
+  renderAll();
+}
+
+function cancelEdit() {
+  editingId = null;
+  clearForm();
+  document.getElementById('addSection').classList.remove('editing');
+  document.getElementById('editNotice').classList.remove('visible');
+  document.getElementById('formTitle').textContent = 'Добавить видео';
+  document.getElementById('submitBtn').textContent = 'Добавить';
+}
+
+function clearForm() {
+  ['fUrl','fTitle','fViews','fLikes','fComments','fShares','fSaves','fCR','fProfileVisits','fFollows'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('fDate').value = new Date().toISOString().slice(0, 10);
+}
+
+// ── Delete ────────────────────────────────────────────────
+
+function askDelete(id) {
+  deleteTarget = id;
+  document.getElementById('deleteModal').classList.add('open');
+}
+
+function closeDeleteModal() {
+  document.getElementById('deleteModal').classList.remove('open');
+  deleteTarget = null;
+}
+
+function confirmDelete() {
+  if (deleteTarget === null) return;
+  data.entries = data.entries.filter(e => e.id !== deleteTarget);
+  saveFile();
+  renderAll();
+  closeDeleteModal();
+}
+
+// ── Render: Stats ─────────────────────────────────────────
+
+function fmt(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+  if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'K';
+  return Math.round(n).toString();
+}
+
+function renderStats() {
+  const entries = data.entries;
+  document.getElementById('statTotal').textContent = entries.length;
+
+  if (!entries.length) {
+    ['statViews','statER','statCR','statSaveRate','statBestCR','statBestER'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+    return;
+  }
+
+  const avgViews    = entries.reduce((s,e) => s + (e.views||0), 0) / entries.length;
+  const avgER       = entries.reduce((s,e) => s + er(e), 0) / entries.length;
+  const withCR      = entries.filter(e => e.completion_rate > 0);
+  const avgCR       = withCR.length ? withCR.reduce((s,e) => s + e.completion_rate, 0) / withCR.length : 0;
+  const avgSaveRate = entries.reduce((s,e) => s + saveRate(e), 0) / entries.length;
+  const bestCR      = withCR.length ? withCR.reduce((a,b) => a.completion_rate > b.completion_rate ? a : b) : null;
+  const bestER      = entries.reduce((a,b) => er(a) > er(b) ? a : b);
+
+  document.getElementById('statViews').textContent    = fmt(avgViews);
+  document.getElementById('statER').textContent       = avgER.toFixed(1) + '%';
+  document.getElementById('statCR').textContent       = avgCR ? avgCR.toFixed(0) + '%' : '—';
+  document.getElementById('statSaveRate').textContent = avgSaveRate.toFixed(2) + '%';
+
+  if (bestCR) {
+    document.getElementById('statBestCR').textContent       = bestCR.completion_rate.toFixed(0) + '%';
+    document.getElementById('statBestCRTitle').textContent  = bestCR.title.slice(0, 20) + (bestCR.title.length > 20 ? '…' : '');
+  } else {
+    document.getElementById('statBestCR').textContent = '—';
+    document.getElementById('statBestCRTitle').textContent = 'completion rate';
+  }
+
+  document.getElementById('statBestER').textContent      = er(bestER).toFixed(1) + '%';
+  document.getElementById('statBestERTitle').textContent = bestER.title.slice(0, 20) + (bestER.title.length > 20 ? '…' : '');
+}
+
+// ── Render: Table ─────────────────────────────────────────
+
+function renderTable() {
+  const search = document.getElementById('filterSearch').value.toLowerCase();
+  const typeF  = document.getElementById('filterType').value;
+  const sortBy = document.getElementById('sortBy').value;
+
+  let rows = [...data.entries];
+  if (search) rows = rows.filter(e => e.title.toLowerCase().includes(search));
+  if (typeF)  rows = rows.filter(e => e.type === typeF);
+
+  rows.sort((a, b) => {
+    if (sortBy === 'date_desc')  return b.date.localeCompare(a.date);
+    if (sortBy === 'date_asc')   return a.date.localeCompare(b.date);
+    if (sortBy === 'views_desc') return b.views - a.views;
+    if (sortBy === 'er_desc')    return er(b) - er(a);
+    if (sortBy === 'cr_desc')    return (b.completion_rate||0) - (a.completion_rate||0);
+    if (sortBy === 'saves_desc') return (b.saves||0) - (a.saves||0);
+    return 0;
+  });
+
+  const container = document.getElementById('tableContainer');
+
+  if (!rows.length) {
+    container.innerHTML = '<div class="empty"><div class="icon">🔍</div>Ничего не найдено</div>';
+    return;
+  }
+
+  const tbody = rows.map(e => {
+    const erVal  = er(e).toFixed(1);
+    const crVal  = e.completion_rate || 0;
+    const tier   = performanceTier(e);
+    const tagCls = 'tag tag-' + e.type;
+    const crStr  = crVal ? crVal.toFixed(0) + '%' : '—';
+    const pvStr  = e.profile_visits ? fmt(e.profile_visits) : '—';
+    const flStr  = e.follows ? fmt(e.follows) : '—';
+    return `<tr>
+      <td class="title-cell">
+        ${e.url
+          ? `<a href="${esc(e.url)}" target="_blank" rel="noopener" class="title-text" style="text-decoration:none;color:#ddd">${esc(e.title)}</a>`
+          : `<span class="title-text">${esc(e.title)}</span>`
+        }
+        <span class="${tagCls}">${TYPE_LABELS[e.type]||e.type}</span>
+      </td>
+      <td class="num">${e.date}</td>
+      <td><span class="hook-tag">${esc(e.hook||'—')}</span></td>
+      <td class="num">${fmt(e.views)}</td>
+      <td class="num">${fmt(e.likes||0)}</td>
+      <td class="num">${fmt(e.comments||0)}</td>
+      <td class="num">${fmt(e.shares||0)}</td>
+      <td class="num">${fmt(e.saves||0)}</td>
+      <td>${crVal ? `<span class="cr-badge ${crClass(crVal)}" data-tip="${crTip(crVal)}">${crStr}</span>` : '<span style="color:#333">—</span>'}</td>
+      <td class="num">${pvStr}</td>
+      <td class="num">${flStr}</td>
+      <td><span class="er-badge ${erClass(parseFloat(erVal))}" data-tip="${erTip(parseFloat(erVal))}">${erVal}%</span></td>
+      <td><span class="tier tier-${tier}">${TIER_LABELS[tier]}</span></td>
+      <td style="white-space:nowrap">
+        <button class="edit-btn" onclick="editEntry(${e.id})" title="Редактировать">✎</button>
+        <button class="del-btn"  onclick="askDelete(${e.id})"  title="Удалить">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `<table>
+    <thead><tr>
+      <th>Название</th>
+      <th>Дата</th>
+      <th>Хук</th>
+      <th>👁 Просмотры</th>
+      <th>❤️ Лайки</th>
+      <th>💬 Комменты</th>
+      <th>↗️ Репосты</th>
+      <th>🔖 Сохранения</th>
+      <th>✅ CR</th>
+      <th>👤 Профиль</th>
+      <th>➕ Подписки</th>
+      <th>ER</th>
+      <th>Tier</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${tbody}</tbody>
+  </table>`;
+}
+
+// ── Render: Funnel ────────────────────────────────────────
+
+const TYPES = ['fomo', 'meme', 'обучающий', 'ugc'];
+const TYPE_LABELS = { fomo: 'Fomo', meme: 'Meme', 'обучающий': 'Обучающий', ugc: 'UGC' };
+
+const STEPS = [
+  { key: 'views',           label: 'Просмотры',    cls: 'bar-views',   bench: null,          mode: 'views' },
+  { key: 'completion_rate', label: 'Досмотрели',   cls: 'bar-cr',      bench: 'норма >50%',  mode: 'cr'    },
+  { key: 'likes',           label: 'Лайки',        cls: 'bar-likes',   bench: 'норма 5-10%', mode: 'ratio' },
+  { key: 'comments',        label: 'Комменты',     cls: 'bar-comments',bench: 'норма 0.5-1.5%', mode: 'ratio' },
+  { key: 'saves',           label: 'Сохранения',   cls: 'bar-saves',   bench: 'норма 0.5-1.5%', mode: 'ratio' },
+  { key: 'shares',          label: 'Репосты',      cls: 'bar-shares',  bench: 'норма 0.1-0.3%', mode: 'ratio' },
+  { key: 'profile_visits',  label: 'Визиты профиля', cls: 'bar-profile', bench: 'норма 1-3%', mode: 'ratio' },
+  { key: 'follows',         label: 'Подписки',     cls: 'bar-follows', bench: 'норма 0.1-0.3%', mode: 'ratio' },
+];
+
+function stepsHtml(entry) {
+  const views = entry.views || 1;
+  return STEPS.map(s => {
+    let pct, label;
+    if (s.mode === 'views') {
+      pct = 100;
+      label = fmt(entry.views || 0);
+    } else if (s.mode === 'cr') {
+      pct = Math.min(100, entry[s.key] || 0);
+      label = pct ? pct.toFixed(0) + '%' : '—';
+    } else {
+      const val = entry[s.key] || 0;
+      pct = Math.min(100, val / views * 100);
+      label = val ? pct.toFixed(1) + '%' : '—';
+    }
+    const benchHtml = s.bench ? `<span class="bench">${s.bench}</span>` : '';
+    return `<div class="funnel-step">
+      <div class="funnel-step-label">
+        <span>${s.label}</span>
+        <div style="display:flex;gap:8px;align-items:center">${benchHtml}<span class="pct">${label}</span></div>
+      </div>
+      <div class="funnel-bar-track">
+        <div class="funnel-bar-fill ${s.cls}" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderSignals() {
+  const entries = data.entries;
+  const container = document.getElementById('signalsGrid');
+
+  if (!entries.length) { container.innerHTML = ''; return; }
+
+  const withCR  = entries.filter(e => e.completion_rate > 0);
+  const avgCR   = withCR.length ? withCR.reduce((s,e) => s + e.completion_rate, 0) / withCR.length : null;
+  const avgSLR  = entries.reduce((s,e) => s + saveLikeRatio(e), 0) / entries.length;
+  const avgSHLR = entries.reduce((s,e) => s + shareLikeRatio(e), 0) / entries.length;
+  const avgPVR  = entries.reduce((s,e) => s + pvRate(e), 0) / entries.length;
+  const withPV  = entries.filter(e => e.profile_visits > 0);
+  const avgFC   = withPV.length ? withPV.reduce((s,e) => s + followConv(e), 0) / withPV.length : null;
+
+  function scoreClass(val, good, great) {
+    if (val === null) return 's-none';
+    if (val >= great) return 's-great';
+    if (val >= good)  return 's-good';
+    if (val >= good * 0.5) return 's-mid';
+    return 's-low';
+  }
+
+  const signals = [
+    {
+      label: 'Avg Completion Rate',
+      value: avgCR !== null ? avgCR.toFixed(0) + '%' : '—',
+      bench: 'Хорошо >50% · Отлично >70%',
+      cls: scoreClass(avgCR, 50, 70),
+      tip: 'Completion Rate — % зрителей, досмотревших видео до конца. Самый важный алгоритмический сигнал (40–50% веса). Ниже 50% — видео не получит широкого распределения.',
+    },
+    {
+      label: 'Save : Like ratio',
+      value: avgSLR.toFixed(2),
+      bench: 'Хорошо >0.2 · Отлично >0.5',
+      cls: scoreClass(avgSLR, 0.2, 0.5),
+      tip: 'Отношение сохранений к лайкам. Saves = намерение вернуться, лайк = импульс. Высокое значение = контент реально ценный, строит авторитет. Saves весят больше лайков в алгоритме.',
+    },
+    {
+      label: 'Share : Like ratio',
+      value: avgSHLR.toFixed(2),
+      bench: 'Хорошо >0.1 · Отлично >0.3',
+      cls: scoreClass(avgSHLR, 0.1, 0.3),
+      tip: 'Отношение репостов к лайкам. Репосты весят ×3 от лайков в алгоритме TikTok. Высокое значение = контент вирусный, люди активно делятся.',
+    },
+    {
+      label: 'Profile Visit Rate',
+      value: avgPVR.toFixed(2) + '%',
+      bench: 'Хорошо >1% · Отлично >3%',
+      cls: scoreClass(avgPVR, 1, 3),
+      tip: '% зрителей, перешедших на твой профиль с видео. Разница между вирусным развлечением и контентом, который строит аудиторию. Высокое = контент вызвал интерес к тебе лично.',
+    },
+    {
+      label: 'Follow Conversion',
+      value: avgFC !== null ? avgFC.toFixed(0) + '%' : '—',
+      bench: 'Хорошо >10% · Отлично >20%',
+      cls: scoreClass(avgFC, 10, 20),
+      tip: '% посетителей профиля, которые подписались. Показывает насколько профиль убеждает остаться. Низкое = видео интересное, но профиль не конвертирует.',
+    },
+  ];
+
+  container.innerHTML = signals.map(s => `
+    <div class="signal-card" data-tip="${s.tip}">
+      <div class="s-label">${s.label}</div>
+      <div class="s-value ${s.cls}">${s.value}</div>
+      <div class="s-bench ${s.cls}">${s.bench}</div>
+    </div>
+  `).join('');
+}
+
+function renderFunnelCats() {
+  const container = document.getElementById('funnelCats');
+  container.innerHTML = TYPES.map(type => {
+    const entries = data.entries.filter(e => e.type === type);
+    if (!entries.length) return `<div class="funnel-cat-card">
+      <h3>${TYPE_LABELS[type]}</h3>
+      <div class="cat-count">нет видео</div>
+      <div style="color:#2a2a2a;font-size:12px;padding:8px 0">—</div>
+    </div>`;
+
+    const avg = { views: 0, likes: 0, comments: 0, shares: 0, saves: 0, profile_visits: 0, follows: 0, completion_rate: 0 };
+    const keys = Object.keys(avg);
+    entries.forEach(e => keys.forEach(k => { avg[k] += (e[k] || 0); }));
+    keys.forEach(k => { avg[k] = avg[k] / entries.length; });
+
+    return `<div class="funnel-cat-card">
+      <h3>${TYPE_LABELS[type]}</h3>
+      <div class="cat-count">${entries.length} видео · ср. ${fmt(avg.views)} просм.</div>
+      <div class="funnel-steps">${stepsHtml(avg)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderFunnelVideos() {
+  const typeF  = document.getElementById('funnelFilterType').value;
+  const sortBy = document.getElementById('funnelSort').value;
+
+  let rows = [...data.entries];
+  if (typeF) rows = rows.filter(e => e.type === typeF);
+
+  rows.sort((a, b) => {
+    if (sortBy === 'views_desc') return (b.views||0) - (a.views||0);
+    if (sortBy === 'date_desc')  return b.date.localeCompare(a.date);
+    if (sortBy === 'er_desc')    return er(b) - er(a);
+    if (sortBy === 'cr_desc')    return (b.completion_rate||0) - (a.completion_rate||0);
+    return 0;
+  });
+
+  const container = document.getElementById('funnelVideosList');
+  if (!rows.length) {
+    container.innerHTML = '<div class="empty"><div class="icon">📭</div>Нет видео</div>';
+    return;
+  }
+
+  container.innerHTML = rows.map(e => {
+    const erVal  = er(e).toFixed(1);
+    const crVal  = e.completion_rate || 0;
+    const tier   = performanceTier(e);
+    const tagCls = 'tag tag-' + e.type;
+    return `<div class="funnel-video-row">
+      <div class="funnel-video-meta">
+        ${e.url
+          ? `<a href="${esc(e.url)}" target="_blank" rel="noopener" class="funnel-video-title" style="text-decoration:none;color:#ddd">${esc(e.title)}</a>`
+          : `<span class="funnel-video-title">${esc(e.title)}</span>`
+        }
+        <div class="funnel-video-right">
+          <span class="funnel-video-date">${e.date}</span>
+          <span class="${tagCls}">${TYPE_LABELS[e.type]||e.type}</span>
+          ${crVal ? `<span class="cr-badge ${crClass(crVal)}" data-tip="${crTip(crVal)}">${crVal.toFixed(0)}% CR</span>` : ''}
+          <span class="er-badge ${erClass(parseFloat(erVal))}" data-tip="${erTip(parseFloat(erVal))}">${erVal}% ER</span>
+          <span class="tier tier-${tier}">${TIER_LABELS[tier]}</span>
+        </div>
+      </div>
+      <div class="funnel-steps">${stepsHtml(e)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderFunnel() {
+  renderSignals();
+  renderFunnelCats();
+  renderFunnelVideos();
+}
+
+function renderAll() {
+  renderStats();
+  renderTable();
+  if (currentTab === 'funnel') renderFunnel();
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('fDate').value = new Date().toISOString().slice(0, 10);
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteModal();
+});
+
+// ── Tooltip ───────────────────────────────────────────────
+
+const tt = document.getElementById('tt');
+
+document.addEventListener('mouseover', e => {
+  const el = e.target.closest('[data-tip]');
+  if (!el) return;
+  tt.textContent = el.dataset.tip;
+  tt.style.display = 'block';
+});
+
+document.addEventListener('mousemove', e => {
+  if (tt.style.display !== 'block') return;
+  const x = e.clientX + 14;
+  const y = e.clientY + 14;
+  const w = tt.offsetWidth;
+  const h = tt.offsetHeight;
+  tt.style.left = (x + w > window.innerWidth  - 8 ? e.clientX - w - 8 : x) + 'px';
+  tt.style.top  = (y + h > window.innerHeight - 8 ? e.clientY - h - 8 : y) + 'px';
+});
+
+document.addEventListener('mouseout', e => {
+  const el = e.target.closest('[data-tip]');
+  if (el) tt.style.display = 'none';
+});
+</script>
+</body>
+</html>
