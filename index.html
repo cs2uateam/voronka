@@ -206,7 +206,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-msg { font-size: 14px; color: #ccc; }
   .loading-sub { font-size: 12px; color: #444; }
-  #loadingChangeBtn { display: none; }
+  #loadingChangeBtn { display: none; margin-top: 8px; }
 
   /* Modal */
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
@@ -246,7 +246,7 @@
   <div class="spinner" id="loadingSpinner"></div>
   <div class="loading-msg" id="loadingMsg">Подключение...</div>
   <div class="loading-sub" id="loadingSub">Загружаем данные из JSONBin</div>
-  <button class="btn btn-ghost btn-sm" id="loadingChangeBtn" onclick="resetAndSetup()">Ввести другой ключ</button>
+  <button class="btn btn-primary" id="loadingChangeBtn" onclick="resetAndSetup()">Обновить ключ</button>
 </div>
 
 <!-- History modal -->
@@ -588,7 +588,7 @@ function setLoadingMsg(msg, sub, error) {
   document.getElementById('loadingMsg').textContent = msg;
   document.getElementById('loadingSub').textContent = sub || '';
   document.getElementById('loadingSpinner').classList.toggle('stopped', !!error);
-  document.getElementById('loadingChangeBtn').style.display = error ? '' : 'none';
+  document.getElementById('loadingChangeBtn').style.display = error ? 'block' : 'none';
 }
 function resetAndSetup() {
   localStorage.removeItem('vt_key'); localStorage.removeItem('vt_bin');
