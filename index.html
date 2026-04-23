@@ -829,6 +829,20 @@ function saveEdit() {
   saveData(); cancelEdit(); renderAll();
 }
 
+function deleteHistSnap(entryId, snapIdx) {
+  const entry = pdata().entries.find(x => x.id === entryId);
+  if (!entry) return;
+  // snapIdx is index in the reversed array, convert back to original
+  const origIdx = entry.history.length - 1 - snapIdx;
+  entry.history.splice(origIdx, 1);
+  saveData();
+  if (entry.history.length) showHistory(entryId);
+  else {
+    document.getElementById('histModal').classList.remove('open');
+    renderAll();
+  }
+}
+
 function showHistory(id) {
   const e = pdata().entries.find(x => x.id===id);
   if (!e || !e.history || !e.history.length) return;
@@ -838,7 +852,7 @@ function showHistory(id) {
   document.getElementById('histTitle').textContent = '📈 ' + e.title.slice(0,40);
 
   const cols = cfg.fields.filter(f => snaps.some(s => s[f.id]));
-  const thead = '<tr><th>Правка</th>' + cols.map(f=>`<th>${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim()}</th>`).join('') + '</tr>';
+  const thead = '<tr><th>Правка</th>' + cols.map(f=>`<th>${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim()}</th>`).join('') + '<th></th></tr>';
 
   const rows = snaps.map((s, i) => {
     const prev = snaps[i+1];
@@ -857,7 +871,7 @@ function showHistory(id) {
     }).join('');
     const d = new Date(s.at);
     const dateStr = d.toLocaleDateString('ru', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-    return `<tr><td style="color:#555;white-space:nowrap">${dateStr}</td>${cells}</tr>`;
+    return `<tr><td style="color:#555;white-space:nowrap">${dateStr}</td>${cells}<td><button class="hist-btn" onclick="deleteHistSnap(${id},${i})" title="Удалить" style="color:#333;font-size:11px">✕</button></td></tr>`;
   }).join('');
 
   document.getElementById('histBody').innerHTML = `
