@@ -49,6 +49,7 @@
 
   /* Stats */
   .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .stats-group-label { grid-column: 1 / -1; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: #444; padding-bottom: 2px; border-bottom: 1px solid #1e1e1e; }
   .stat-card { background: #111; border: 1px solid #1e1e1e; border-radius: 12px; padding: 13px 15px; cursor: help; }
   .stat-card .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #555; margin-bottom: 5px; }
   .stat-card .val { font-size: 19px; font-weight: 700; color: #fff; }
@@ -921,14 +922,17 @@ function renderStats() {
   })).filter(t => t.id !== cfg.mainMetric && t.val > 0);
 
   document.getElementById('statsRow').innerHTML = `
+    <div class="stats-group-label">Среднее</div>
     <div class="stat-card"><div class="lbl">Видео</div><div class="val">${entries.length}</div><div class="sub">всего записей</div></div>
-    <div class="stat-card" data-tip="Всего ${mainLbl} по всем видео."><div class="lbl">Всего ${mainLbl}</div><div class="val">${entries.length?fmt(totMain):'—'}</div><div class="sub">сумма</div></div>
     <div class="stat-card" data-tip="Среднее ${mainLbl} на видео."><div class="lbl">Ср. ${mainLbl}</div><div class="val">${entries.length?fmt(avgMain):'—'}</div><div class="sub">на видео</div></div>
-    ${totals.map(t=>`<div class="stat-card"><div class="lbl">Всего ${t.label}</div><div class="val">${fmt(t.val)}</div><div class="sub">сумма</div></div>`).join('')}
     <div class="stat-card" data-tip="Engagement Rate = (лайки + комменты + репосты + сохранения) / ${mainLbl} × 100."><div class="lbl">Ср. ER</div><div class="val">${entries.length?avgER.toFixed(1)+'%':'—'}</div><div class="sub">engagement rate</div></div>
-    ${cfg.crField ? `<div class="stat-card" data-tip="${crLbl} — ключевой алгоритмический сигнал."><div class="lbl">Ср. ${crLbl}</div><div class="val">${avgCR?avgCR.toFixed(0)+'%':'—'}</div><div class="sub">по видео с данными</div></div>` : ''}
+    ${cfg.crField ? `<div class="stat-card" data-tip="${crLbl} — ключевой алгоритмический сигнал. Норма >50%, для вирального >70%."><div class="lbl">Ср. ${crLbl}</div><div class="val">${avgCR?avgCR.toFixed(0)+'%':'—'}</div><div class="sub">по видео с данными</div></div>` : ''}
+    <div class="stat-card" data-tip="Процент зрителей, сохранивших контент. Норма: 0.5–1.5%."><div class="lbl">Save rate</div><div class="val">${entries.length?avgSR.toFixed(2)+'%':'—'}</div><div class="sub">ср. saves / ${mainLbl}</div></div>
     ${bestCR&&cfg.crField ? `<div class="stat-card" data-tip="Видео с наибольшим ${crLbl}."><div class="lbl">Лучший ${crLbl}</div><div class="val">${bestCR[cfg.crField].toFixed(0)}%</div><div class="sub">${esc(bestCR.title.slice(0,20))}${bestCR.title.length>20?'…':''}</div></div>` : ''}
     ${bestER ? `<div class="stat-card" data-tip="Видео с наибольшим Engagement Rate."><div class="lbl">Лучший ER</div><div class="val">${erOf(bestER).toFixed(1)}%</div><div class="sub">${esc(bestER.title.slice(0,20))}${bestER.title.length>20?'…':''}</div></div>` : ''}
+    <div class="stats-group-label" style="margin-top:10px">Всего</div>
+    <div class="stat-card"><div class="lbl">Всего ${mainLbl}</div><div class="val">${fmt(totMain)}</div><div class="sub">сумма</div></div>
+    ${totals.map(t=>`<div class="stat-card"><div class="lbl">Всего ${t.label}</div><div class="val">${fmt(t.val)}</div><div class="sub">сумма</div></div>`).join('')}
   `;
 }
 
