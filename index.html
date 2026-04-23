@@ -428,7 +428,7 @@ const PLATS = {
     fields: [
       { id:'views',        label:'👁 Просмотры',        parse:'int'   },
       { id:'ctr',          label:'🎯 CTR %',            parse:'float' },
-      { id:'avg_duration', label:'⏱ Ср. просмотр %',   parse:'float' },
+      { id:'watch_hours',   label:'⏱ Часы просмотра',    parse:'float' },
       { id:'likes',        label:'❤️ Лайки',           parse:'int'   },
       { id:'comments',     label:'💬 Комменты',         parse:'int'   },
       { id:'shares',       label:'↗️ Репосты',          parse:'int'   },
@@ -436,12 +436,12 @@ const PLATS = {
       { id:'follows',      label:'➕ Подписчики',       parse:'int'   },
     ],
     mainMetric: 'views',
-    crField: 'avg_duration',
-    crLabel: 'Ср. просмотр',
+    crField: 'watch_hours',
+    crLabel: 'Часы просм.',
     erBase: 'views',
     funnelSteps: [
       { key:'views',        label:'Просмотры',     cls:'bar-views',   mode:'top',   bench:null          },
-      { key:'avg_duration', label:'Ср. просмотр',  cls:'bar-dur',     mode:'cr',    bench:'норма >40%'  },
+      { key:'watch_hours',   label:'Часы просмотра', cls:'bar-dur',    mode:'ratio', bench:null           },
       { key:'likes',        label:'Лайки',         cls:'bar-likes',   mode:'ratio', bench:'норма 2-5%'  },
       { key:'comments',     label:'Комменты',      cls:'bar-comments',mode:'ratio', bench:'норма 0.3-1%'},
       { key:'saves',        label:'В плейлист',    cls:'bar-saves',   mode:'ratio', bench:'норма 0.3-1%'},
@@ -450,7 +450,7 @@ const PLATS = {
     ],
     signals: [
       { key:'ctr',  label:'Avg CTR',          bench:'Хорошо >4% · Отлично >7%',  good:4,  great:7,  tip:'Click-Through Rate — % людей, кликнувших на видео из предложенных. Главный показатель привлекательности превью и заголовка.' },
-      { key:'dur',  label:'Avg Duration',     bench:'Хорошо >40% · Отлично >60%',good:40, great:60, tip:'Средний процент просмотра видео. Аналог CR для TikTok. Напрямую влияет на продвижение алгоритмом.' },
+      { key:'wh',   label:'Watch Hours',       bench:null, good:null, great:null, tip:'Суммарные часы просмотра видео. Чем больше — тем лучше алгоритм продвигает канал.' },
       { key:'slr',  label:'Save:Like ratio',  bench:'Хорошо >0.1 · Отлично >0.3',good:.1, great:.3, tip:'Отношение сохранений в плейлист к лайкам. Saves = долгосрочная ценность контента.' },
       { key:'fr',   label:'Follow Rate',      bench:'Хорошо >0.3% · Отлично >1%',good:.3, great:1,  tip:'% зрителей, подписавшихся после просмотра. Показывает насколько видео конвертирует в подписчиков.' },
       { key:'er',   label:'Avg ER',           bench:'Хорошо >3% · Отлично >6%',  good:3,  great:6,  tip:'Engagement Rate = (лайки + комменты + репосты + сохранения) / просмотры × 100.' },
