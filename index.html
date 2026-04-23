@@ -202,17 +202,32 @@
   .loading-ov { display: none; position: fixed; inset: 0; background: #0a0a0a; z-index: 300; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
   .loading-ov.open { display: flex; }
   .spinner { width: 36px; height: 36px; border: 3px solid #1e1e1e; border-top-color: var(--pc, #fe2c55); border-radius: 50%; animation: spin .8s linear infinite; }
+  .spinner.stopped { animation: none; border-top-color: #f44336; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-msg { font-size: 14px; color: #555; }
-  .loading-sub { font-size: 12px; color: #333; }
+  .loading-msg { font-size: 14px; color: #ccc; }
+  .loading-sub { font-size: 12px; color: #444; }
+  #loadingChangeBtn { display: none; }
 
   /* Modal */
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
   .modal-bg.open { display: flex; }
-  .modal { background: #111; border: 1px solid #222; border-radius: 16px; padding: 28px; max-width: 480px; width: 90%; }
+  .modal { background: #111; border: 1px solid #222; border-radius: 16px; padding: 28px; max-width: 560px; width: 90%; max-height: 85vh; overflow-y: auto; }
   .modal h2 { font-size: 16px; margin-bottom: 8px; color: #fff; }
   .modal p  { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* History */
+  .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
+  .hist-table th { padding: 7px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: #444; border-bottom: 1px solid #1e1e1e; white-space: nowrap; }
+  .hist-table td { padding: 8px 10px; border-bottom: 1px solid #161616; color: #bbb; font-variant-numeric: tabular-nums; vertical-align: middle; }
+  .hist-table tr:last-child td { border-bottom: none; }
+  .hist-table tr:hover td { background: #161616; }
+  .hist-delta { font-size: 10px; margin-left: 4px; }
+  .hist-delta.up   { color: #4caf50; }
+  .hist-delta.down { color: #f44336; }
+  .hist-badge { display: inline-block; padding: 1px 5px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #1a1a1a; color: #555; }
+  .hist-btn { background: none; border: none; color: #333; cursor: pointer; font-size: 13px; padding: 3px 5px; border-radius: 5px; transition: color .15s; }
+  .hist-btn:hover { color: #f0a030; }
 
   @media (max-width: 800px) {
     .fg-top { grid-template-columns: 1fr 1fr; }
@@ -228,9 +243,21 @@
 
 <!-- Loading overlay -->
 <div class="loading-ov open" id="loadingOv">
-  <div class="spinner"></div>
+  <div class="spinner" id="loadingSpinner"></div>
   <div class="loading-msg" id="loadingMsg">Подключение...</div>
   <div class="loading-sub" id="loadingSub">Загружаем данные из JSONBin</div>
+  <button class="btn btn-ghost btn-sm" id="loadingChangeBtn" onclick="resetAndSetup()">Ввести другой ключ</button>
+</div>
+
+<!-- History modal -->
+<div class="modal-bg" id="histModal">
+  <div class="modal">
+    <h2 id="histTitle">История</h2>
+    <div id="histBody"></div>
+    <div class="modal-actions" style="margin-top:20px">
+      <button class="btn btn-ghost" onclick="document.getElementById('histModal').classList.remove('open')">Закрыть</button>
+    </div>
+  </div>
 </div>
 
 <!-- Setup overlay -->
@@ -557,9 +584,17 @@ async function setupConnect() {
 }
 
 function hideLoading() { document.getElementById('loadingOv').classList.remove('open'); }
-function setLoadingMsg(msg, sub) {
+function setLoadingMsg(msg, sub, error) {
   document.getElementById('loadingMsg').textContent = msg;
   document.getElementById('loadingSub').textContent = sub || '';
+  document.getElementById('loadingSpinner').classList.toggle('stopped', !!error);
+  document.getElementById('loadingChangeBtn').style.display = error ? '' : 'none';
+}
+function resetAndSetup() {
+  localStorage.removeItem('vt_key'); localStorage.removeItem('vt_bin');
+  apiKey = ''; binId = '';
+  hideLoading();
+  document.getElementById('setupOv').classList.add('open');
 }
 
 (function init() {
@@ -573,29 +608,25 @@ function setLoadingMsg(msg, sub) {
   apiKey = k; binId = b;
   setLoadingMsg('Подключение...', 'Загружаем данные из JSONBin');
   const t0 = Date.now();
-  fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey } })
-    .then(r => { if (!r.ok) throw new Error('Ошибка сервера: ' + r.status); return r.json(); })
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), 10000);
+  fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey }, signal: ctrl.signal })
+    .then(r => { clearTimeout(timeout); if (!r.ok) throw new Error('Ошибка ' + r.status + '. Возможно, ключ устарел.'); return r.json(); })
     .then(json => {
       const rec = json.record || {};
       data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] } };
-      // минимум 600мс чтобы загрузка была заметна
       const wait = Math.max(0, 600 - (Date.now() - t0));
       setLoadingMsg('Готово ✓', 'Данные загружены');
       setTimeout(() => {
         hideLoading();
         document.getElementById('setupOv').classList.remove('open');
-        updateConn();
-        renderAll();
+        updateConn(); renderAll();
       }, wait);
     })
     .catch(e => {
-      setLoadingMsg('Не удалось подключиться', e.message || 'Проверь соединение');
-      setTimeout(() => {
-        localStorage.removeItem('vt_key');
-        localStorage.removeItem('vt_bin');
-        hideLoading();
-        document.getElementById('setupOv').classList.add('open');
-      }, 2000);
+      clearTimeout(timeout);
+      const msg = e.name === 'AbortError' ? 'Сервер не отвечает (таймаут)' : (e.message || 'Проверь соединение');
+      setLoadingMsg('Не удалось подключиться', msg, true);
     });
 })();
 
@@ -782,8 +813,54 @@ function saveEdit() {
   const fields = readForm();
   if (!fields.title) { document.getElementById('fTitle')?.focus(); return; }
   const idx = pdata().entries.findIndex(x => x.id===editingId);
-  if (idx!==-1) pdata().entries[idx] = { id: editingId, ...fields };
+  if (idx !== -1) {
+    const prev = pdata().entries[idx];
+    // сохраняем снапшот текущих метрик перед перезаписью
+    const snap = { at: new Date().toISOString() };
+    p().fields.forEach(f => { snap[f.id] = prev[f.id] || 0; });
+    const history = prev.history || [];
+    history.push(snap);
+    pdata().entries[idx] = { id: editingId, history, ...fields };
+  }
   saveData(); cancelEdit(); renderAll();
+}
+
+function showHistory(id) {
+  const e = pdata().entries.find(x => x.id===id);
+  if (!e || !e.history || !e.history.length) return;
+  const cfg = p();
+  const snaps = [...e.history].reverse(); // новые сначала
+
+  document.getElementById('histTitle').textContent = '📈 ' + e.title.slice(0,40);
+
+  const cols = cfg.fields.filter(f => snaps.some(s => s[f.id]));
+  const thead = '<tr><th>Дата</th>' + cols.map(f=>`<th>${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim()}</th>`).join('') + '</tr>';
+
+  const rows = snaps.map((s, i) => {
+    const prev = snaps[i+1];
+    const cells = cols.map(f => {
+      const val = s[f.id] || 0;
+      let delta = '';
+      if (prev) {
+        const diff = val - (prev[f.id]||0);
+        if (diff !== 0) {
+          const sign = diff > 0 ? '+' : '';
+          const cls  = diff > 0 ? 'up' : 'down';
+          delta = `<span class="hist-delta ${cls}">${sign}${fmt(Math.abs(diff))}</span>`;
+        }
+      }
+      return `<td>${fmt(val)}${delta}</td>`;
+    }).join('');
+    const d = new Date(s.at);
+    const dateStr = d.toLocaleDateString('ru', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `<tr><td style="color:#555;white-space:nowrap">${dateStr}</td>${cells}</tr>`;
+  }).join('');
+
+  document.getElementById('histBody').innerHTML = `
+    <p style="font-size:12px;color:#444;margin-bottom:12px">${snaps.length} снапшот${snaps.length===1?'':'ов'} — сохраняется при каждом редактировании</p>
+    <div style="overflow-x:auto"><table class="hist-table"><thead>${thead}</thead><tbody>${rows}</tbody></table></div>`;
+
+  document.getElementById('histModal').classList.add('open');
 }
 
 function cancelEdit() {
@@ -885,6 +962,7 @@ function renderTable() {
       <td><span class="er-badge ${erClass(parseFloat(erVal))}" data-tip="${erTip(parseFloat(erVal))}">${erVal}%</span></td>
       <td><span class="tier tier-${tier}">${TIER_LABELS[tier]}</span></td>
       <td style="white-space:nowrap">
+        ${e.history?.length ? `<button class="hist-btn" onclick="showHistory(${e.id})" title="${e.history.length} снапшот(ов)">📈</button>` : ''}
         <button class="edit-btn" onclick="editEntry(${e.id})" title="Редактировать">✎</button>
         <button class="del-btn"  onclick="askDelete(${e.id})"  title="Удалить">✕</button>
       </td>
@@ -1055,6 +1133,7 @@ document.addEventListener('mousemove', e => {
 });
 document.addEventListener('mouseout', e => { if(e.target.closest('[data-tip]')) ttip.style.display='none'; });
 document.getElementById('delModal').addEventListener('click', function(e){ if(e.target===this) closeDelModal(); });
+document.getElementById('histModal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
 </script>
 </body>
 </html>
