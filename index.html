@@ -985,7 +985,7 @@ function renderTable() {
   container.innerHTML = `<table>
     <thead><tr>
       <th>Название</th><th>Дата</th><th>Хук</th>
-      ${cfg.fields.map((f,i) => `<th>${i===0?'📊 '+cfg.typeLabels[cfg.types[0]]?.slice(0,1)+'..':''} ${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'')}</th>`).join('')}
+      ${cfg.fields.map(f => `<th>${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim()}</th>`).join('')}
       ${crLbl ? `<th>${crLbl}</th>` : ''}
       <th>ER</th><th>Tier</th><th></th>
     </tr></thead>
