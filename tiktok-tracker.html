@@ -428,6 +428,7 @@ const PLATS = {
     fields: [
       { id:'views',        label:'👁 Просмотры',        parse:'int'   },
       { id:'watch_hours',  label:'⏱ Часы просмотра',   parse:'float' },
+      { id:'retention',    label:'👥 Удержание %',      parse:'float' },
       { id:'likes',        label:'❤️ Лайки',           parse:'int'   },
       { id:'comments',     label:'💬 Комменты',         parse:'int'   },
       { id:'shares',       label:'↗️ Репосты',          parse:'int'   },
@@ -440,8 +441,9 @@ const PLATS = {
     erBase: 'views',
     funnelSteps: [
       { key:'views',        label:'Просмотры',     cls:'bar-views',   mode:'top',   bench:null          },
-      { key:'watch_hours',   label:'Часы просмотра', cls:'bar-dur',    mode:'ratio', bench:null           },
-      { key:'likes',        label:'Лайки',         cls:'bar-likes',   mode:'ratio', bench:'норма 2-5%'  },
+      { key:'watch_hours',  label:'Часы просмотра', cls:'bar-dur',     mode:'ratio', bench:null              },
+      { key:'retention',   label:'Удержание',      cls:'bar-cr',      mode:'cr',    bench:'норма >30%'     },
+      { key:'likes',       label:'Лайки',          cls:'bar-likes',   mode:'ratio', bench:'норма 2-5%'     },
       { key:'comments',     label:'Комменты',      cls:'bar-comments',mode:'ratio', bench:'норма 0.3-1%'},
       { key:'saves',        label:'В плейлист',    cls:'bar-saves',   mode:'ratio', bench:'норма 0.3-1%'},
       { key:'shares',       label:'Репосты',       cls:'bar-shares',  mode:'ratio', bench:'норма 0.1-0.3%'},
