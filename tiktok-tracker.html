@@ -931,7 +931,7 @@ function renderStats() {
   const mainLbl = cfg.mainMetric==='reach' ? 'охват' : 'просмотры';
 
   // totals for all numeric fields
-  const totals = cfg.fields.map(f => ({
+  const totals = cfg.fields.filter(f => f.parse === 'int').map(f => ({
     label: f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim(),
     val: entries.reduce((s,e)=>s+(e[f.id]||0),0),
     id: f.id
