@@ -426,7 +426,6 @@ const PLATS = {
     typeLabels: { shorts:'Shorts', long:'Long-form', tutorial:'Tutorial', влог:'Влог', обзор:'Обзор' },
     hooks: ['вопрос','шок/контраст','обещание','список топ-N','история','другое'],
     fields: [
-      { id:'impressions',  label:'📊 Импрессии',       parse:'int'   },
       { id:'views',        label:'👁 Просмотры',        parse:'int'   },
       { id:'ctr',          label:'🎯 CTR %',            parse:'float' },
       { id:'avg_duration', label:'⏱ Ср. просмотр %',   parse:'float' },
@@ -441,8 +440,7 @@ const PLATS = {
     crLabel: 'Ср. просмотр',
     erBase: 'views',
     funnelSteps: [
-      { key:'impressions',  label:'Импрессии',     cls:'bar-imp',     mode:'top',   bench:null          },
-      { key:'views',        label:'Просмотры',     cls:'bar-views',   mode:'imp',   bench:'норма CTR >4%'},
+      { key:'views',        label:'Просмотры',     cls:'bar-views',   mode:'top',   bench:null          },
       { key:'avg_duration', label:'Ср. просмотр',  cls:'bar-dur',     mode:'cr',    bench:'норма >40%'  },
       { key:'likes',        label:'Лайки',         cls:'bar-likes',   mode:'ratio', bench:'норма 2-5%'  },
       { key:'comments',     label:'Комменты',      cls:'bar-comments',mode:'ratio', bench:'норма 0.3-1%'},
