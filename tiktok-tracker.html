@@ -427,8 +427,7 @@ const PLATS = {
     hooks: ['вопрос','шок/контраст','обещание','список топ-N','история','другое'],
     fields: [
       { id:'views',        label:'👁 Просмотры',        parse:'int'   },
-      { id:'ctr',          label:'🎯 CTR %',            parse:'float' },
-      { id:'watch_hours',   label:'⏱ Часы просмотра',    parse:'float' },
+      { id:'watch_hours',  label:'⏱ Часы просмотра',   parse:'float' },
       { id:'likes',        label:'❤️ Лайки',           parse:'int'   },
       { id:'comments',     label:'💬 Комменты',         parse:'int'   },
       { id:'shares',       label:'↗️ Репосты',          parse:'int'   },
@@ -449,7 +448,6 @@ const PLATS = {
       { key:'follows',      label:'Подписчики',    cls:'bar-follows', mode:'ratio', bench:'норма 0.3-1%'},
     ],
     signals: [
-      { key:'ctr',  label:'Avg CTR',          bench:'Хорошо >4% · Отлично >7%',  good:4,  great:7,  tip:'Click-Through Rate — % людей, кликнувших на видео из предложенных. Главный показатель привлекательности превью и заголовка.' },
       { key:'wh',   label:'Watch Hours',       bench:null, good:null, great:null, tip:'Суммарные часы просмотра видео. Чем больше — тем лучше алгоритм продвигает канал.' },
       { key:'slr',  label:'Save:Like ratio',  bench:'Хорошо >0.1 · Отлично >0.3',good:.1, great:.3, tip:'Отношение сохранений в плейлист к лайкам. Saves = долгосрочная ценность контента.' },
       { key:'fr',   label:'Follow Rate',      bench:'Хорошо >0.3% · Отлично >1%',good:.3, great:1,  tip:'% зрителей, подписавшихся после просмотра. Показывает насколько видео конвертирует в подписчиков.' },
