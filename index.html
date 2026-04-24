@@ -681,14 +681,14 @@ function perfTier(e) {
   const erV = erOf(e);
   const crV = crOf(e);
   if (platform === 'youtube') {
-    if (v>=100000||(v>=10000&&erV>=5)) return 'viral';
-    if (erV>=3||(crV>=50&&v>=1000)||v>=10000) return 'good';
-    if (erV>=1||v>=500) return 'ok';
+    if (v>=20000||(v>=5000&&erV>=4)) return 'viral';
+    if (erV>=2||(crV>=35&&v>=500)||v>=3000) return 'good';
+    if (erV>=0.5||v>=200) return 'ok';
     return 'flop';
   }
-  if (v>=50000||(v>=5000&&erV>=10)||(crV>=70&&v>=10000)) return 'viral';
-  if (erV>=5||(crV>=60&&v>=1000)||v>=10000) return 'good';
-  if (erV>=2||v>=500||crV>=40) return 'ok';
+  if (v>=10000||(v>=2000&&erV>=5)||(crV>=55&&v>=3000)) return 'viral';
+  if (erV>=2||(crV>=35&&v>=300)||v>=2000) return 'good';
+  if (erV>=0.5||v>=200||crV>=25) return 'ok';
   return 'flop';
 }
 const TIER_LABELS = { viral:'Viral 🔥', good:'Good', ok:'Ok', flop:'Flop' };
