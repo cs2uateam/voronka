@@ -826,23 +826,30 @@ function renderOverview() {
   const groupKeys = Object.keys(groups).sort();
   const groupHtml = groupKeys.length ? groupKeys.map(gk => {
     const items = groups[gk];
-    const totViews  = items.reduce((s,e)=>s+(e.views||e.reach||e.plays||0),0);
+    // per-item views — prefer plays (instagram), then views (tiktok/youtube), then reach
+    const totViews  = items.reduce((s,e)=>s+viewsOf(e),0);
     const totLikes  = items.reduce((s,e)=>s+(e.likes||0),0);
     const totCom    = items.reduce((s,e)=>s+(e.comments||0),0);
     const totShr    = items.reduce((s,e)=>s+(e.shares||0),0);
     const totSav    = items.reduce((s,e)=>s+(e.saves||0),0);
     const platBadges = items.map(e=>`<span style="font-size:11px">${platIcons2[e._plat]}</span>`).join(' ');
+    // per-platform breakdown to see exactly what's being summed
+    const breakdown = items.map(e => {
+      const v = viewsOf(e);
+      return `<span style="font-size:11px;color:#777;white-space:nowrap">${platIcons2[e._plat]} ${fmt(v)}</span>`;
+    }).join(' <span style="color:#333">+</span> ');
     return `<div class="table-section" style="margin-bottom:10px;padding:14px 18px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
         <span style="font-size:13px;font-weight:600;color:#ddd">${esc(gk)}</span>
         <span>${platBadges}</span>
+        <span style="margin-left:auto">${breakdown}</span>
       </div>
       <div class="stats" style="margin:0">
-        <div class="stat-card"><div class="lbl">Просмотры/Охват</div><div class="val">${fmt(totViews)}</div><div class="sub">сумма</div></div>
-        <div class="stat-card"><div class="lbl">Лайки</div><div class="val">${fmt(totLikes)}</div><div class="sub">сумма</div></div>
-        <div class="stat-card"><div class="lbl">Комменты</div><div class="val">${fmt(totCom)}</div><div class="sub">сумма</div></div>
-        <div class="stat-card"><div class="lbl">Репосты</div><div class="val">${fmt(totShr)}</div><div class="sub">сумма</div></div>
-        <div class="stat-card"><div class="lbl">Сохранения</div><div class="val">${fmt(totSav)}</div><div class="sub">сумма</div></div>
+        <div class="stat-card" data-tip="Сумма просмотров (для Instagram берётся plays, для остальных — views)"><div class="lbl">👁 Просмотры</div><div class="val">${fmt(totViews)}</div><div class="sub">сумма по ${items.length} платформ${items.length===1?'е':items.length<5?'ам':''}</div></div>
+        <div class="stat-card"><div class="lbl">❤️ Лайки</div><div class="val">${fmt(totLikes)}</div><div class="sub">сумма</div></div>
+        <div class="stat-card"><div class="lbl">💬 Комменты</div><div class="val">${fmt(totCom)}</div><div class="sub">сумма</div></div>
+        <div class="stat-card"><div class="lbl">↗️ Репосты</div><div class="val">${fmt(totShr)}</div><div class="sub">сумма</div></div>
+        <div class="stat-card"><div class="lbl">🔖 Сохранения</div><div class="val">${fmt(totSav)}</div><div class="sub">сумма</div></div>
       </div>
     </div>`;
   }).join('') : `<div style="color:#444;font-size:13px;padding:12px 0">Нет видео с группой — заполни поле "Группа видео" при добавлении.</div>`;
