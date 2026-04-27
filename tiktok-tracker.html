@@ -314,6 +314,7 @@
     <button class="ptab active" data-plat="tiktok"    onclick="switchPlatform('tiktok')">   <span class="picon">🎵</span> TikTok    </button>
     <button class="ptab"        data-plat="youtube"   onclick="switchPlatform('youtube')">  <span class="picon">▶️</span> YouTube   </button>
     <button class="ptab"        data-plat="instagram" onclick="switchPlatform('instagram')"><span class="picon">📸</span> Instagram </button>
+    <button class="ptab"        data-plat="overview"  onclick="switchPlatform('overview')" style="margin-left:auto"><span class="picon">📊</span> Всего </button>
   </div>
 
   <!-- Stats row -->
@@ -378,6 +379,11 @@
       </div>
       <div id="funnelVids"></div>
     </div>
+  </div>
+
+  <!-- Overview -->
+  <div id="overviewSec" style="display:none">
+    <div id="overviewBody"></div>
   </div>
 </main>
 
@@ -699,11 +705,61 @@ const TIER_LABELS = { viral:'Viral 🔥', good:'Good', ok:'Ok', flop:'Flop' };
 function switchPlatform(plat) {
   platform = plat;
   document.querySelectorAll('.ptab').forEach(b => b.classList.toggle('active', b.dataset.plat === plat));
-  const pc = PLATS[plat].color;
-  document.documentElement.style.setProperty('--pc', pc);
+  const isOverview = plat === 'overview';
+  document.getElementById('statsRow').style.display     = isOverview ? 'none' : '';
+  document.getElementById('overviewSec').style.display  = isOverview ? '' : 'none';
+  document.querySelector('.view-tabs').style.display    = isOverview ? 'none' : '';
+  document.getElementById('addSection').style.display   = isOverview ? 'none' : '';
+  document.getElementById('trackerSec').style.display   = isOverview ? 'none' : '';
+  document.getElementById('funnelSec').style.display    = isOverview ? 'none' : '';
+  if (isOverview) { renderOverview(); return; }
+  document.documentElement.style.setProperty('--pc', PLATS[plat].color);
   rebuildTypeFilters();
   rebuildForm();
   renderAll();
+}
+
+function renderOverview() {
+  document.documentElement.style.setProperty('--pc', '#888');
+  const platKeys = ['tiktok','youtube','instagram'];
+  const platIcons = { tiktok:'🎵', youtube:'▶️', instagram:'📸' };
+
+  let totalVideos = 0, totalLikes = 0, totalComments = 0, totalShares = 0, totalSaves = 0;
+  platKeys.forEach(k => {
+    const entries = (data[k]||{entries:[]}).entries;
+    totalVideos   += entries.length;
+    totalLikes    += entries.reduce((s,e)=>s+(e.likes||0),0);
+    totalComments += entries.reduce((s,e)=>s+(e.comments||0),0);
+    totalShares   += entries.reduce((s,e)=>s+(e.shares||0),0);
+    totalSaves    += entries.reduce((s,e)=>s+(e.saves||0),0);
+  });
+
+  const platCards = platKeys.map(k => {
+    const cfg = PLATS[k];
+    const entries = (data[k]||{entries:[]}).entries;
+    if (!entries.length) return `<div class="stat-card"><div class="lbl">${platIcons[k]} ${cfg.label}</div><div class="val">0</div><div class="sub">видео</div></div>`;
+    const totMain = entries.reduce((s,e)=>s+(e[cfg.mainMetric]||0),0);
+    const avgER   = entries.reduce((s,e)=>s+(((e.likes||0)+(e.comments||0)+(e.shares||0)+(e.saves||0))/(e[cfg.erBase]||1)*100),0)/entries.length;
+    return `<div class="stat-card" style="border-color:${cfg.color}22">
+      <div class="lbl">${platIcons[k]} ${cfg.label}</div>
+      <div class="val">${entries.length} <span style="font-size:13px;color:#555">видео</span></div>
+      <div class="sub">${fmt(totMain)} ${cfg.mainMetric==='reach'?'охват':'просмотров'} · ER ${avgER.toFixed(1)}%</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('overviewBody').innerHTML = `
+    <div class="stats" style="margin-bottom:18px">
+      <div class="stats-group-label">По платформам</div>
+      ${platCards}
+    </div>
+    <div class="stats">
+      <div class="stats-group-label">Всего по всем платформам</div>
+      <div class="stat-card"><div class="lbl">Видео</div><div class="val">${totalVideos}</div><div class="sub">всего записей</div></div>
+      <div class="stat-card"><div class="lbl">Лайки</div><div class="val">${fmt(totalLikes)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card"><div class="lbl">Комменты</div><div class="val">${fmt(totalComments)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card"><div class="lbl">Репосты</div><div class="val">${fmt(totalShares)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card"><div class="lbl">Сохранения</div><div class="val">${fmt(totalSaves)}</div><div class="sub">сумма</div></div>
+    </div>`;
 }
 
 function switchView(view) {
