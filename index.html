@@ -471,7 +471,6 @@ const PLATS = {
     fields: [
       { id:'plays',          label:'▶️ Просмотры',       parse:'int'   },
       { id:'reach',          label:'📡 Охват (Reach)',   parse:'int'   },
-      { id:'impressions',    label:'👁 Показы',          parse:'int'   },
       { id:'avg_watch',      label:'⏱ Ср. просмотр (сек)', parse:'float' },
       { id:'likes',          label:'❤️ Лайки',          parse:'int'   },
       { id:'comments',       label:'💬 Комменты',        parse:'int'   },
@@ -486,7 +485,6 @@ const PLATS = {
     erBase: 'reach',
     funnelSteps: [
       { key:'reach',         label:'Охват',          cls:'bar-reach',   mode:'top',   bench:null           },
-      { key:'impressions',   label:'Показы',         cls:'bar-imp',     mode:'reach', bench:null           },
       { key:'likes',         label:'Лайки',          cls:'bar-likes',   mode:'ratio', bench:'норма 3-8%'   },
       { key:'comments',      label:'Комменты',       cls:'bar-comments',mode:'ratio', bench:'норма 0.3-1%' },
       { key:'saves',         label:'Сохранения',     cls:'bar-saves',   mode:'ratio', bench:'норма 1-3%'   },
