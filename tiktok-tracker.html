@@ -395,7 +395,7 @@ const PLATS = {
     label: 'TikTok', color: '#fe2c55',
     types: ['fomo','meme','обучающий','ugc'],
     typeLabels: { fomo:'Fomo', meme:'Meme', обучающий:'Обучающий', ugc:'UGC' },
-    hooks: ['вопрос','контраст','проблема','тренд/звук','цифра/факт','другое'],
+    hooks: ['Tilt','Clutch','Diff','Ratio','Toxic','вопрос','контраст','проблема','тренд/звук','цифра/факт','другое'],
     fields: [
       { id:'views',           label:'👁 Просмотры',       parse:'int'   },
       { id:'likes',           label:'❤️ Лайки',           parse:'int'   },
@@ -827,7 +827,7 @@ function rebuildForm() {
   const bot = fields.slice(6);
 
   const typeOpts = cfg.types.map(t => `<option value="${t}">${cfg.typeLabels[t]}</option>`).join('');
-  const hookOpts = cfg.hooks.map(h => `<option value="${h}">${h}</option>`).join('');
+  const hookOpts = cfg.hooks.map(h => `<option value="${h}">${h}</option>`).join('') + '<option value="__custom__">✏️ Свой...</option>';
 
   let html = `
     <div class="fgrid" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
@@ -838,7 +838,7 @@ function rebuildForm() {
       <div class="field"><label>Название / описание</label><input type="text" id="fTitle" placeholder="О чём видео..." /></div>
       <div class="field"><label>Дата</label><input type="date" id="fDate" /></div>
       <div class="field"><label>Тип контента</label><select id="fType2">${typeOpts}</select></div>
-      <div class="field"><label>Тип хука</label><select id="fHook">${hookOpts}</select></div>
+      <div class="field"><label>Тип хука</label><select id="fHook" onchange="onHookChange()">${hookOpts}</select><input type="text" id="fHookCustom" placeholder="Свой хук..." style="display:none;margin-top:5px" /></div>
     </div>
     <div class="fgrid fg-mid">
       ${mid.map(f => `<div class="field"><label>${f.label}</label><input type="number" id="ff_${f.id}" placeholder="0" min="0" step="${f.parse==='float'?'0.1':'1'}" /></div>`).join('')}
@@ -867,7 +867,9 @@ function readForm() {
     vid_group:(document.getElementById('fVidGroup')?.value || '').trim().toLowerCase(),
     date:     document.getElementById('fDate')?.value      || new Date().toISOString().slice(0,10),
     type:     document.getElementById('fType2')?.value     || cfg.types[0],
-    hook:     document.getElementById('fHook')?.value      || '',
+    hook:     (document.getElementById('fHook')?.value === '__custom__'
+                ? (document.getElementById('fHookCustom')?.value || '').trim()
+                : document.getElementById('fHook')?.value) || '',
   };
   cfg.fields.forEach(f => {
     const el = document.getElementById('ff_'+f.id);
@@ -900,7 +902,12 @@ function editEntry(id) {
   editingId = id;
   const set = (sel, val) => { const el=document.getElementById(sel); if(el) el.value=val||''; };
   set('fUrl', e.url); set('fTitle', e.title); set('fVidGroup', e.vid_group||''); set('fDate', e.date);
-  set('fType2', e.type); set('fHook', e.hook);
+  set('fType2', e.type);
+  const knownHooks = p().hooks;
+  if (e.hook && !knownHooks.includes(e.hook)) {
+    document.getElementById('fHook').value = '__custom__';
+    const ci = document.getElementById('fHookCustom'); if(ci){ ci.style.display=''; ci.value=e.hook; }
+  } else { set('fHook', e.hook); }
   p().fields.forEach(f => set('ff_'+f.id, e[f.id]||''));
   document.getElementById('addSection').classList.add('editing', 'open');
   document.getElementById('editNotice').classList.add('vis');
@@ -1256,6 +1263,15 @@ function renderAll() {
   renderStats();
   renderTable();
   if (currentView==='funnel') renderFunnel();
+}
+
+function onHookChange() {
+  const sel = document.getElementById('fHook');
+  const ci  = document.getElementById('fHookCustom');
+  if (!ci) return;
+  const isCustom = sel.value === '__custom__';
+  ci.style.display = isCustom ? '' : 'none';
+  if (isCustom) ci.focus();
 }
 
 // ── Init UI ───────────────────────────────────────────────
