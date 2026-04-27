@@ -464,6 +464,7 @@ const PLATS = {
     hooks: ['вопрос','визуал','текст на фото','тренд','другое'],
     fields: [
       { id:'reach',          label:'📡 Охват (Reach)',   parse:'int'   },
+      { id:'plays',          label:'▶️ Просмотры',       parse:'int'   },
       { id:'impressions',    label:'👁 Показы',          parse:'int'   },
       { id:'avg_watch',      label:'⏱ Ср. просмотр (сек)', parse:'float' },
       { id:'likes',          label:'❤️ Лайки',          parse:'int'   },
@@ -930,9 +931,13 @@ function renderStats() {
   const crLbl = cfg.crLabel || 'CR';
   const mainLbl = cfg.mainMetric==='reach' ? 'охват' : 'просмотры';
 
+  // secondary metric (e.g. plays for instagram where mainMetric=reach)
+  const secField = cfg.fields.find(f => f.id === 'plays' && cfg.mainMetric !== 'plays');
+  const avgSec = secField && entries.length ? entries.reduce((s,e)=>s+(e.plays||0),0)/entries.length : 0;
+
   // totals for all numeric fields
   const totals = cfg.fields.filter(f => f.parse === 'int').map(f => ({
-    label: f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim(),
+    label: f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅▶️]/u,'').trim(),
     val: entries.reduce((s,e)=>s+(e[f.id]||0),0),
     id: f.id
   })).filter(t => t.id !== cfg.mainMetric && t.val > 0);
@@ -941,6 +946,7 @@ function renderStats() {
     <div class="stats-group-label">Среднее</div>
     <div class="stat-card"><div class="lbl">Видео</div><div class="val">${entries.length}</div><div class="sub">всего записей</div></div>
     <div class="stat-card" data-tip="Среднее ${mainLbl} на видео."><div class="lbl">Ср. ${mainLbl}</div><div class="val">${entries.length?fmt(avgMain):'—'}</div><div class="sub">на видео</div></div>
+    ${secField && avgSec ? `<div class="stat-card" data-tip="Среднее просмотров (plays) на видео."><div class="lbl">Ср. просмотры</div><div class="val">${fmt(avgSec)}</div><div class="sub">на видео</div></div>` : ''}
     <div class="stat-card" data-tip="Engagement Rate = (лайки + комменты + репосты + сохранения) / ${mainLbl} × 100."><div class="lbl">Ср. ER</div><div class="val">${entries.length?avgER.toFixed(1)+'%':'—'}</div><div class="sub">engagement rate</div></div>
     ${cfg.crField ? `<div class="stat-card" data-tip="${crLbl} — ключевой алгоритмический сигнал. Норма >50%, для вирального >70%."><div class="lbl">Ср. ${crLbl}</div><div class="val">${avgCR?avgCR.toFixed(0)+'%':'—'}</div><div class="sub">по видео с данными</div></div>` : ''}
     <div class="stat-card" data-tip="Процент зрителей, сохранивших контент. Норма: 0.5–1.5%."><div class="lbl">Save rate</div><div class="val">${entries.length?avgSR.toFixed(2)+'%':'—'}</div><div class="sub">ср. saves / ${mainLbl}</div></div>
