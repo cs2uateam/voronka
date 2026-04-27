@@ -747,19 +747,56 @@ function renderOverview() {
     </div>`;
   }).join('');
 
+  // group entries by vid_group across all platforms
+  const groups = {};
+  const platIcons2 = { tiktok:'🎵', youtube:'▶️', instagram:'📸' };
+  platKeys.forEach(k => {
+    (data[k]||{entries:[]}).entries.forEach(e => {
+      if (!e.vid_group) return;
+      if (!groups[e.vid_group]) groups[e.vid_group] = [];
+      groups[e.vid_group].push({ ...e, _plat: k });
+    });
+  });
+
+  const groupKeys = Object.keys(groups).sort();
+  const groupHtml = groupKeys.length ? groupKeys.map(gk => {
+    const items = groups[gk];
+    const totViews  = items.reduce((s,e)=>s+(e.views||e.reach||e.plays||0),0);
+    const totLikes  = items.reduce((s,e)=>s+(e.likes||0),0);
+    const totCom    = items.reduce((s,e)=>s+(e.comments||0),0);
+    const totShr    = items.reduce((s,e)=>s+(e.shares||0),0);
+    const totSav    = items.reduce((s,e)=>s+(e.saves||0),0);
+    const platBadges = items.map(e=>`<span style="font-size:11px">${platIcons2[e._plat]}</span>`).join(' ');
+    return `<div class="table-section" style="margin-bottom:10px;padding:14px 18px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span style="font-size:13px;font-weight:600;color:#ddd">${esc(gk)}</span>
+        <span>${platBadges}</span>
+      </div>
+      <div class="stats" style="margin:0">
+        <div class="stat-card"><div class="lbl">Просмотры/Охват</div><div class="val">${fmt(totViews)}</div><div class="sub">сумма</div></div>
+        <div class="stat-card"><div class="lbl">Лайки</div><div class="val">${fmt(totLikes)}</div><div class="sub">сумма</div></div>
+        <div class="stat-card"><div class="lbl">Комменты</div><div class="val">${fmt(totCom)}</div><div class="sub">сумма</div></div>
+        <div class="stat-card"><div class="lbl">Репосты</div><div class="val">${fmt(totShr)}</div><div class="sub">сумма</div></div>
+        <div class="stat-card"><div class="lbl">Сохранения</div><div class="val">${fmt(totSav)}</div><div class="sub">сумма</div></div>
+      </div>
+    </div>`;
+  }).join('') : `<div style="color:#444;font-size:13px;padding:12px 0">Нет видео с группой — заполни поле "Группа видео" при добавлении.</div>`;
+
   document.getElementById('overviewBody').innerHTML = `
     <div class="stats" style="margin-bottom:18px">
       <div class="stats-group-label">По платформам</div>
       ${platCards}
     </div>
-    <div class="stats">
+    <div class="stats" style="margin-bottom:18px">
       <div class="stats-group-label">Всего по всем платформам</div>
       <div class="stat-card"><div class="lbl">Видео</div><div class="val">${totalVideos}</div><div class="sub">всего записей</div></div>
       <div class="stat-card"><div class="lbl">Лайки</div><div class="val">${fmt(totalLikes)}</div><div class="sub">сумма</div></div>
       <div class="stat-card"><div class="lbl">Комменты</div><div class="val">${fmt(totalComments)}</div><div class="sub">сумма</div></div>
       <div class="stat-card"><div class="lbl">Репосты</div><div class="val">${fmt(totalShares)}</div><div class="sub">сумма</div></div>
       <div class="stat-card"><div class="lbl">Сохранения</div><div class="val">${fmt(totalSaves)}</div><div class="sub">сумма</div></div>
-    </div>`;
+    </div>
+    <div class="stats-group-label" style="margin-bottom:12px">По видео (кросс-платформа)</div>
+    ${groupHtml}`;
 }
 
 function switchView(view) {
@@ -791,8 +828,9 @@ function rebuildForm() {
   const hookOpts = cfg.hooks.map(h => `<option value="${h}">${h}</option>`).join('');
 
   let html = `
-    <div class="fgrid" style="grid-template-columns:1fr;margin-bottom:10px">
+    <div class="fgrid" style="grid-template-columns:1fr 1fr;margin-bottom:10px">
       <div class="field"><label>Ссылка на видео (URL)</label><input type="url" id="fUrl" placeholder="https://..." /></div>
+      <div class="field"><label>🔗 Группа видео (необяз.)</label><input type="text" id="fVidGroup" placeholder="напр. epic-timing" /></div>
     </div>
     <div class="fgrid fg-top">
       <div class="field"><label>Название / описание</label><input type="text" id="fTitle" placeholder="О чём видео..." /></div>
@@ -822,11 +860,12 @@ function rebuildForm() {
 function readForm() {
   const cfg = p();
   const entry = {
-    title: (document.getElementById('fTitle')?.value || '').trim(),
-    url:   (document.getElementById('fUrl')?.value   || '').trim(),
-    date:  document.getElementById('fDate')?.value   || new Date().toISOString().slice(0,10),
-    type:  document.getElementById('fType2')?.value  || cfg.types[0],
-    hook:  document.getElementById('fHook')?.value   || '',
+    title:    (document.getElementById('fTitle')?.value    || '').trim(),
+    url:      (document.getElementById('fUrl')?.value      || '').trim(),
+    vid_group:(document.getElementById('fVidGroup')?.value || '').trim().toLowerCase(),
+    date:     document.getElementById('fDate')?.value      || new Date().toISOString().slice(0,10),
+    type:     document.getElementById('fType2')?.value     || cfg.types[0],
+    hook:     document.getElementById('fHook')?.value      || '',
   };
   cfg.fields.forEach(f => {
     const el = document.getElementById('ff_'+f.id);
@@ -838,7 +877,7 @@ function readForm() {
 
 function clearForm() {
   const cfg = p();
-  ['fUrl','fTitle'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['fUrl','fTitle','fVidGroup'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('fDate').value = new Date().toISOString().slice(0,10);
   cfg.fields.forEach(f => { const el=document.getElementById('ff_'+f.id); if(el) el.value=''; });
 }
@@ -858,7 +897,7 @@ function editEntry(id) {
   if (!e) return;
   editingId = id;
   const set = (sel, val) => { const el=document.getElementById(sel); if(el) el.value=val||''; };
-  set('fUrl', e.url); set('fTitle', e.title); set('fDate', e.date);
+  set('fUrl', e.url); set('fTitle', e.title); set('fVidGroup', e.vid_group||''); set('fDate', e.date);
   set('fType2', e.type); set('fHook', e.hook);
   p().fields.forEach(f => set('ff_'+f.id, e[f.id]||''));
   document.getElementById('addSection').classList.add('editing', 'open');
