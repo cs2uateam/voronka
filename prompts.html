@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS2 Vidos — Промт-библиотека маскота</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --pc:#fe2c55; --bg:#0a0a0a; --card:#111; --br:#1e1e1e; --br2:#2e2e2e; --tx:#e0e0e0; --mu:#777; --dim:#555; --ok:#44dd88; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--tx); line-height: 1.55; -webkit-font-smoothing: antialiased; min-height:100vh; }
+  code, pre { font-family: 'SF Mono', Menlo, Consolas, monospace; }
+
+  header { background: rgba(17,17,17,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--br); padding: 18px 28px; position: sticky; top: 0; z-index: 100; }
+  header .wrap { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  header h1 span { color: var(--pc); }
+  header nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  header nav a { font-size: 12px; color: var(--mu); padding: 6px 12px; border-radius: 6px; text-decoration: none; transition: all .15s; }
+  header nav a:hover { color: var(--tx); background: var(--br); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 32px 28px 80px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 80px; }
+  section h2 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px; letter-spacing: -0.4px; }
+  section h2 .num { display: inline-block; min-width: 28px; height: 28px; line-height: 28px; text-align: center; font-size: 12px; font-weight: 700; color: var(--pc); background: rgba(254,44,85,.1); border-radius: 6px; margin-right: 10px; vertical-align: middle; }
+  section .sub { color: var(--mu); font-size: 13px; margin-bottom: 22px; max-width: 720px; }
+  section .sub b { color: #ddd; }
+
+  /* Cards */
+  .prompt-block { background: var(--card); border: 1px solid var(--br); border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
+  .prompt-head { padding: 14px 18px; border-bottom: 1px solid var(--br); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .prompt-title { font-size: 14px; font-weight: 600; color: #fff; }
+  .prompt-meta { font-size: 11px; color: var(--mu); }
+  .prompt-body { padding: 16px 18px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; line-height: 1.6; color: #ccc; white-space: pre-wrap; max-height: 280px; overflow-y: auto; background: #0c0c0c; }
+  .prompt-body::-webkit-scrollbar { width: 6px; }
+  .prompt-body::-webkit-scrollbar-track { background: transparent; }
+  .prompt-body::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+
+  .btn { padding: 7px 14px; border-radius: 7px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; background: var(--pc); color: #fff; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { opacity: .85; }
+  .btn:active { transform: translateY(1px); }
+  .btn-ghost { background: var(--br); color: #ddd; border: 1px solid var(--br2); }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+  .btn.ok { background: var(--ok); }
+
+  /* Steps box */
+  .steps { background: linear-gradient(135deg, rgba(254,44,85,.08), rgba(254,44,85,.02)); border: 1px solid rgba(254,44,85,.2); border-radius: 12px; padding: 18px 22px; margin-bottom: 24px; }
+  .steps ol { list-style: none; counter-reset: step; }
+  .steps li { counter-increment: step; padding: 6px 0 6px 32px; position: relative; font-size: 13px; color: #ddd; }
+  .steps li::before { content: counter(step); position: absolute; left: 0; top: 6px; width: 22px; height: 22px; line-height: 22px; text-align: center; background: var(--pc); color: #fff; border-radius: 50%; font-size: 11px; font-weight: 700; }
+  .steps li b { color: #fff; }
+  .steps code { background: rgba(0,0,0,.4); padding: 1px 6px; border-radius: 4px; color: #fff; font-size: 11.5px; }
+
+  /* Pose grid */
+  .pose-tools { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .search { flex: 1; min-width: 220px; background: var(--card); border: 1px solid var(--br); border-radius: 8px; padding: 9px 14px; color: var(--tx); font-size: 13px; outline: none; transition: border-color .15s; }
+  .search:focus { border-color: var(--pc); }
+  .filters { display: flex; gap: 4px; flex-wrap: wrap; background: var(--card); border: 1px solid var(--br); border-radius: 8px; padding: 3px; }
+  .filter { padding: 6px 12px; border-radius: 6px; border: none; background: transparent; color: var(--mu); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .15s; }
+  .filter.active { background: var(--br); color: #fff; }
+  .filter:hover:not(.active) { color: #ccc; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .pcard { background: var(--card); border: 1px solid var(--br); border-radius: 10px; padding: 14px 16px; cursor: pointer; transition: all .15s; display: flex; flex-direction: column; gap: 6px; }
+  .pcard:hover { border-color: var(--pc); transform: translateY(-1px); }
+  .pcard .ptag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; align-self: flex-start; text-transform: uppercase; letter-spacing: .4px; }
+  .pcard .pname { font-size: 14px; font-weight: 600; color: #fff; margin-top: 4px; }
+  .pcard .pdesc { font-size: 12px; color: var(--mu); }
+  .ptag.combat { background: rgba(255,80,80,.12); color: #ff6666; }
+  .ptag.emo    { background: rgba(255,180,80,.12); color: #ffaa44; }
+  .ptag.util   { background: rgba(80,200,150,.12); color: #44dd88; }
+  .ptag.meme   { background: rgba(180,80,255,.12); color: #cc66ff; }
+  .ptag.video  { background: rgba(80,180,255,.12); color: #5cb8ff; }
+
+  /* Modal */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-bg.show { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--br); border-radius: 14px; max-width: 760px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; }
+  .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--br); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .modal-head h3 { font-size: 16px; color: #fff; font-weight: 700; }
+  .modal-head .close { width: 32px; height: 32px; border-radius: 7px; background: var(--br); border: none; color: #ccc; font-size: 18px; cursor: pointer; }
+  .modal-head .close:hover { background: var(--br2); color: #fff; }
+  .modal-body { padding: 18px 20px; overflow-y: auto; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; line-height: 1.6; color: #ddd; white-space: pre-wrap; background: #0c0c0c; flex: 1; }
+  .modal-foot { padding: 14px 20px; border-top: 1px solid var(--br); display: flex; justify-content: flex-end; gap: 8px; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--ok); color: #0a0a0a; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; opacity: 0; transition: all .25s; z-index: 300; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Followups accordion */
+  details { background: var(--card); border: 1px solid var(--br); border-radius: 10px; margin-bottom: 8px; }
+  summary { padding: 12px 16px; cursor: pointer; font-size: 13px; font-weight: 600; color: #ddd; user-select: none; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '+'; color: var(--mu); font-size: 16px; }
+  details[open] summary::after { content: '−'; }
+  details[open] summary { border-bottom: 1px solid var(--br); }
+  .followup { padding: 14px 16px; }
+  .followup .lbl { font-size: 11px; color: var(--mu); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+  .followup .ftext { background: #0c0c0c; padding: 10px 12px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; color: #ddd; margin-bottom: 12px; cursor: pointer; transition: border-color .15s; border: 1px solid transparent; }
+  .followup .ftext:hover { border-color: var(--br2); }
+  .followup .ftext:last-child { margin-bottom: 0; }
+
+  footer { text-align: center; padding: 32px 20px; color: var(--dim); font-size: 12px; border-top: 1px solid var(--br); margin-top: 60px; }
+  footer a { color: var(--mu); text-decoration: none; border-bottom: 1px dashed var(--br2); }
+
+  @media (max-width: 700px) {
+    main { padding: 20px 16px 60px; }
+    section h2 { font-size: 18px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>CS2 <span>Vidos</span> — Промт-библиотека маскота</h1>
+    <nav>
+      <a href="#canonical">Эталон</a>
+      <a href="#poses">Позы</a>
+      <a href="#video">Видео</a>
+      <a href="#tips">Тонкости</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- CANONICAL -->
+<section id="canonical">
+  <h2><span class="num">01</span>Эталон маскота</h2>
+  <p class="sub">Создаётся <b>один раз</b>. Прикрепляешь 2 файла: фото маскота + логотип. Получившийся результат — твой референс №1 для всех будущих генераций.</p>
+
+  <div class="steps">
+    <ol>
+      <li>Подготовь <b>логотип</b> в PNG (прозрачный фон, минимум 512×512)</li>
+      <li>Открой Nano Banana, прикрепи <b>2 файла</b>: <code>фото маскота</code> + <code>лого</code></li>
+      <li>Скопируй промт ниже → вставь → отправь</li>
+      <li>Сохрани лучший результат как <code>mascot-canonical.png</code></li>
+    </ol>
+  </div>
+
+  <div class="prompt-block">
+    <div class="prompt-head">
+      <div>
+        <div class="prompt-title">Промт эталона (flat-стайл)</div>
+        <div class="prompt-meta">2 reference images · English · ~310 words</div>
+      </div>
+      <button class="btn" onclick="copyById('canonicalPrompt', this)">Скопировать</button>
+    </div>
+    <div class="prompt-body" id="canonicalPrompt">I'm providing 2 reference images:
+- Image 1: a cartoon grenade mascot character
+- Image 2: my official brand logo
+
+TASK: Create a SIMPLIFIED, FLAT canonical version of the mascot from Image 1, with my real logo from Image 2 applied. This is the master reference — keep it minimal, clean, sticker-friendly.
+
+KEEP THE CHARACTER (from Image 1):
+- Olive-green grenade body shape with safety lever and pull-ring on top
+- Body proportions: rounded grenade torso, short stubby arms and legs
+- Face: thick angular eyebrows, confident neutral expression, simple cartoon eyes
+- Tactical vest with chest plate
+- Ammo belt with shotgun shells (simplified — just a row of shapes)
+- Fingerless gloves
+- Combat boots
+
+REPLACE (using Image 2):
+- The orange X on the chest plate → put my logo from Image 2, copied 1:1, exact shape and colors, centered on the chest plate, completely flat (no fabric texture, no distortion, no shading)
+
+REMOVE / SIMPLIFY:
+- Background — completely removed, solid flat dark grey #1a1a1a or transparent
+- Other soldier in background — removed
+- All debris, bullet casings, smoke, props — removed
+- Wrench/tool in hand — removed, hands empty (relaxed fists)
+- "MOD-G1" patch text — removed
+- Walkie-talkie — removed (declutter the vest)
+- Dog tags — removed
+- MOLLE webbing details — removed or reduced to minimal straight lines
+- Boot laces — simplified to minimum
+
+STYLE — FLAT AND CLEAN (MOST IMPORTANT):
+- FLAT colors only — NO gradients, NO shading, NO highlights, NO cel-shading, NO bevels
+- NO shadows — no cast shadow under feet, no ambient occlusion, no rim light
+- Solid color fills with clean black outline, uniform line weight
+- Minimum detail — only essential shapes and lines
+- Vector-style illustration look, like a sticker or Discord emoji
+- Limited palette: 4-5 colors maximum (olive base, one darker olive for separation, black linework, logo colors, skin tone if visible)
+
+OUTPUT SPECIFICATION:
+- Single full-body hero shot, character centered, facing 3/4 to camera-left
+- Confident grounded stance, both feet visible, arms relaxed at sides
+- Solid flat dark grey background (#1a1a1a) or fully transparent
+- Square 1:1 aspect ratio
+- Sticker / mascot illustration aesthetic</div>
+  </div>
+
+  <details>
+    <summary>Follow-up'ы если что-то поплыло</summary>
+    <div class="followup">
+      <div class="lbl">Логотип искажён</div>
+      <div class="ftext" onclick="copyText(this.textContent, this)">Same image, but the logo on the chest plate is slightly distorted. Re-render it cleaner, 1:1 from Image 2, perfectly centered and undistorted.</div>
+      <div class="lbl">Остались тени / шейдинг</div>
+      <div class="ftext" onclick="copyText(this.textContent, this)">Same character, but flatter. Remove ALL shading, ALL gradients, ALL highlights. Pure flat colors only, like a vector sticker. Black outline only, no internal shading lines.</div>
+      <div class="lbl">Тень под ногами осталась</div>
+      <div class="ftext" onclick="copyText(this.textContent, this)">Remove all shadows including the one under the character. No ambient occlusion. Pure flat fills only.</div>
+      <div class="lbl">Пропорции тела поплыли</div>
+      <div class="ftext" onclick="copyText(this.textContent, this)">Same image, but restore exact body proportions from Image 1: rounded grenade torso, short stubby limbs.</div>
+    </div>
+  </details>
+</section>
+
+<!-- POSES -->
+<section id="poses">
+  <h2><span class="num">02</span>Библиотека поз</h2>
+  <p class="sub">Прикрепляешь <b>один файл</b> — свой эталон. Кликаешь позу — получаешь готовый промт со встроенной позой и lock-блоками. Копируешь, вставляешь в Banana.</p>
+
+  <div class="pose-tools">
+    <input class="search" id="poseSearch" type="search" placeholder="Поиск по позам — например: AK, тильт, попкорн..." oninput="filterPoses()">
+    <div class="filters" id="poseFilters">
+      <button class="filter active" data-cat="all" onclick="setFilter('all', this)">Все</button>
+      <button class="filter" data-cat="combat" onclick="setFilter('combat', this)">Боевые</button>
+      <button class="filter" data-cat="emo"    onclick="setFilter('emo', this)">Эмоции</button>
+      <button class="filter" data-cat="util"   onclick="setFilter('util', this)">Контент</button>
+      <button class="filter" data-cat="meme"   onclick="setFilter('meme', this)">Мемы</button>
+    </div>
+  </div>
+
+  <div class="grid" id="poseGrid"></div>
+</section>
+
+<!-- VIDEO -->
+<section id="video">
+  <h2><span class="num">03</span>Видео-промты (Veo / Sora)</h2>
+  <p class="sub">Промты универсальные — работают и в <b>Google Veo</b>, и в <b>OpenAI Sora</b>. Прикрепляй эталон как референс. Все варианты на chroma purple под кей в монтаже.</p>
+
+  <div class="steps">
+    <ol>
+      <li>Прикрепить эталон <code>mascot-canonical.png</code> как референс / image input</li>
+      <li>Аспект <code>9:16</code> (TikTok/Reels), длина <code>~6 секунд</code> (Veo 3 / Sora 2 со звуком)</li>
+      <li>Фон <code>#B026FF</code> — для кея в Premiere / DaVinci / CapCut</li>
+      <li>В персонаже нет ни одного зелёного цвета — иначе уйдёт в кей вместе с фоном</li>
+    </ol>
+  </div>
+
+  <div class="grid" id="videoGrid"></div>
+</section>
+
+<!-- TIPS -->
+<section id="tips">
+  <h2><span class="num">04</span>Тонкости</h2>
+  <p class="sub">Если генерация уехала в сторону.</p>
+  <details>
+    <summary>Если поза получилась слишком статичной</summary>
+    <div class="followup">
+      <div class="ftext" onclick="copyText(this.textContent, this)">Same image, but make the body more dynamic. Add tilt, twist, weight shift, exaggerated cartoon motion. Avoid stiff symmetrical posing.</div>
+    </div>
+  </details>
+  <details>
+    <summary>Если стиль ушёл от flat-эталона</summary>
+    <div class="followup">
+      <div class="ftext" onclick="copyText(this.textContent, this)">Same character and pose, but return to flat sticker style from reference. Remove all shading, gradients, shadows. Pure flat colors with black outline.</div>
+    </div>
+  </details>
+  <details>
+    <summary>Если логотип на жилете слетел</summary>
+    <div class="followup">
+      <div class="ftext" onclick="copyText(this.textContent, this)">Same image, but re-render the chest logo to match the reference exactly. Flat, undistorted, perfectly centered on the chest plate.</div>
+    </div>
+  </details>
+  <details>
+    <summary>Если взрыв обрезается краями кадра</summary>
+    <div class="followup">
+      <div class="ftext" onclick="copyText(this.textContent, this)">Re-render the explosion smaller and fully contained inside the frame. Every spike, point, and edge of the star-burst must be completely visible with clear empty background space around it on all four sides. The explosion must NOT touch or cross ANY edge of the frame. It should occupy roughly 60% of the frame width, leaving a clear margin around the entire explosion silhouette.</div>
+    </div>
+  </details>
+  <details>
+    <summary>Универсальные правила</summary>
+    <div class="followup" style="font-family: inherit; font-size: 13px; line-height: 1.7;">
+      <div style="background: #0c0c0c; padding: 14px 16px; border-radius: 6px; color: #ddd;">
+        • В каждой позе явно прописывай: <b>где наклон корпуса, какая рука/нога куда летит, что сжато / что растянуто</b>. Banana буквально читает анатомию.<br><br>
+        • Логотип уже впечён в эталон — отдельным файлом второй раз кидать не нужно.<br><br>
+        • Сохраняй каждую готовую позу в <code style="background: rgba(0,0,0,.4); padding: 1px 6px; border-radius: 4px;">vidos-tracker/assets/poses/</code> с понятным именем — это библиотека для оверлеев.<br><br>
+        • Для серии похожих поз можно сгенерировать пачкой 4–6 в одном запросе — Banana держит консистентность лучше.
+      </div>
+    </div>
+  </details>
+</section>
+
+</main>
+
+<footer>
+  Промт-библиотека — рабочий документ. Дополняй новыми позами, удаляй неудачные.<br>
+  Соседние документы: <a href="./index.html">vidos-tracker</a> · <a href="./strategy.html">контент-стратегия</a>
+</footer>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Поза</h3>
+      <button class="close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" id="modalPrompt"></div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Закрыть</button>
+      <button class="btn" id="modalCopyBtn" onclick="copyById('modalPrompt', this)">Скопировать промт</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Скопировано</div>
+
+<script>
+const MASTER = `I'm providing 1 reference image: my canonical mascot character (a cartoon grenade in tactical gear).
+
+TASK: Generate a NEW image of the SAME exact character, in a new pose. Keep 100% character identity from the reference — same body design, same vest, same logo on chest plate, same colors, same flat style.
+
+NEW POSE:
+__POSE__
+
+LOCK IDENTITY (do NOT change):
+- Olive-green grenade body with safety lever and pull-ring on top
+- Same body PROPORTIONS and DESIGN (rounded grenade torso, short stubby limbs) — but the body itself is FULLY POSEABLE: it can squash, stretch, lean, twist, tilt, and bend dynamically as the pose requires. The torso, arms, legs, and head should move expressively to sell the action. This is cartoon animation — NOT a stiff statue.
+- Same face design: thick angular eyebrows, simple cartoon eyes
+- Tactical vest with the brand logo on chest plate (copy logo 1:1 from reference)
+- Ammo belt with shotgun shells
+- Fingerless gloves
+- Combat boots
+
+LOCK STYLE (MOST IMPORTANT — match reference exactly):
+- FLAT colors only — NO gradients, NO shading, NO highlights, NO cel-shading
+- NO shadows — no cast shadow under feet, no ambient occlusion
+- Solid color fills with clean black outline, uniform line weight
+- Same limited 4-5 color palette as reference
+- Vector-style sticker aesthetic
+- DYNAMIC body language: cartoon squash & stretch, exaggerated motion, tilted axis, weight shift, expressive limbs.
+
+WEAPON / PROP STYLE (if pose includes weapons or objects):
+- Drawn in the same flat cartoon style as the character
+- Same line weight, no realistic detail, no metal shading
+- Solid fills only
+
+OUTPUT:
+- Full-body, character centered
+- Solid flat dark grey background #1a1a1a or transparent
+- Square 1:1 aspect ratio
+- Same sticker/mascot illustration aesthetic as reference`;
+
+const POSES = [
+  // COMBAT
+  { id:'ak',         cat:'combat', name:'AK-стойка',           desc:'Универсальный hero shot',  pose:'Full-body action stance — holding an AK-47 with both hands, weapon shouldered and aimed forward toward camera, slight forward lean, feet planted shoulder-width apart, finger on trigger, looking down the sights with focused expression. Confident, grounded, ready-to-fire posture.' },
+  { id:'smoke',      cat:'combat', name:'Бросает смок',         desc:'Дым/утилка',                 pose:'Throwing a smoke grenade overhead with right hand, left arm extended for balance, mid-motion, dynamic action stance with body twisted to throw side, weight shifted onto back leg.' },
+  { id:'awp',        cat:'combat', name:'AWP лёжа',             desc:'Снайперский pose',           pose:'Lying prone on the ground, body fully stretched out flat, both stubby arms extended forward gripping a long AWP sniper rifle, scope to eye, finger on trigger, fully concentrated focused expression, legs spread slightly behind for stability.' },
+  { id:'defuse',     cat:'combat', name:'Дефуз бомбы',          desc:'Тиковый момент',             pose:'Kneeling on one knee with body hunched forward over a defuse kit, both stubby hands working on the cable, head tilted down looking at the bomb, focused intense expression, sweat drop on forehead, urgency in posture.' },
+  { id:'slide',      cat:'combat', name:'Knee-slide стрельба',  desc:'Highlight-shot',             pose:'Sliding forward on one bent knee across the ground, body fully tilted backward at a 45-degree angle, torso twisted slightly to camera-right, the rear leg stretched out long behind for balance, both stubby arms extended forward gripping an AK-47 firing toward the camera with bright muzzle flash, head locked forward with sharp focused expression and squinted eyes. Cape-like motion lines trail behind the body.' },
+  { id:'crawl',      cat:'combat', name:'Стелс-краул',          desc:'Подкрад из-за угла',         pose:'Belly-down on the floor in a low army crawl, body fully stretched out long like a cartoon lizard, one elbow dragging the body forward while the opposite leg pushes off, torso slightly twisted, head poked around a corner-edge of the frame with only one wide cartoonish eye and the top of the grenade pull-ring visible past the corner. Devious sneaky expression, eyebrow raised.' },
+
+  // EMO
+  { id:'win',        cat:'emo', name:'Клатч-победа',           desc:'Руки вверх, кричит',         pose:'Both fists raised straight up in the air, body slightly arched backward in joy, head tilted back, mouth wide open screaming victory, eyes squeezed shut, triumphant celebration. Weight shifted, one leg slightly back.' },
+  { id:'backflip',   cat:'emo', name:'Backflip-победа',         desc:'Сальто на эмоциях',          pose:'Full mid-air backflip — body fully inverted upside-down at the peak of rotation, torso curled tight into a ball with stubby legs tucked toward the chest and arms thrown out wide horizontally, head tilted back with mouth wide open in a triumphant scream, eyes squeezed shut with pure joy. Spiral motion arc drawn behind the body. Weightless feeling, exaggerated cartoon physics.' },
+  { id:'rage',       cat:'emo', name:'Тильт / рейдж',          desc:'Стом по клаве',              pose:'Stomping hard on a broken keyboard on the ground, body leaned forward aggressively with full weight on the stomping leg, fists clenched at sides, face red with rage, steam coming out from the top of the head, mouth wide open yelling, eyebrows pulled down sharply.' },
+  { id:'think',      cat:'emo', name:'Strat-call / думает',     desc:'Размышление',                pose:'Standing with weight shifted onto one leg, right hand on chin in classic thinking pose, slight head tilt to the side, raised eyebrow, contemplative slightly puzzled expression. Small floating question mark above head.' },
+  { id:'flex',       cat:'emo', name:'Чилл-флекс',              desc:'Уверенный hero',             pose:'Standing casually with arms crossed over chest, weight shifted onto one leg with the other slightly out, slight smug grin with one corner of mouth raised, confident relaxed pose.' },
+
+  // UTIL
+  { id:'gamer',      cat:'util', name:'POV-геймер',             desc:'За игровой станцией',        pose:'Sitting in a black gaming chair at a desk, body slightly hunched forward into the screen, wearing oversized gaming headset over the head, both stubby hands on a mechanical keyboard and gaming mouse, glowing monitor in front showing CS2 gameplay, focused intense face lit by screen glow. Three-quarter view from front.' },
+  { id:'phone',      cat:'util', name:'Скрин чата на телефоне', desc:'Toxic-цитата формат',        pose:'Standing facing camera, body angled slightly with weight on one leg, right hand holding up a smartphone toward the viewer — phone screen tilted so the chat message on it is clearly readable, left hand on hip, smug "are you kidding me" expression with one raised eyebrow. The phone is the focal point of the composition.' },
+  { id:'tactic',     cat:'util', name:'Тактик у карты',         desc:'Обучающий формат',           pose:'Standing next to a large CS2 map illustration (Mirage layout) mounted on a wall, body turned sideways toward the map, pointing at a specific spot on the map with one extended index finger, head turned back to look at the camera with a confident teaching expression, free hand on hip. Coach / strategist vibe.' },
+
+  // MEME
+  { id:'popcorn',    cat:'meme', name:'Попкорн-ватчер',         desc:'«Тимейты грызутся»',          pose:'Sitting cross-legged on the floor with body slightly hunched forward in fascination, torso leaned in toward the off-screen drama, one shoulder lifted higher than the other, head tilted with curiosity, holding a giant red-striped popcorn bucket between both stubby hands, mouth open mid-chew, eyes wide and squinting. A few popcorn pieces flying mid-air. Body weight shifted forward, feet relaxed at sides.' },
+  { id:'rodeo',      cat:'meme', name:'Родео на бомбе',         desc:'C4 как родео-бык',            pose:'Mid-flight riding a large red C4 bomb like a rodeo bull — body fully arched backward in wild excitement, torso twisted to the side, one stubby leg kicked up high in the air, the other hooked around the bomb, one hand gripping the bomb handle, the other arm thrown up "yeehaw" with finger pointing skyward, head tipped back, mouth wide open yelling. Tilted dynamic axis, exaggerated motion lines around the bomb.' },
+  { id:'sleep',      cat:'meme', name:'Спит обнимая AWP',       desc:'AWP как плюшевая игрушка',    pose:'Curled up sleeping on the ground in an exaggerated cozy fetal position — torso curved into a soft C-shape, one stubby leg pulled up to the chest, the other stretched out long behind, head buried into the side of a long AWP sniper rifle hugged tightly to the chest, body squashed sideways into the floor as if sinking into it. Cheek pressed into the rifle, peaceful tiny smile, drool bubble, three floating Zzz letters above.' },
+  { id:'yeet',       cat:'meme', name:'Yeet тимейта-гранату',    desc:'Бросок сокомандника',         pose:'Mid-throw windup motion — body twisted hard sideways with full torso rotation, back foot planted and front leg lifting off the ground, both stubby arms cocked back over the shoulder gripping a smaller terrified teammate (a tiny stick-figure soldier) by the collar like a grenade about to be thrown, head turned forward with a deranged wide grin, one eye squinted aiming at target. Heavy motion lines behind the throwing arm.' },
+];
+
+const VIDEOS = [
+  { id:'hero',   name:'Heroic Kamikaze', desc:'Решительный забег · гордая жертва · одна слеза перед взрывом', meta:'6s · 9:16 · audio · chroma purple',
+    prompt:`Animated cartoon scene, 6 seconds, vertical 9:16 aspect ratio.
+
+BACKGROUND (LOCKED, STATIC, UNIFORM):
+A perfectly flat, solid chroma key purple plate (#B026FF) fills the entire frame behind the character. The background is COMPLETELY STATIC and UNCHANGING throughout the entire video — no gradients, no lighting variation, no flickering, no animation, no movement, no parallax, no shadows, no color shifts, no vignette, no texture, no atmospheric effects. It is a single uniform digital chroma key plate, identical pixel-for-pixel from frame 0 to the last frame. This is required for clean chroma key compositing in post-production.
+
+CHARACTER (FULLY DEFINED BY THE ATTACHED REFERENCE IMAGE):
+The character's appearance is 100% determined by the attached reference image. Do NOT design, redesign, restyle, redraw, recolor, or modify the character in any way. Do NOT add, remove, duplicate, or alter any clothing, gear, accessories, weapons, straps, belts, patches, badges, or details. Whatever is shown in the reference is final and locked — there is nothing to interpret, only to copy. Your ONLY job is to animate this character — make it move, emote, and perform the actions described below while keeping its visual identity completely unchanged frame to frame.
+
+The character contains NO purple color anywhere on its body or gear — required for clean chroma key separation from the background. The character maintains the flat 2D cartoon sticker style of the reference (bold black outlines, solid color fills, no internal shading, no realistic textures).
+
+ACTION TIMELINE:
+0.0–1.5s: Mascot sprints into frame from the bottom-right corner toward center, body leaned forward, legs blurring with motion lines, mouth open in a battle cry, determined fearless expression. Skids to a dramatic stop dead-center, full body in frame.
+1.5–3.0s: Looks down at the pull-ring on its own head, eyes go wide with realization, then narrow with steely determination. Slowly raises its right hand, fingers close around the metal ring. One dramatic beat — gripped.
+3.0–4.0s: One hard YANK — pin pulls out and flies off-screen in a clean arc, lever pops with a metallic spring. Eyes shift from determined to "I've made my peace" — a single proud tear rolls down. Brave smile to camera.
+4.0–6.0s: BOOM. A flat-cartoon orange-yellow star-burst explosion appears centered in the frame. CRITICAL: the explosion is FULLY CONTAINED inside the frame — every spike, point, and edge of the star-burst is completely visible with clear empty purple space around it on all four sides. The explosion does NOT touch, cross, or get clipped by ANY edge of the frame (top, bottom, left, right). It occupies roughly 60–70% of the frame width, leaving a comfortable purple margin around the entire silhouette. Holds for half a second, then dissipates revealing chroma purple with a small cartoon smoke puff that clears. End on clean purple frame.
+
+CAMERA: locked static medium shot, slight zoom-in during the pin-pull moment for dramatic emphasis.
+
+STYLE: 2D flat cartoon animation, sticker aesthetic, bold outlines, NO realistic textures, NO 3D shading. Looney-Tunes / modern flash-cartoon energy. Limited color palette matching reference.
+
+AUDIO: dramatic running footsteps, military bugle "charge" trumpet, sharp metallic CLINK as the pin pulls, beat of silence, then comedic over-the-top BOOM.` },
+
+  { id:'comedy', name:'Comedy Oops', desc:'Нервный забег · спотыкается · паника · бум', meta:'6s · 9:16 · audio · chroma purple',
+    prompt:`Animated cartoon scene, 6 seconds, vertical 9:16 aspect ratio.
+
+BACKGROUND (LOCKED, STATIC, UNIFORM):
+A perfectly flat, solid chroma key purple plate (#B026FF) fills the entire frame behind the character. The background is COMPLETELY STATIC and UNCHANGING throughout the entire video — no gradients, no lighting variation, no flickering, no animation, no movement, no parallax, no shadows, no color shifts, no vignette, no texture, no atmospheric effects. It is a single uniform digital chroma key plate, identical pixel-for-pixel from frame 0 to the last frame. This is required for clean chroma key compositing in post-production.
+
+CHARACTER (FULLY DEFINED BY THE ATTACHED REFERENCE IMAGE):
+The character's appearance is 100% determined by the attached reference image. Do NOT design, redesign, restyle, redraw, recolor, or modify the character in any way. Do NOT add, remove, duplicate, or alter any clothing, gear, accessories, weapons, straps, belts, patches, badges, or details. Whatever is shown in the reference is final and locked — there is nothing to interpret, only to copy. Your ONLY job is to animate this character — make it move, emote, and perform the actions described below while keeping its visual identity completely unchanged frame to frame.
+
+The character contains NO purple color anywhere on its body or gear — required for clean chroma key separation from the background. The character maintains the flat 2D cartoon sticker style of the reference (bold black outlines, solid color fills, no internal shading, no realistic textures).
+
+ACTION TIMELINE:
+0.0–1.5s: Mascot tip-toes nervously into frame from the left, eyes darting side-to-side suspiciously, body crouched low. Reaches center, straightens up, gives a polite "hello" wave to the camera.
+1.5–3.0s: Mid-wave, trips on its own foot — body flails in comedic stumble, arms spinning windmill-style. As it falls forward, one flailing hand accidentally catches its own pull-ring.
+3.0–4.0s: Lands flat on its face. The pin gets yanked out by the fall, flies off-screen with a "PING". Mascot lifts its head — dazed first, then notices the pin is gone. Eyes turn into pure white circles of horror, mouth drops into a perfect "O" of panic.
+4.0–5.0s: Frantic panic — scrambles in a circle, slaps the top of its head, sweat drops flying, body stretching and squashing chaotically. Tries to plug the hole with its finger.
+5.0–6.0s: BOOM. A flat-cartoon orange-yellow star-burst explosion appears centered in the frame. CRITICAL: the explosion is FULLY CONTAINED inside the frame — every spike, point, and edge of the star-burst is completely visible with clear empty purple space around it on all four sides. The explosion does NOT touch, cross, or get clipped by ANY edge of the frame (top, bottom, left, right). It occupies roughly 60–70% of the frame width, leaving a comfortable purple margin around the entire silhouette. Then dissipates leaving a faint cartoon smoke puff and the pin slowly falling back into frame with a sad "ting" landing on the floor.
+
+CAMERA: fully locked and static — no pan, no zoom, no shake, no wobble. The comedic energy of the trip and panic is conveyed entirely through exaggerated CHARACTER animation, not through camera movement. A static camera is required to keep the purple background perfectly uniform for chroma keying.
+
+STYLE: flat sticker cartoon style matching reference. Looney-Tunes pacing, exaggerated cartoon physics.
+
+AUDIO: nervous tip-toe sound effects, comedic stumble "boi-oing", panic violin strings, BOOM, sad "ting" of the falling pin.` },
+
+  { id:'rage', name:'Rage Boom + CTA', desc:'Ярость · фуллскрин-взрыв · «FOLLOW US!» с фейдом в финале', meta:'3s · 9:16 · audio · chroma purple · CTA-text',
+    prompt:`Animated cartoon scene, 3 seconds, vertical 9:16 aspect ratio, full-frame composition (mascot uses the entire vertical canvas — will be repositioned/scaled in post).
+
+BACKGROUND (LOCKED, STATIC, UNIFORM):
+A perfectly flat, solid chroma key purple plate (#B026FF) fills the entire frame behind the character. The background is COMPLETELY STATIC and UNCHANGING throughout the entire video — no gradients, no lighting variation, no flickering, no animation, no movement, no parallax, no shadows, no color shifts, no vignette, no texture, no atmospheric effects. It is a single uniform digital chroma key plate, identical pixel-for-pixel from frame 0 to the last frame.
+
+CHARACTER (FULLY DEFINED BY THE ATTACHED REFERENCE IMAGE):
+The character's appearance is 100% determined by the attached reference image. Do NOT design, redesign, restyle, redraw, recolor, or modify the character in any way. Do NOT add, remove, duplicate, or alter any clothing, gear, accessories, weapons, straps, belts, patches, badges, or details. Whatever is shown in the reference is final and locked — there is nothing to interpret, only to copy. Your ONLY job is to animate this character.
+
+The character contains NO purple color anywhere on its body or gear — required for clean chroma key separation from the background. The character maintains the flat 2D cartoon sticker style of the reference (bold black outlines, solid color fills, no internal shading, no realistic textures). EXCEPTION: a temporary rage-red tint may flush over the face/body during the build-up — this is the only allowed visual modification (a color overlay only); the underlying design stays identical to the reference.
+
+ACTION TIMELINE (3 seconds total — tight, fast-paced):
+0.0–0.7s: Mascot stomps into frame from off-screen right toward center, body shaking with rage, face flushed deep red, steam shooting from the top of its head, mouth wide open in a screaming yell. Stops dead-center, both fists clenched, full body filling the frame vertically.
+
+0.7–1.2s: Looks directly at camera, eyebrows fully knitted into a furious V, teeth bared. Reaches up with both hands, grabs its own pull-ring, defiant scream.
+
+1.2–1.6s: RIPS the pin out in a violent two-handed yank — pin and lever fly upward off-screen, body bouncing upward from the force.
+
+1.6–2.4s: BOOM. A flat-cartoon explosion appears centered in the frame — bright orange, red, and yellow flat star-burst flames, classic cartoon "POW" shape. CRITICAL: the explosion is FULLY CONTAINED inside the frame — every spike, point, and edge of the star-burst is completely visible with clear empty purple space around it on all four sides. The explosion does NOT touch, cross, or get clipped by ANY edge of the frame (top, bottom, left, right). It occupies roughly 60–70% of the frame width, leaving a comfortable purple margin around the entire silhouette. As the explosion peaks (around 1.9s), large BOLD CARTOON TEXT appears centered in the frame, layered ON TOP of the explosion silhouette (text fits comfortably inside the explosion shape, not extending past its edges): the words "FOLLOW US!" — bright white block letters with thick black outline, comic-book / cartoon lettering, slight tilt for energy, with bold motion impact lines and a few small starbursts around the text. The text pops in with a punchy squash-and-stretch animation and holds in place.
+
+2.4–3.0s: Smoke dissipates outward as drifting cartoon smoke puffs that quickly clear, AND simultaneously the "FOLLOW US!" text fades out smoothly (opacity from 100% to 0%). Final frame: completely clean uniform chroma purple plate — no character, no smoke, no text remaining — pure purple for a clean chroma key end-state.
+
+CAMERA: locked static throughout — no pan, no zoom, no shake, no wobble. The static camera ensures the purple background stays perfectly uniform for chroma keying.
+
+STYLE: flat sticker cartoon style matching the reference, with intensified rage-red tint on the character during the build-up. The "FOLLOW US!" text is in matching cartoon aesthetic — flat colors with bold black outline, comic-book bold lettering (sans-serif, very thick weight, no thin strokes), no realistic font. NEITHER the text NOR the explosion contain any purple color — everything visible must survive the chroma key cleanly.
+
+AUDIO: angry stomp footsteps, escalating rage-scream that cuts off, sharp metallic pin-yank "TWANG", explosive BOOM with deep bass, punchy "DING!" sound effect synced perfectly with the "FOLLOW US!" text pop-in, then fade to silence as smoke and text dissipate.` },
+];
+
+const CAT_LABEL = { combat:'Боевая', emo:'Эмоция', util:'Контент', meme:'Мем' };
+let activeCat = 'all';
+
+function renderPoses() {
+  const grid = document.getElementById('poseGrid');
+  const q = document.getElementById('poseSearch').value.toLowerCase().trim();
+  grid.innerHTML = '';
+  POSES
+    .filter(p => activeCat === 'all' || p.cat === activeCat)
+    .filter(p => !q || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.pose.toLowerCase().includes(q))
+    .forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'pcard';
+      card.onclick = () => openPose(p.id);
+      card.innerHTML = `
+        <span class="ptag ${p.cat}">${CAT_LABEL[p.cat]}</span>
+        <div class="pname">${p.name}</div>
+        <div class="pdesc">${p.desc}</div>
+      `;
+      grid.appendChild(card);
+    });
+  if (!grid.children.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; color:var(--mu); padding:40px; font-size:13px;">Ничего не найдено</div>';
+  }
+}
+
+function setFilter(cat, btn) {
+  activeCat = cat;
+  document.querySelectorAll('.filter').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPoses();
+}
+
+function filterPoses() { renderPoses(); }
+
+function renderVideos() {
+  const grid = document.getElementById('videoGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  VIDEOS.forEach(v => {
+    const card = document.createElement('div');
+    card.className = 'pcard';
+    card.onclick = () => openVideo(v.id);
+    card.innerHTML = `
+      <span class="ptag video">Veo · ${v.meta.split(' · ')[0]}</span>
+      <div class="pname">${v.name}</div>
+      <div class="pdesc">${v.desc}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function openVideo(id) {
+  const v = VIDEOS.find(x => x.id === id);
+  if (!v) return;
+  document.getElementById('modalTitle').textContent = v.name;
+  document.getElementById('modalPrompt').textContent = v.prompt;
+  const btn = document.getElementById('modalCopyBtn');
+  btn.textContent = 'Скопировать промт';
+  btn.classList.remove('ok');
+  document.getElementById('modal').classList.add('show');
+}
+
+function openPose(id) {
+  const p = POSES.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('modalTitle').textContent = p.name;
+  document.getElementById('modalPrompt').textContent = MASTER.replace('__POSE__', p.pose);
+  const btn = document.getElementById('modalCopyBtn');
+  btn.textContent = 'Скопировать промт';
+  btn.classList.remove('ok');
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+}
+
+function copyById(id, btn) {
+  const text = document.getElementById(id).textContent;
+  copyText(text, btn);
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('Скопировано');
+    if (btn) {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Скопировано';
+      btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('ok'); }, 1500);
+    }
+  });
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+renderPoses();
+renderVideos();
+</script>
+
+</body>
+</html>

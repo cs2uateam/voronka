@@ -208,7 +208,7 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .loading-msg { font-size: 14px; color: #ccc; }
   .loading-sub { font-size: 12px; color: #444; }
-  #loadingChangeBtn { display: none; margin-top: 8px; }
+  #loadingActions.vis { display: flex !important; }
 
   /* Modal */
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
@@ -248,7 +248,11 @@
   <div class="spinner" id="loadingSpinner"></div>
   <div class="loading-msg" id="loadingMsg">Подключение...</div>
   <div class="loading-sub" id="loadingSub">Загружаем данные из JSONBin</div>
-  <button class="btn btn-primary" id="loadingChangeBtn" onclick="resetAndSetup()">Обновить ключ</button>
+  <div id="loadingActions" style="display:none; flex-direction:column; gap:8px; margin-top:8px; align-items:center;">
+    <button class="btn btn-primary" id="loadingRetryBtn" onclick="retryLoad()">↻ Повторить</button>
+    <button class="btn btn-ghost btn-sm" id="loadingCacheBtn" onclick="loadFromCache()" style="display:none">📂 Открыть из кэша (offline)</button>
+    <button class="btn btn-ghost btn-sm" id="loadingChangeBtn" onclick="resetAndSetup()">Сбросить ключ</button>
+  </div>
 </div>
 
 <!-- History modal -->
@@ -520,15 +524,20 @@ async function saveData() {
   if (!apiKey || !binId) return;
   const el = document.getElementById('savingEl');
   el.classList.add('vis');
+  // always cache locally first, so data isn't lost if network fails
+  try { localStorage.setItem('vt_cache', JSON.stringify(data)); } catch (e) {}
   try {
     await fetch(`${JSONBIN}/${binId}`, {
       method: 'PUT',
       headers: { 'X-Master-Key': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-  } finally {
-    setTimeout(() => el.classList.remove('vis'), 800);
+  } catch (e) {
+    el.textContent = '⚠ нет сети — кэш сохранён';
+    setTimeout(() => { el.textContent = 'сохранение...'; el.classList.remove('vis'); }, 2500);
+    return;
   }
+  setTimeout(() => el.classList.remove('vis'), 800);
 }
 
 function updateConn() {
@@ -596,13 +605,64 @@ function setLoadingMsg(msg, sub, error) {
   document.getElementById('loadingMsg').textContent = msg;
   document.getElementById('loadingSub').textContent = sub || '';
   document.getElementById('loadingSpinner').classList.toggle('stopped', !!error);
-  document.getElementById('loadingChangeBtn').style.display = error ? 'block' : 'none';
+  const actions = document.getElementById('loadingActions');
+  if (actions) actions.classList.toggle('vis', !!error);
+  // show "open from cache" only if cache exists
+  const cacheBtn = document.getElementById('loadingCacheBtn');
+  if (cacheBtn) cacheBtn.style.display = (error && localStorage.getItem('vt_cache')) ? 'inline-flex' : 'none';
 }
 function resetAndSetup() {
   localStorage.removeItem('vt_key'); localStorage.removeItem('vt_bin');
   apiKey = ''; binId = '';
   hideLoading();
   document.getElementById('setupOv').classList.add('open');
+}
+
+function retryLoad() {
+  if (!apiKey || !binId) { resetAndSetup(); return; }
+  setLoadingMsg('Подключение...', 'Загружаем данные из JSONBin');
+  loadFromJsonbin();
+}
+
+function loadFromCache() {
+  const cached = localStorage.getItem('vt_cache');
+  if (!cached) return;
+  try {
+    data = JSON.parse(cached);
+    setLoadingMsg('Загружено из кэша', 'Работаешь offline — изменения уйдут в облако когда сеть восстановится');
+    setTimeout(() => { hideLoading(); updateConn(); renderAll(); }, 500);
+  } catch (e) {
+    setLoadingMsg('Кэш повреждён', 'Сбрось ключ или попробуй ещё раз', true);
+  }
+}
+
+function cacheData() {
+  try { localStorage.setItem('vt_cache', JSON.stringify(data)); } catch (e) {}
+}
+
+function loadFromJsonbin() {
+  const t0 = Date.now();
+  const ctrl = new AbortController();
+  const timeout = setTimeout(() => ctrl.abort(), 20000);
+  return fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey }, signal: ctrl.signal })
+    .then(r => { clearTimeout(timeout); if (!r.ok) throw new Error('Ошибка ' + r.status + '. Возможно, ключ устарел.'); return r.json(); })
+    .then(json => {
+      const rec = json.record || {};
+      data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] } };
+      cacheData();
+      const wait = Math.max(0, 400 - (Date.now() - t0));
+      setLoadingMsg('Готово ✓', 'Данные загружены');
+      setTimeout(() => {
+        hideLoading();
+        document.getElementById('setupOv').classList.remove('open');
+        updateConn(); renderAll();
+      }, wait);
+    })
+    .catch(e => {
+      clearTimeout(timeout);
+      const msg = e.name === 'AbortError' ? 'Сервер не отвечает (таймаут 20с)' : (e.message || 'Проверь соединение');
+      setLoadingMsg('Не удалось подключиться', msg, true);
+    });
 }
 
 (function init() {
@@ -615,27 +675,7 @@ function resetAndSetup() {
   }
   apiKey = k; binId = b;
   setLoadingMsg('Подключение...', 'Загружаем данные из JSONBin');
-  const t0 = Date.now();
-  const ctrl = new AbortController();
-  const timeout = setTimeout(() => ctrl.abort(), 10000);
-  fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey }, signal: ctrl.signal })
-    .then(r => { clearTimeout(timeout); if (!r.ok) throw new Error('Ошибка ' + r.status + '. Возможно, ключ устарел.'); return r.json(); })
-    .then(json => {
-      const rec = json.record || {};
-      data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] } };
-      const wait = Math.max(0, 600 - (Date.now() - t0));
-      setLoadingMsg('Готово ✓', 'Данные загружены');
-      setTimeout(() => {
-        hideLoading();
-        document.getElementById('setupOv').classList.remove('open');
-        updateConn(); renderAll();
-      }, wait);
-    })
-    .catch(e => {
-      clearTimeout(timeout);
-      const msg = e.name === 'AbortError' ? 'Сервер не отвечает (таймаут)' : (e.message || 'Проверь соединение');
-      setLoadingMsg('Не удалось подключиться', msg, true);
-    });
+  loadFromJsonbin();
 })();
 
 // ── Helpers ───────────────────────────────────────────────
@@ -722,28 +762,53 @@ function renderOverview() {
   const platKeys = ['tiktok','youtube','instagram'];
   const platIcons = { tiktok:'🎵', youtube:'▶️', instagram:'📸' };
 
-  let totalVideos = 0, totalLikes = 0, totalComments = 0, totalShares = 0, totalSaves = 0;
+  // helper: views-equivalent for any entry, prioritizing plays > views > reach
+  const viewsOf = e => e.plays || e.views || e.reach || 0;
+
+  let totalVideos = 0, totalViews = 0, totalLikes = 0, totalComments = 0, totalShares = 0, totalSaves = 0, totalProfileVisits = 0, totalFollows = 0;
+  let bestVideo = null, bestVideoViews = 0;
   platKeys.forEach(k => {
     const entries = (data[k]||{entries:[]}).entries;
     totalVideos   += entries.length;
-    totalLikes    += entries.reduce((s,e)=>s+(e.likes||0),0);
-    totalComments += entries.reduce((s,e)=>s+(e.comments||0),0);
-    totalShares   += entries.reduce((s,e)=>s+(e.shares||0),0);
-    totalSaves    += entries.reduce((s,e)=>s+(e.saves||0),0);
+    entries.forEach(e => {
+      const v = viewsOf(e);
+      totalViews += v;
+      totalLikes    += e.likes||0;
+      totalComments += e.comments||0;
+      totalShares   += e.shares||0;
+      totalSaves    += e.saves||0;
+      totalProfileVisits += e.profile_visits||0;
+      totalFollows  += e.follows||0;
+      if (v > bestVideoViews) { bestVideoViews = v; bestVideo = { ...e, _plat: k }; }
+    });
+  });
+
+  // last 7 days
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+  const weekAgoStr = weekAgo.toISOString().slice(0,10);
+  let weekVideos = 0, weekViews = 0;
+  platKeys.forEach(k => {
+    (data[k]||{entries:[]}).entries.forEach(e => {
+      if (e.date >= weekAgoStr) { weekVideos++; weekViews += viewsOf(e); }
+    });
   });
 
   const platCards = platKeys.map(k => {
     const cfg = PLATS[k];
     const entries = (data[k]||{entries:[]}).entries;
     if (!entries.length) return `<div class="stat-card"><div class="lbl">${platIcons[k]} ${cfg.label}</div><div class="val">0</div><div class="sub">видео</div></div>`;
-    const useField = (k === 'instagram' && entries.some(e=>e.plays>0)) ? 'plays' : cfg.mainMetric;
-    const totMain = entries.reduce((s,e)=>s+(e[useField]||0),0);
-    const metricLbl = useField === 'plays' ? 'просмотров' : useField === 'reach' ? 'охват' : 'просмотров';
+    const totViews = entries.reduce((s,e)=>s+viewsOf(e),0);
+    const totLikes = entries.reduce((s,e)=>s+(e.likes||0),0);
+    const totShares = entries.reduce((s,e)=>s+(e.shares||0),0);
+    const totReach = k === 'instagram' ? entries.reduce((s,e)=>s+(e.reach||0),0) : null;
     const avgER   = entries.reduce((s,e)=>s+(((e.likes||0)+(e.comments||0)+(e.shares||0)+(e.saves||0))/(e[cfg.erBase]||1)*100),0)/entries.length;
-    return `<div class="stat-card" style="border-color:${cfg.color}22">
+    const subLine = totReach
+      ? `${fmt(totViews)} просмотров · ${fmt(totReach)} охвата · ER ${avgER.toFixed(1)}%`
+      : `${fmt(totViews)} просмотров · ER ${avgER.toFixed(1)}%`;
+    return `<div class="stat-card" style="border-color:${cfg.color}22" data-tip="${cfg.label}: ${entries.length} видео · ${fmt(totViews)} просмотров · ${fmt(totLikes)} лайков · ${fmt(totShares)} репостов">
       <div class="lbl">${platIcons[k]} ${cfg.label}</div>
       <div class="val">${entries.length} <span style="font-size:13px;color:#555">видео</span></div>
-      <div class="sub">${fmt(totMain)} ${metricLbl} · ER ${avgER.toFixed(1)}%</div>
+      <div class="sub">${subLine}</div>
     </div>`;
   }).join('');
 
@@ -782,6 +847,23 @@ function renderOverview() {
     </div>`;
   }).join('') : `<div style="color:#444;font-size:13px;padding:12px 0">Нет видео с группой — заполни поле "Группа видео" при добавлении.</div>`;
 
+  // overall ER across all entries
+  let allEntries = 0, allER = 0;
+  platKeys.forEach(k => {
+    const cfg = PLATS[k];
+    (data[k]||{entries:[]}).entries.forEach(e => {
+      const base = e[cfg.erBase] || 0;
+      if (base) { allER += ((e.likes||0)+(e.comments||0)+(e.shares||0)+(e.saves||0))/base*100; allEntries++; }
+    });
+  });
+  const avgERAll = allEntries ? (allER/allEntries) : 0;
+
+  const bestVideoCard = bestVideo ? `<div class="stat-card" style="border-color:#fe2c5544" data-tip="Лучшее видео по просмотрам · ${platIcons[bestVideo._plat]} ${PLATS[bestVideo._plat].label}">
+      <div class="lbl">🏆 Топ-видео</div>
+      <div class="val">${fmt(bestVideoViews)}</div>
+      <div class="sub">${platIcons[bestVideo._plat]} ${esc(bestVideo.title.slice(0,28))}${bestVideo.title.length>28?'…':''}</div>
+    </div>` : '';
+
   document.getElementById('overviewBody').innerHTML = `
     <div class="stats" style="margin-bottom:18px">
       <div class="stats-group-label">По платформам</div>
@@ -790,10 +872,19 @@ function renderOverview() {
     <div class="stats" style="margin-bottom:18px">
       <div class="stats-group-label">Всего по всем платформам</div>
       <div class="stat-card"><div class="lbl">Видео</div><div class="val">${totalVideos}</div><div class="sub">всего записей</div></div>
-      <div class="stat-card"><div class="lbl">Лайки</div><div class="val">${fmt(totalLikes)}</div><div class="sub">сумма</div></div>
-      <div class="stat-card"><div class="lbl">Комменты</div><div class="val">${fmt(totalComments)}</div><div class="sub">сумма</div></div>
-      <div class="stat-card"><div class="lbl">Репосты</div><div class="val">${fmt(totalShares)}</div><div class="sub">сумма</div></div>
-      <div class="stat-card"><div class="lbl">Сохранения</div><div class="val">${fmt(totalSaves)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card" data-tip="Сумма просмотров по всем платформам (TikTok views + YouTube views + Instagram plays)"><div class="lbl">👁 Просмотры</div><div class="val">${fmt(totalViews)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card" data-tip="Средний Engagement Rate по всем видео (по соответствующей базе на каждой платформе)"><div class="lbl">📊 Ср. ER</div><div class="val">${allEntries?avgERAll.toFixed(1)+'%':'—'}</div><div class="sub">по всем видео</div></div>
+      <div class="stat-card"><div class="lbl">❤️ Лайки</div><div class="val">${fmt(totalLikes)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card"><div class="lbl">💬 Комменты</div><div class="val">${fmt(totalComments)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card"><div class="lbl">↗️ Репосты</div><div class="val">${fmt(totalShares)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card"><div class="lbl">🔖 Сохранения</div><div class="val">${fmt(totalSaves)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card"><div class="lbl">👤 Визиты профиля</div><div class="val">${fmt(totalProfileVisits)}</div><div class="sub">сумма</div></div>
+      <div class="stat-card"><div class="lbl">➕ Подписки</div><div class="val">${fmt(totalFollows)}</div><div class="sub">сумма</div></div>
+    </div>
+    <div class="stats" style="margin-bottom:18px">
+      <div class="stats-group-label">Highlights</div>
+      ${bestVideoCard}
+      <div class="stat-card" data-tip="Видео и просмотры за последние 7 дней"><div class="lbl">📅 За 7 дней</div><div class="val">${weekVideos} <span style="font-size:13px;color:#555">видео</span></div><div class="sub">${fmt(weekViews)} просмотров</div></div>
     </div>
     <div class="stats-group-label" style="margin-bottom:12px">По видео (кросс-платформа)</div>
     ${groupHtml}`;
@@ -1092,9 +1183,6 @@ function renderTable() {
     const crVal = crOf(e);
     const tier  = perfTier(e);
     const tCls  = 'tag tag-'+e.type;
-    const pvStr = e.profile_visits ? fmt(e.profile_visits) : '—';
-    const flStr = e.follows ? fmt(e.follows) : '—';
-    const main  = e[cfg.mainMetric] || 0;
 
     const crCell = crLbl && crVal
       ? `<span class="cr-badge ${crClass(crVal)}" data-tip="${crTip(crVal, crLbl)}">${crVal.toFixed(0)}%</span>`
@@ -1108,8 +1196,7 @@ function renderTable() {
       </td>
       <td class="num">${e.date}</td>
       <td><span class="hook-tag">${esc(e.hook||'—')}</span></td>
-      <td class="num">${fmt(main)}</td>
-      ${cfg.fields.slice(1).map(f => `<td class="num">${e[f.id]?fmt(e[f.id]):'—'}</td>`).join('')}
+      ${cfg.fields.map(f => `<td class="num">${e[f.id]?fmt(e[f.id]):'—'}</td>`).join('')}
       ${crLbl ? `<td>${crCell}</td>` : ''}
       <td><span class="er-badge ${erClass(parseFloat(erVal))}" data-tip="${erTip(parseFloat(erVal))}">${erVal}%</span></td>
       <td><span class="tier tier-${tier}">${TIER_LABELS[tier]}</span></td>
