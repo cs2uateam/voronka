@@ -469,8 +469,8 @@ const PLATS = {
     typeLabels: { reels:'Reels', фото:'Фото', карусель:'Карусель', story:'Story' },
     hooks: ['вопрос','визуал','текст на фото','тренд','другое'],
     fields: [
-      { id:'reach',          label:'📡 Охват (Reach)',   parse:'int'   },
       { id:'plays',          label:'▶️ Просмотры',       parse:'int'   },
+      { id:'reach',          label:'📡 Охват (Reach)',   parse:'int'   },
       { id:'impressions',    label:'👁 Показы',          parse:'int'   },
       { id:'avg_watch',      label:'⏱ Ср. просмотр (сек)', parse:'float' },
       { id:'likes',          label:'❤️ Лайки',          parse:'int'   },
@@ -738,12 +738,14 @@ function renderOverview() {
     const cfg = PLATS[k];
     const entries = (data[k]||{entries:[]}).entries;
     if (!entries.length) return `<div class="stat-card"><div class="lbl">${platIcons[k]} ${cfg.label}</div><div class="val">0</div><div class="sub">видео</div></div>`;
-    const totMain = entries.reduce((s,e)=>s+(e[cfg.mainMetric]||0),0);
+    const useField = (k === 'instagram' && entries.some(e=>e.plays>0)) ? 'plays' : cfg.mainMetric;
+    const totMain = entries.reduce((s,e)=>s+(e[useField]||0),0);
+    const metricLbl = useField === 'plays' ? 'просмотров' : useField === 'reach' ? 'охват' : 'просмотров';
     const avgER   = entries.reduce((s,e)=>s+(((e.likes||0)+(e.comments||0)+(e.shares||0)+(e.saves||0))/(e[cfg.erBase]||1)*100),0)/entries.length;
     return `<div class="stat-card" style="border-color:${cfg.color}22">
       <div class="lbl">${platIcons[k]} ${cfg.label}</div>
       <div class="val">${entries.length} <span style="font-size:13px;color:#555">видео</span></div>
-      <div class="sub">${fmt(totMain)} ${cfg.mainMetric==='reach'?'охват':'просмотров'} · ER ${avgER.toFixed(1)}%</div>
+      <div class="sub">${fmt(totMain)} ${metricLbl} · ER ${avgER.toFixed(1)}%</div>
     </div>`;
   }).join('');
 
