@@ -823,7 +823,7 @@ function renderOverview() {
     });
   });
 
-  const groupKeys = Object.keys(groups).sort();
+  const groupKeys = Object.keys(groups).sort().reverse();
   const groupHtml = groupKeys.length ? groupKeys.map(gk => {
     const items = groups[gk];
     // per-item views — prefer plays (instagram), then views (tiktok/youtube), then reach
