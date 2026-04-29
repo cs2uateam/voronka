@@ -1,8 +1,9 @@
-ПРОМТ №3 — ВИДЕО: ГОВОРЯЩИЙ МАСКОТ С CTA НА САЙТ
+ПРОМТ №3 — ВИДЕО: ГОВОРЯЩИЙ МАСКОТ С CTA НА САЙТ (Rambo-голос, EN)
 ====================================================
 
 ЦЕЛЬ: универсальный 6-секундный вертикальный ролик 9:16 с речью и
 липсинком — маскот зовёт зрителя на сайт cs2analytics за CS2-предиктами.
+Голос — в стиле Rambo (Сталлоне): низкий, гравийный, рычащий ветеран.
 
 Реплика НЕ привязана к конкретному матчу — команды, проценты и UI-карточку
 накладываешь поверх в CapCut. Один раз сгенерировал — клепаешь под все
@@ -23,10 +24,10 @@
 
 
 ===========================================
-ПРОМТ — РУССКАЯ ОЗВУЧКА (копировать целиком)
+ПРОМТ — АНГЛИЙСКАЯ ОЗВУЧКА (RAMBO VOICE)
 ===========================================
 
-Animated cartoon scene, 6 seconds, vertical 9:16 aspect ratio, native audio with Russian dialogue and accurate lipsync.
+Animated cartoon scene, 6 seconds, vertical 9:16 aspect ratio, native audio with English dialogue and accurate lipsync.
 
 BACKGROUND (LOCKED, STATIC, UNIFORM):
 A perfectly flat, solid chroma key purple plate (#B026FF) fills the entire frame behind the character. The background is COMPLETELY STATIC and UNCHANGING throughout the entire video — no gradients, no lighting variation, no flickering, no animation, no movement, no parallax, no shadows, no color shifts, no vignette, no texture, no atmospheric effects. It is a single uniform digital chroma key plate, identical pixel-for-pixel from frame 0 to the last frame. This is required for clean chroma key compositing in post-production.
@@ -40,43 +41,32 @@ FRAMING:
 Mid-shot from waist up. Character centered, head, face, vest, and chest logo clearly visible and readable. Camera locked, no zoom, no dolly, no parallax.
 
 ACTION TIMELINE:
-0.0–1.0s: Slight idle bob with sharp eye contact at the camera. One thick eyebrow raises confidently, half-smirk on one side of the mouth.
-1.0–2.5s: Leans forward and points the right index finger directly at the camera, calling out the viewer.
-2.5–4.5s: Rolls the right palm open outward, gestures at the imaginary CTA. A small fist pump on the strongest word. Head tilts in the rhythm of the speech.
-4.5–6.0s: Settles back, confident chin-up nod, both arms relaxed at the sides. Final beat — direct eye contact, eyebrow raised.
+0.0–1.2s: Slow heavy idle. Sharp eye contact at the camera. One thick eyebrow raises slowly, jaw set, a low intense stare.
+1.2–2.8s: Leans forward heavily, points the right index finger directly at the camera — slow, deliberate, threatening like a war veteran giving an order.
+2.8–4.5s: Rolls the right palm open outward in a heavy gesture, then a slow controlled fist clench on the strongest word. Head tilts down slightly, looking up from under the brow — the classic Rambo "thousand-yard stare".
+4.5–6.0s: Settles back, slow chin-up nod, both arms relaxed but tense at the sides. Final beat — direct piercing eye contact, eyebrow furrowed.
 
-DIALOGUE (the character speaks this exact line, in Russian, native audio, lipsync the mouth precisely):
-"Заходи на си-эс-два-аналитикс. Все предикты на CS2. Не благодари."
+DIALOGUE (the character speaks this exact line, in English, native audio, lipsync the mouth precisely):
+"Pull up to cs2analytics. Predictions on every CS2 match. You're welcome."
 
-VOICE:
-Male, mid-pitch, energetic, slightly cocky — CS2 streamer vibe. Confident, fast pace, clean Russian articulation. No accent, no robotic tone, no whisper. Even volume.
+VOICE — RAMBO STYLE (CRITICAL):
+Voice in the style of John Rambo (Sylvester Stallone) — male, deep, low-pitched, gravelly, raspy, gritty, battle-hardened. Slow controlled cadence, slightly slurred breathy delivery, weight on every word. Sounds like a Vietnam veteran who survived hell and came back quieter for it. Heavy chest resonance, raw growl underneath, almost mumbling but clear enough to understand. NO upbeat tone, NO energetic streamer voice, NO clean radio voice. Think dark, brooding, intense — a man with nothing left to lose telling you exactly what to do.
 
 STYLE LOCK (CRITICAL — match reference exactly):
 - FLAT 2D cartoon sticker style. NO 3D, NO realistic shading, NO cel-shading, NO gradients, NO motion blur, NO depth of field.
 - Solid color fills with clean black outline of uniform line weight.
 - Same limited 4–5 color palette as the reference.
-- Frame-by-frame hand-drawn animation feel, cartoon squash & stretch on accents. Like a Discord sticker that came alive.
+- Frame-by-frame hand-drawn animation feel, cartoon squash & stretch on accents — but the energy is HEAVY and DELIBERATE, not bouncy. The character moves like it weighs 200 pounds of muscle and trauma.
 - NO photoreal lighting, NO film grain, NO bokeh.
 - NEITHER the character NOR any animated element contains purple — everything visible must survive the chroma key cleanly.
 
 AUDIO:
-Only the dialogue, mid-volume. No background music, no SFX, no room tone. Clean speech track for layering in post.
+Only the dialogue, mid-volume. No background music, no SFX, no room tone. Clean Rambo-style speech track for layering in post.
 
 OUTPUT:
 - 9:16 vertical, 1080x1920, 24fps, 6 seconds.
-- Native audio: the Russian dialogue above with accurate lipsync.
+- Native audio: the English Rambo-voiced dialogue above with accurate lipsync.
 - No on-screen text, no subtitles, no extra logos other than the chest plate logo from the reference.
-
-
-===========================================
-ПРОМТ — АНГЛИЙСКАЯ ОЗВУЧКА (если нужен EN-вариант)
-===========================================
-
-Заменить блок DIALOGUE на:
-"Pull up to cs2analytics. Predictions on every CS2 match. You're welcome."
-
-Заменить блок VOICE на:
-Male, mid-pitch, confident, slightly cocky esports caster vibe, native American English, fast pace, clean articulation, even volume.
 
 
 ===========================================
@@ -84,20 +74,20 @@ Male, mid-pitch, confident, slightly cocky esports caster vibe, native American 
 ===========================================
 
 Заменить DIALOGUE на:
-"NO dialogue. The mascot's mouth stays closed with subtle expression changes only. Performs the gestures from the ACTION TIMELINE as if reacting to something off-screen. Mouth movement minimal so external voice-over can be added in post."
+"NO dialogue. The mascot's mouth stays mostly closed with subtle expression changes only. Performs the heavy deliberate gestures from the ACTION TIMELINE as if reacting to something off-screen. Mouth movement minimal so external Rambo-style voice-over can be added in post."
 
 Убрать блок VOICE и блок AUDIO (no native audio output).
-В CapCut накладываешь свой voiceover + субтитры.
+В CapCut накладываешь свой voiceover (или генеришь Rambo-голос в ElevenLabs / Speechify) + субтитры.
 
 
 ===========================================
-СУБТИТРЫ В CAPCUT (универсал на 6 сек)
+СУБТИТРЫ В CAPCUT (на английском)
 ===========================================
 
-| время       | RU                                | EN                                  |
-| 0.0 – 1.5   | Заходи на cs2analytics            | Pull up to cs2analytics             |
-| 1.5 – 4.0   | Все предикты на CS2               | Predictions on every CS2 match      |
-| 4.0 – 6.0   | Не благодари.                     | You're welcome.                     |
+| время       | EN                                  |
+| 0.0 – 1.5   | Pull up to cs2analytics             |
+| 1.5 – 4.0   | Predictions on every CS2 match      |
+| 4.0 – 6.0   | You're welcome.                     |
 
 Стиль: жирный sans-serif (Bebida / Komika Axis / Inter Black), белый
 с чёрной обводкой 3–4 px, по центру внизу 25% от низа.
@@ -110,8 +100,25 @@ UI-КАРТОЧКА ПРЕДИКТА:
 
 
 ===========================================
+ВАРИАНТ ОЗВУЧКИ ЧЕРЕЗ ELEVENLABS (если Veo не тащит Rambo-голос)
+===========================================
+
+Если Veo дал «обычный» голос вместо Rambo-вайба:
+
+1. Генеришь видео с пометкой "NO dialogue, mouth closed only" (см. вариант без речи выше)
+2. Голос отдельно через ElevenLabs:
+   - Voice: "Bill" / "Drew" / "Adam" (низкие, gravelly) — или клон Stallone из voice library
+   - Settings: Stability 35–45%, Similarity 75–85%, Style exaggeration 25%
+   - Текст: "Pull up to cs2analytics. Predictions on every CS2 match. You're welcome."
+3. Накладываешь .mp3 на видео в CapCut, ставишь субтитры
+
+
+===========================================
 FOLLOW-UP'Ы НА БРАК
 ===========================================
+
+Голос вышел нормальный / весёлый, не Rambo:
+"Same scene, but make the voice deeper, gravelly, raspy, slow-paced — like John Rambo (Sylvester Stallone). Heavy chest resonance, breathy delivery, war-veteran intensity. NOT upbeat, NOT energetic."
 
 Стиль ушёл в 3D / реализм:
 "Same scene, but flatten the style back to the reference exactly. Pure flat 2D cartoon, black outline, no 3D shading, no gradients."
@@ -122,8 +129,8 @@ FOLLOW-UP'Ы НА БРАК
 Логотип на жилете слетел:
 "Same video, but re-render the chest logo to match the reference 1:1. Flat, undistorted, perfectly centered, no rotation, no fabric warp."
 
-Маскот стоит как столб:
-"Same scene, but add more body language. Tilt, weight shift, subtle squash & stretch on emphasis words. Avoid stiff symmetrical posing."
+Маскот двигается слишком резво / прыгуче:
+"Same scene, but make the body movement HEAVY and DELIBERATE. Slow, controlled, weighted gestures. The character should feel like it weighs 200 pounds. No bouncy or energetic motion — Rambo-style intensity."
 
 На фоне появился градиент / тень / шум:
 "Same scene, but force the background to a perfectly flat solid #B026FF chroma key plate, completely uniform, no gradient, no shadows, no texture."
@@ -133,5 +140,5 @@ FOLLOW-UP'Ы НА БРАК
 СОХРАНЕНИЕ
 ===========================================
 
-Готовый файл: vidos-tracker/assets/videos/talking-cta.mp4
+Готовый файл: vidos-tracker/assets/videos/talking-cta-rambo.mp4
 Один раз сгенерировал — переиспользуешь под все матчи через CapCut.
