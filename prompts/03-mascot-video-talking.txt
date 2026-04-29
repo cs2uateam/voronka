@@ -1,0 +1,137 @@
+ПРОМТ №3 — ВИДЕО: ГОВОРЯЩИЙ МАСКОТ С CTA НА САЙТ
+====================================================
+
+ЦЕЛЬ: универсальный 6-секундный вертикальный ролик 9:16 с речью и
+липсинком — маскот зовёт зрителя на сайт cs2analytics за CS2-предиктами.
+
+Реплика НЕ привязана к конкретному матчу — команды, проценты и UI-карточку
+накладываешь поверх в CapCut. Один раз сгенерировал — клепаешь под все
+матчи без перегенерации.
+
+
+ГЕНЕРАТОР
+---------
+- Лучший: Veo 3 (нативная речь + точный липсинк, до 8 сек)
+- Запасной: Sora 2 / Kling 2.5 (липсинк слабее)
+- Если липсинк ломается → генерь без речи, голос накладываешь сам
+
+
+ЗАГРУЗКА
+--------
+- ОДИН референс — твой эталон mascot-canonical.png
+- Логотип уже впечён, отдельно его не кидаешь
+
+
+===========================================
+ПРОМТ — РУССКАЯ ОЗВУЧКА (копировать целиком)
+===========================================
+
+Animated cartoon scene, 6 seconds, vertical 9:16 aspect ratio, native audio with Russian dialogue and accurate lipsync.
+
+BACKGROUND (LOCKED, STATIC, UNIFORM):
+A perfectly flat, solid chroma key purple plate (#B026FF) fills the entire frame behind the character. The background is COMPLETELY STATIC and UNCHANGING throughout the entire video — no gradients, no lighting variation, no flickering, no animation, no movement, no parallax, no shadows, no color shifts, no vignette, no texture, no atmospheric effects. It is a single uniform digital chroma key plate, identical pixel-for-pixel from frame 0 to the last frame. This is required for clean chroma key compositing in post-production.
+
+CHARACTER (FULLY DEFINED BY THE ATTACHED REFERENCE IMAGE):
+The character's appearance is 100% determined by the attached reference image. Do NOT design, redesign, restyle, redraw, recolor, or modify the character in any way. Do NOT add, remove, duplicate, or alter any clothing, gear, accessories, weapons, straps, belts, patches, badges, or details. Whatever is shown in the reference is final and locked. Your ONLY job is to animate this character — make it speak, emote, and gesture while keeping its visual identity completely unchanged frame to frame.
+
+The character contains NO purple color anywhere on its body or gear — required for clean chroma key separation from the background. Maintains the flat 2D cartoon sticker style of the reference (bold black outlines, solid color fills, no internal shading, no realistic textures).
+
+FRAMING:
+Mid-shot from waist up. Character centered, head, face, vest, and chest logo clearly visible and readable. Camera locked, no zoom, no dolly, no parallax.
+
+ACTION TIMELINE:
+0.0–1.0s: Slight idle bob with sharp eye contact at the camera. One thick eyebrow raises confidently, half-smirk on one side of the mouth.
+1.0–2.5s: Leans forward and points the right index finger directly at the camera, calling out the viewer.
+2.5–4.5s: Rolls the right palm open outward, gestures at the imaginary CTA. A small fist pump on the strongest word. Head tilts in the rhythm of the speech.
+4.5–6.0s: Settles back, confident chin-up nod, both arms relaxed at the sides. Final beat — direct eye contact, eyebrow raised.
+
+DIALOGUE (the character speaks this exact line, in Russian, native audio, lipsync the mouth precisely):
+"Заходи на си-эс-два-аналитикс. Все предикты на CS2. Не благодари."
+
+VOICE:
+Male, mid-pitch, energetic, slightly cocky — CS2 streamer vibe. Confident, fast pace, clean Russian articulation. No accent, no robotic tone, no whisper. Even volume.
+
+STYLE LOCK (CRITICAL — match reference exactly):
+- FLAT 2D cartoon sticker style. NO 3D, NO realistic shading, NO cel-shading, NO gradients, NO motion blur, NO depth of field.
+- Solid color fills with clean black outline of uniform line weight.
+- Same limited 4–5 color palette as the reference.
+- Frame-by-frame hand-drawn animation feel, cartoon squash & stretch on accents. Like a Discord sticker that came alive.
+- NO photoreal lighting, NO film grain, NO bokeh.
+- NEITHER the character NOR any animated element contains purple — everything visible must survive the chroma key cleanly.
+
+AUDIO:
+Only the dialogue, mid-volume. No background music, no SFX, no room tone. Clean speech track for layering in post.
+
+OUTPUT:
+- 9:16 vertical, 1080x1920, 24fps, 6 seconds.
+- Native audio: the Russian dialogue above with accurate lipsync.
+- No on-screen text, no subtitles, no extra logos other than the chest plate logo from the reference.
+
+
+===========================================
+ПРОМТ — АНГЛИЙСКАЯ ОЗВУЧКА (если нужен EN-вариант)
+===========================================
+
+Заменить блок DIALOGUE на:
+"Pull up to cs2analytics. Predictions on every CS2 match. You're welcome."
+
+Заменить блок VOICE на:
+Male, mid-pitch, confident, slightly cocky esports caster vibe, native American English, fast pace, clean articulation, even volume.
+
+
+===========================================
+ВАРИАНТ БЕЗ РЕЧИ (для Sora / Kling если липсинк сломан)
+===========================================
+
+Заменить DIALOGUE на:
+"NO dialogue. The mascot's mouth stays closed with subtle expression changes only. Performs the gestures from the ACTION TIMELINE as if reacting to something off-screen. Mouth movement minimal so external voice-over can be added in post."
+
+Убрать блок VOICE и блок AUDIO (no native audio output).
+В CapCut накладываешь свой voiceover + субтитры.
+
+
+===========================================
+СУБТИТРЫ В CAPCUT (универсал на 6 сек)
+===========================================
+
+| время       | RU                                | EN                                  |
+| 0.0 – 1.5   | Заходи на cs2analytics            | Pull up to cs2analytics             |
+| 1.5 – 4.0   | Все предикты на CS2               | Predictions on every CS2 match      |
+| 4.0 – 6.0   | Не благодари.                     | You're welcome.                     |
+
+Стиль: жирный sans-serif (Bebida / Komika Axis / Inter Black), белый
+с чёрной обводкой 3–4 px, по центру внизу 25% от низа.
+Ключевое cs2analytics → жёлтый #FFD400.
+
+UI-КАРТОЧКА ПРЕДИКТА:
+Накладываешь поверх 0.5–4.5 сек как screenshot из сайта (Vitality vs FUT,
+65/35 — или любая другая пара). Можно на правую половину кадра, маскот
+жестикулирует на левой.
+
+
+===========================================
+FOLLOW-UP'Ы НА БРАК
+===========================================
+
+Стиль ушёл в 3D / реализм:
+"Same scene, but flatten the style back to the reference exactly. Pure flat 2D cartoon, black outline, no 3D shading, no gradients."
+
+Липсинк не попадает:
+"Same scene, but tighten the lipsync to the dialogue. Each syllable should match the visible mouth shape."
+
+Логотип на жилете слетел:
+"Same video, but re-render the chest logo to match the reference 1:1. Flat, undistorted, perfectly centered, no rotation, no fabric warp."
+
+Маскот стоит как столб:
+"Same scene, but add more body language. Tilt, weight shift, subtle squash & stretch on emphasis words. Avoid stiff symmetrical posing."
+
+На фоне появился градиент / тень / шум:
+"Same scene, but force the background to a perfectly flat solid #B026FF chroma key plate, completely uniform, no gradient, no shadows, no texture."
+
+
+===========================================
+СОХРАНЕНИЕ
+===========================================
+
+Готовый файл: vidos-tracker/assets/videos/talking-cta.mp4
+Один раз сгенерировал — переиспользуешь под все матчи через CapCut.
