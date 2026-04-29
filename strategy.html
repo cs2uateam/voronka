@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS2 Vidos — Контент-стратегия</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --pc:#fe2c55; --yt:#ff0000; --ig:#e1306c; --bg:#0a0a0a; --card:#111; --br:#1e1e1e; --br2:#2e2e2e; --tx:#e0e0e0; --mu:#777; --dim:#555; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--tx); line-height: 1.55; -webkit-font-smoothing: antialiased; }
+
+  header { background: var(--card); border-bottom: 1px solid var(--br); padding: 18px 28px; position: sticky; top: 0; z-index: 10; backdrop-filter: blur(8px); background: rgba(17,17,17,.85); }
+  header .wrap { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  header h1 span { color: var(--pc); }
+  header nav { display: flex; gap: 4px; flex-wrap: wrap; }
+  header nav a { font-size: 12px; color: var(--mu); padding: 6px 10px; border-radius: 6px; text-decoration: none; transition: all .15s; }
+  header nav a:hover { color: var(--tx); background: var(--br); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 32px 28px 80px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 80px; }
+  section h2 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 6px; letter-spacing: -0.4px; }
+  section h2 .num { display: inline-block; min-width: 28px; height: 28px; line-height: 28px; text-align: center; font-size: 12px; font-weight: 700; color: var(--pc); background: rgba(254,44,85,.1); border-radius: 6px; margin-right: 10px; vertical-align: middle; }
+  section .sub { color: var(--mu); font-size: 13px; margin-bottom: 22px; }
+
+  .hero { background: linear-gradient(135deg, rgba(254,44,85,.12), rgba(254,44,85,.02)); border: 1px solid rgba(254,44,85,.25); border-radius: 14px; padding: 28px; margin-bottom: 48px; }
+  .hero h2 { font-size: 24px; margin-bottom: 14px; }
+  .hero p { color: #ccc; font-size: 14px; max-width: 720px; }
+  .hero p b { color: #fff; }
+  .hero .pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 22px; }
+  .pillar { background: rgba(0,0,0,.35); border: 1px solid var(--br); border-radius: 10px; padding: 14px; }
+  .pillar .lbl { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .pillar .val { font-size: 14px; color: #fff; font-weight: 600; }
+
+  .card { background: var(--card); border: 1px solid var(--br); border-radius: 12px; padding: 20px; margin-bottom: 14px; }
+  .card h3 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .card p { font-size: 13.5px; color: #bbb; }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+
+  /* Mix table */
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--br); border-radius: 12px; overflow: hidden; }
+  th, td { padding: 12px 14px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--br); }
+  th { background: #161616; color: var(--mu); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+  td { color: #ddd; }
+  tr:last-child td { border-bottom: none; }
+  td.num { color: var(--pc); font-weight: 700; }
+
+  /* Tags */
+  .tag { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+  .t-fomo  { background: #2a1a0a; color: #ffaa44; }
+  .t-meme  { background: #0a1a2a; color: #44aaff; }
+  .t-edu   { background: #0a2a1a; color: #44dd88; }
+  .t-ugc   { background: #2a0a2a; color: #dd44dd; }
+  .t-clutch{ background: #2a0a0a; color: #ff5555; }
+  .t-tiktok{ background: rgba(254,44,85,.12); color: var(--pc); }
+  .t-yt    { background: rgba(255,0,0,.12); color: #ff5555; }
+  .t-ig    { background: rgba(225,48,108,.12); color: var(--ig); }
+
+  /* Hooks */
+  .hook { background: var(--card); border: 1px solid var(--br); border-radius: 12px; padding: 18px; }
+  .hook .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .hook .ttl { font-size: 15px; font-weight: 700; color: #fff; }
+  .hook .cr { font-size: 11px; color: var(--pc); font-weight: 700; background: rgba(254,44,85,.1); padding: 3px 8px; border-radius: 5px; }
+  .hook .desc { font-size: 13px; color: #aaa; margin-bottom: 12px; }
+  .hook .examples { display: flex; flex-direction: column; gap: 6px; }
+  .hook .ex { font-size: 12.5px; color: #ddd; padding: 9px 12px; background: #0c0c0c; border-left: 2px solid var(--pc); border-radius: 4px; font-style: italic; }
+
+  /* Ideas */
+  .ideas-grp { margin-bottom: 28px; }
+  .ideas-grp .grp-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--br); }
+  .ideas-grp .grp-head .ttl { font-size: 14px; font-weight: 700; color: #fff; }
+  .ideas-grp .grp-head .cnt { font-size: 11px; color: var(--dim); }
+  .ideas-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 8px; }
+  .idea { background: var(--card); border: 1px solid var(--br); border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #ccc; display: flex; gap: 10px; align-items: flex-start; }
+  .idea .n { font-size: 11px; color: var(--dim); font-weight: 700; min-width: 22px; padding-top: 1px; }
+  .idea .txt b { color: #fff; font-weight: 600; }
+
+  /* Test plan */
+  .day { background: var(--card); border: 1px solid var(--br); border-radius: 10px; padding: 14px 16px; margin-bottom: 8px; display: grid; grid-template-columns: 80px 1fr; gap: 16px; align-items: center; }
+  .day .dl { font-size: 11px; color: var(--dim); text-transform: uppercase; font-weight: 700; letter-spacing: .5px; }
+  .day .dl b { display: block; color: var(--pc); font-size: 18px; margin-bottom: 2px; }
+  .day .ct { font-size: 13px; color: #ddd; }
+  .day .ct b { color: #fff; }
+  .day .hyp { font-size: 11.5px; color: var(--mu); margin-top: 4px; }
+
+  /* Metrics traffic light */
+  .metric-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--br); align-items: center; font-size: 13px; }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-row.head { background: #161616; color: var(--mu); font-size: 11px; text-transform: uppercase; font-weight: 600; letter-spacing: .4px; }
+  .metric-row .name { color: #fff; font-weight: 600; }
+  .metric-row .red    { color: #ff5555; }
+  .metric-row .yellow { color: #ffaa44; }
+  .metric-row .green  { color: #44dd88; }
+  .metric-table { background: var(--card); border: 1px solid var(--br); border-radius: 12px; overflow: hidden; }
+
+  /* Checklist */
+  .checks { background: var(--card); border: 1px solid var(--br); border-radius: 12px; padding: 4px 0; }
+  .check { display: grid; grid-template-columns: 24px 1fr; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--br); font-size: 13px; align-items: flex-start; }
+  .check:last-child { border-bottom: none; }
+  .check .box { width: 16px; height: 16px; border: 1.5px solid var(--br2); border-radius: 4px; margin-top: 2px; }
+  .check .ct b { color: #fff; }
+  .check .ct { color: #bbb; }
+  .check .ct .hint { display: block; color: var(--dim); font-size: 11.5px; margin-top: 2px; }
+
+  /* Funnel */
+  .funnel { display: flex; flex-direction: column; gap: 8px; }
+  .stage { background: var(--card); border: 1px solid var(--br); border-radius: 10px; padding: 14px 18px; display: grid; grid-template-columns: 100px 1fr 1fr; gap: 16px; align-items: center; }
+  .stage .plat { font-size: 12px; font-weight: 700; }
+  .stage .role { font-size: 13px; color: #fff; font-weight: 600; }
+  .stage .role span { display: block; font-weight: 400; color: var(--mu); font-size: 12px; margin-top: 2px; }
+  .stage .out  { font-size: 12px; color: #aaa; }
+
+  /* Foot */
+  footer { text-align: center; padding: 32px 20px; color: var(--dim); font-size: 12px; border-top: 1px solid var(--br); margin-top: 60px; }
+  footer a { color: var(--mu); text-decoration: none; border-bottom: 1px dashed var(--br2); }
+
+  @media (max-width: 700px) {
+    main { padding: 20px 16px 60px; }
+    section h2 { font-size: 18px; }
+    .stage { grid-template-columns: 1fr; gap: 6px; }
+    .day { grid-template-columns: 60px 1fr; gap: 12px; }
+    .metric-row { grid-template-columns: 1fr; gap: 4px; }
+    .metric-row.head { display: none; }
+    .metric-row .name::after { content:''; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>CS2 <span>Vidos</span> — Контент-стратегия</h1>
+    <nav>
+      <a href="#mix">Микс</a>
+      <a href="#hooks">Хуки</a>
+      <a href="#ideas">Идеи</a>
+      <a href="#funnel">Воронка</a>
+      <a href="#tests">Тесты</a>
+      <a href="#metrics">Метрики</a>
+      <a href="#checklist">Чеклист</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- HERO -->
+<section class="hero">
+  <h2>Главный тезис</h2>
+  <p>В CS2-нише алгоритм вытягивает только <b>эмоция + узнаваемость + темп</b>. Проигрывают «обзоры» и сюжетные нарезки длиннее 25 секунд. Выигрывает <b>высокий CR (>60%) на коротком видео + триггер споры</b>. Главный сигнал — Completion Rate, второй — Save:Like ratio. Стратегия строится вокруг них.</p>
+  <div class="pillars">
+    <div class="pillar"><div class="lbl">Приоритет платформы</div><div class="val">TikTok → Reels → Shorts</div></div>
+    <div class="pillar"><div class="lbl">Цель CR</div><div class="val">>60% (отлично >70%)</div></div>
+    <div class="pillar"><div class="lbl">Save:Like</div><div class="val">>0.3 — масштабируем</div></div>
+    <div class="pillar"><div class="lbl">Темп</div><div class="val">7 видео / неделю</div></div>
+  </div>
+</section>
+
+<!-- MIX -->
+<section id="mix">
+  <h2><span class="num">01</span>Контент-микс на неделю</h2>
+  <p class="sub">7 видео в TikTok как ядро. Reels и Shorts — кросспост лучшего, не отдельный поток.</p>
+  <table>
+    <thead><tr><th>Видео</th><th>Тип</th><th>Цель</th><th>Длина</th></tr></thead>
+    <tbody>
+      <tr><td class="num">×3</td><td><span class="tag t-meme">Meme/FOMO</span></td><td>Вирусный охват + shares (×3 в TikTok)</td><td>8–14с</td></tr>
+      <tr><td class="num">×2</td><td><span class="tag t-clutch">Clutch/Highlight</span></td><td>Высокий CR на трендовом звуке</td><td>12–20с</td></tr>
+      <tr><td class="num">×1</td><td><span class="tag t-edu">Обучающий</span></td><td>Saves + конверсия в подписку</td><td>15–25с</td></tr>
+      <tr><td class="num">×1</td><td><span class="tag t-ugc">UGC / Diff-тейк</span></td><td>Комменты, спор, профиль</td><td>10–18с</td></tr>
+    </tbody>
+  </table>
+  <div class="card" style="margin-top:14px;">
+    <h3>Принцип «80/20»</h3>
+    <p>80% постов работают на алгоритм (охват, эмоция, мем). 20% — на удержание профиля (saves, follow). Без обучающего у тебя будут просмотры и нулевые подписки — классическая ошибка геймерских аккаунтов.</p>
+  </div>
+</section>
+
+<!-- HOOKS -->
+<section id="hooks">
+  <h2><span class="num">02</span>Топ-5 хуков и скрипты</h2>
+  <p class="sub">Первые 1.5 секунды решают всё. Текст на экране в первый кадр обязателен.</p>
+  <div class="grid-2">
+
+    <div class="hook">
+      <div class="head"><div class="ttl">Diff / Ratio</div><div class="cr">CR ~75%</div></div>
+      <div class="desc">Конфликтный сетап: «он считал X — а потом Y». Самый сильный хук в CS2.</div>
+      <div class="examples">
+        <div class="ex">«Он сказал что я bot. Через 30 секунд…»</div>
+        <div class="ex">«Silver написал что я hardstuck Global. Окей.»</div>
+        <div class="ex">«Тимейт: rush B noob. Я: …»</div>
+      </div>
+    </div>
+
+    <div class="hook">
+      <div class="head"><div class="ttl">Toxic-цитата</div><div class="cr">CR ~70%</div></div>
+      <div class="desc">Скриншот чата / запись войса первым кадром. Контекст после.</div>
+      <div class="examples">
+        <div class="ex">[chat] «kys ur bot» → переход в clutch</div>
+        <div class="ex">«русский войс»: компиляция + реакция</div>
+        <div class="ex">Голос-сообщение от тимейта: «выкинь awp»</div>
+      </div>
+    </div>
+
+    <div class="hook">
+      <div class="head"><div class="ttl">Цифра / Факт</div><div class="cr">CR ~65%</div></div>
+      <div class="desc">Конкретное число в первый кадр. Должно противоречить интуиции.</div>
+      <div class="examples">
+        <div class="ex">«1% игроков знает этот flick»</div>
+        <div class="ex">«99% делают этот smoke на Mirage неправильно»</div>
+        <div class="ex">«Этот раунд я прокручивал 200 раз»</div>
+      </div>
+    </div>
+
+    <div class="hook">
+      <div class="head"><div class="ttl">Контраст (Before/After)</div><div class="cr">CR ~62%</div></div>
+      <div class="desc">Два состояния side-by-side: ранг, скилл, до/после патча.</div>
+      <div class="examples">
+        <div class="ex">«Silver vs Global на одном раунде»</div>
+        <div class="ex">«AWP-флик: Pro / Average / Silver»</div>
+        <div class="ex">«Reaction time: 0.3с vs 1.2с»</div>
+      </div>
+    </div>
+
+    <div class="hook">
+      <div class="head"><div class="ttl">Tilt / Fail</div><div class="cr">CR ~58%</div></div>
+      <div class="desc">Эмоциональный пик в первый кадр — крик, реакция, fail-момент. Работает на меме.</div>
+      <div class="examples">
+        <div class="ex">Кадр с фейлом → «как я слил MM за 4 секунды»</div>
+        <div class="ex">Headshot в свою же дымку → реакция</div>
+        <div class="ex">Teamkill в clutch → молчание → текст «и так каждый матч»</div>
+      </div>
+    </div>
+
+    <div class="hook">
+      <div class="head"><div class="ttl">Тренд + сетап</div><div class="cr">CR varies</div></div>
+      <div class="desc">Отдельно тренд/звук в CS2 не работает. Только наложенный на Diff или Clutch.</div>
+      <div class="examples">
+        <div class="ex">Trending audio + текст «когда тимейт зовёт rush B»</div>
+        <div class="ex">Тренд-формат «POV:» + AWP highlight</div>
+        <div class="ex">Звук-мем + Diff против читера</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- IDEAS -->
+<section id="ideas">
+  <h2><span class="num">03</span>33 идеи видео — пул для тестов</h2>
+  <p class="sub">Используй как банк гипотез. Каждую идею прогоняй через хук-формулу из блока 02.</p>
+
+  <div class="ideas-grp">
+    <div class="grp-head"><span class="tag t-clutch">Diff / Ratio</span><span class="ttl">Конфликтный формат</span><span class="cnt">10 идей</span></div>
+    <div class="ideas-list">
+      <div class="idea"><span class="n">01</span><span class="txt"><b>Spectate чита</b> — что НЕ так в его движениях. Сравнение с pro</span></div>
+      <div class="idea"><span class="n">02</span><span class="txt"><b>3 кадра — кто из них чит?</b> Голосование в комментах</span></div>
+      <div class="idea"><span class="n">03</span><span class="txt"><b>«Silver написал что я boost»</b> — следующий раунд: ace</span></div>
+      <div class="idea"><span class="n">04</span><span class="txt"><b>Тимейт обозвал bot</b> → kill cam: фраг через 4 стенки</span></div>
+      <div class="idea"><span class="n">05</span><span class="txt"><b>Один и тот же раунд</b>: топ-MM vs дно-MM</span></div>
+      <div class="idea"><span class="n">06</span><span class="txt"><b>ELO разница</b>: как видят smoke на Mirage A разные ранги</span></div>
+      <div class="idea"><span class="n">07</span><span class="txt"><b>Crosshair placement</b>: видно ли разницу за 2 секунды</span></div>
+      <div class="idea"><span class="n">08</span><span class="txt"><b>Утилка одного бомба</b>: Silver/Mid/Global — где встают</span></div>
+      <div class="idea"><span class="n">09</span><span class="txt"><b>«Это не aim, это luck»</b> → 5 одинаковых фрагов подряд</span></div>
+      <div class="idea"><span class="n">10</span><span class="txt"><b>Reaction time</b>: pro vs ты vs тимейт-новичок (раздели экран)</span></div>
+    </div>
+  </div>
+
+  <div class="ideas-grp">
+    <div class="grp-head"><span class="tag t-fomo">Clutch / Highlight</span><span class="ttl">Эмоциональный пик</span><span class="cnt">6 идей</span></div>
+    <div class="ideas-list">
+      <div class="idea"><span class="n">11</span><span class="txt"><b>1v5 на B Mirage</b> с реакцией войса</span></div>
+      <div class="idea"><span class="n">12</span><span class="txt"><b>Ace через дым</b> с пистолетом — slow-mo последний фраг</span></div>
+      <div class="idea"><span class="n">13</span><span class="txt"><b>Last bullet 1HP</b> clutch — таймер на экране</span></div>
+      <div class="idea"><span class="n">14</span><span class="txt"><b>Eco round AWP</b> highlight + цифра ущерба</span></div>
+      <div class="idea"><span class="n">15</span><span class="txt"><b>Wallbang clutch</b> — со звуком сердцебиения</span></div>
+      <div class="idea"><span class="n">16</span><span class="txt"><b>Defuse под нос</b> — стрелка-таймер 0.3с</span></div>
+    </div>
+  </div>
+
+  <div class="ideas-grp">
+    <div class="grp-head"><span class="tag t-meme">Meme / FOMO</span><span class="ttl">Виральный охват</span><span class="cnt">8 идей</span></div>
+    <div class="ideas-list">
+      <div class="idea"><span class="n">17</span><span class="txt"><b>Когда тимейт зовёт rush B</b> — тренд-аудио + кадр-фейл</span></div>
+      <div class="idea"><span class="n">18</span><span class="txt"><b>Russian voice chat</b> compilation — 5 секундных фраз</span></div>
+      <div class="idea"><span class="n">19</span><span class="txt"><b>«Я не bait, я держу angle»</b> — мем-формат POV</span></div>
+      <div class="idea"><span class="n">20</span><span class="txt"><b>Когда у тебя AK 1HP</b> — слоумо реакции лица</span></div>
+      <div class="idea"><span class="n">21</span><span class="txt"><b>Trust the process</b> — провалился на eco</span></div>
+      <div class="idea"><span class="n">22</span><span class="txt"><b>Smoke не зашёл</b> — поза «я устал»</span></div>
+      <div class="idea"><span class="n">23</span><span class="txt"><b>Реакция на teamkill</b> — тишина + текст</span></div>
+      <div class="idea"><span class="n">24</span><span class="txt"><b>Когда тимейт пикает knife</b> — компиляция фейлов</span></div>
+    </div>
+  </div>
+
+  <div class="ideas-grp">
+    <div class="grp-head"><span class="tag t-edu">Обучающий</span><span class="ttl">Saves + подписка</span><span class="cnt">5 идей</span></div>
+    <div class="ideas-list">
+      <div class="idea"><span class="n">25</span><span class="txt"><b>3 smoke на Mirage A</b> которые надо знать — за 20 секунд</span></div>
+      <div class="idea"><span class="n">26</span><span class="txt"><b>Crosshair placement</b> до выстрела — 1 правило</span></div>
+      <div class="idea"><span class="n">27</span><span class="txt"><b>Recoil control AK</b> — 1 трюк который меняет всё</span></div>
+      <div class="idea"><span class="n">28</span><span class="txt"><b>Eco round</b> — что покупать на 800$ (с цифрами)</span></div>
+      <div class="idea"><span class="n">29</span><span class="txt"><b>Pre-aim spots</b> на Inferno A — 5 точек</span></div>
+    </div>
+  </div>
+
+  <div class="ideas-grp">
+    <div class="grp-head"><span class="tag t-ugc">UGC / Реакция</span><span class="ttl">Личность + комменты</span><span class="cnt">4 идеи</span></div>
+    <div class="ideas-list">
+      <div class="idea"><span class="n">30</span><span class="txt"><b>Реакция на pro-play</b> вчера — что бы сделал ты</span></div>
+      <div class="idea"><span class="n">31</span><span class="txt"><b>Тейк по новому патчу</b> — 1 спорное мнение</span></div>
+      <div class="idea"><span class="n">32</span><span class="txt"><b>Разбор слитого матча</b> подписчика — присылайте demo</span></div>
+      <div class="idea"><span class="n">33</span><span class="txt"><b>Hot take по тир-листу карт</b> — расставь от худшей к лучшей</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- FUNNEL -->
+<section id="funnel">
+  <h2><span class="num">04</span>Кросс-платформенная воронка</h2>
+  <p class="sub">TikTok — лаборатория. Reels и Shorts — переиспользование победителей. YouTube long — фундамент.</p>
+  <div class="funnel">
+    <div class="stage">
+      <div class="plat"><span class="tag t-tiktok">TikTok</span></div>
+      <div class="role">Котёл гипотез<span>Гонишь объём 7+/нед, тестируешь хуки</span></div>
+      <div class="out">Метрика для отбора: <b>CR > 60%</b> и <b>Save:Like > 0.3</b></div>
+    </div>
+    <div class="stage">
+      <div class="plat"><span class="tag t-ig">Reels</span></div>
+      <div class="role">Только победители<span>Постишь только то, что в TikTok дало >100к</span></div>
+      <div class="out">IG любит сохранения, не лайки. Ставка на <b>Save Rate &gt;1%</b></div>
+    </div>
+    <div class="stage">
+      <div class="plat"><span class="tag t-yt">Shorts</span></div>
+      <div class="role">Те же видео + отдельный поток<span>Кросспост победителей TikTok</span></div>
+      <div class="out">Бесплатный канал на топ-of-funnel YT</div>
+    </div>
+    <div class="stage">
+      <div class="plat"><span class="tag t-yt">YouTube long</span></div>
+      <div class="role">Фундамент канала<span>1 видео в нед, 8–12 мин: нарезка матча, тир-лист, разбор</span></div>
+      <div class="out">Долгосрочный трафик + монетизация. <b>Не пропускать первые 2 месяца</b> даже без просмотров</div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTS -->
+<section id="tests">
+  <h2><span class="num">05</span>14-дневный план тестов</h2>
+  <p class="sub">5 гипотез, парные A/B. Все цифры пишешь в трекер — после 14 дней top-quartile по CR определит формат-победитель.</p>
+
+  <div class="day">
+    <div class="dl"><b>1–3</b>Дни</div>
+    <div class="ct"><b>Гипотеза 1: Diff vs Clutch на одинаковом материале</b>
+      <div class="hyp">Сними 1 раунд → нарежь 2 версии: один с хуком «Diff» (текст-цитата), другой как чистый Highlight. Что даст CR выше?</div>
+    </div>
+  </div>
+  <div class="day">
+    <div class="dl"><b>4–7</b>Дни</div>
+    <div class="ct"><b>Гипотеза 2: Длина 8–12с vs 18–22с на мемах</b>
+      <div class="hyp">Один мем-формат, 2 длины. Сравни Save:Like — обычно короткие лайкают, длинные сохраняют.</div>
+    </div>
+  </div>
+  <div class="day">
+    <div class="dl"><b>8–10</b>Дни</div>
+    <div class="ct"><b>Гипотеза 3: Подпись на видео в первый кадр vs «голый» кадр</b>
+      <div class="hyp">Многие думают «подпись отвлекает от геймплея» — на самом деле без неё CR падает на 15–20%. Проверь.</div>
+    </div>
+  </div>
+  <div class="day">
+    <div class="dl"><b>11–13</b>Дни</div>
+    <div class="ct"><b>Гипотеза 4: Toxic-цитата своя vs органический коммент-фарм</b>
+      <div class="hyp">Сам пишешь провокацию первым кадром vs закидываешь крючок в комменты с фейк-аккаунта. Что лучше двигает share-rate?</div>
+    </div>
+  </div>
+  <div class="day">
+    <div class="dl"><b>14</b>День</div>
+    <div class="ct"><b>Анализ + 3 версии одного клипа</b>
+      <div class="hyp">Возьми лучший клип недели → сделай 3 версии хука (Diff / Toxic / Цифра). Постни с разницей 24ч. Variance покажет, насколько хук — главный рычаг.</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px;">
+    <h3>Что считать победой теста</h3>
+    <p>Разница &gt;30% между версиями по CR или Save:Like. Если &lt;15% — это шум, формат «нейтральный», ищи дальше. Если &gt;100% — масштабируй немедленно (5+ версий за следующую неделю).</p>
+  </div>
+</section>
+
+<!-- METRICS -->
+<section id="metrics">
+  <h2><span class="num">06</span>Метрики-светофор</h2>
+  <p class="sub">Что делать в зависимости от того, какие цифры пришли в трекер. Применяй автоматически.</p>
+  <div class="metric-table">
+    <div class="metric-row head"><div>Метрика</div><div>Красная</div><div>Жёлтая</div><div>Зелёная</div></div>
+    <div class="metric-row">
+      <div class="name">CR (досмотр)</div>
+      <div class="red">&lt;50% — в мусор, формат не повторять</div>
+      <div class="yellow">50–60% — переснять с другим хуком</div>
+      <div class="green">&gt;60% — повторить формат 2–3 раза</div>
+    </div>
+    <div class="metric-row">
+      <div class="name">Save:Like</div>
+      <div class="red">&lt;0.1 — нет ценности, только развлечение</div>
+      <div class="yellow">0.1–0.3 — норма, не масштабируй</div>
+      <div class="green">&gt;0.3 — серия, делай 5+ вариантов</div>
+    </div>
+    <div class="metric-row">
+      <div class="name">Share:Like</div>
+      <div class="red">&lt;0.05 — нет триггера к шерингу</div>
+      <div class="yellow">0.05–0.15 — нормально</div>
+      <div class="green">&gt;0.15 — вирусный потенциал, докупай рекламу</div>
+    </div>
+    <div class="metric-row">
+      <div class="name">Profile Visit %</div>
+      <div class="red">&lt;1% — нет крючка к личности</div>
+      <div class="yellow">1–3% — стандарт</div>
+      <div class="green">&gt;3% — подписки польются, проверь профиль</div>
+    </div>
+    <div class="metric-row">
+      <div class="name">Follow Conv.</div>
+      <div class="red">&lt;5% — проблема в био/закрепе</div>
+      <div class="yellow">5–10% — приемлемо</div>
+      <div class="green">&gt;10% — профиль работает, гони трафик</div>
+    </div>
+  </div>
+</section>
+
+<!-- CHECKLIST -->
+<section id="checklist">
+  <h2><span class="num">07</span>Чеклист продакшена</h2>
+  <p class="sub">Перед публикацией каждого видео. Если хоть один пункт не закрыт — не постить.</p>
+  <div class="checks">
+    <div class="check"><div class="box"></div><div class="ct"><b>Хук в первые 1.5 секунды</b><span class="hint">Эмоция / цифра / конфликт. Без хука алгоритм не возьмёт даже идеальный геймплей.</span></div></div>
+    <div class="check"><div class="box"></div><div class="ct"><b>Текст на экране в первый кадр</b><span class="hint">Звук может быть выключен. Хук должен читаться без звука за 0.5 секунды.</span></div></div>
+    <div class="check"><div class="box"></div><div class="ct"><b>Длина оптимизирована под формат</b><span class="hint">Meme: 8–14с, Clutch: 12–20с, Обучающий: 15–25с. Нет «свободного хвоста».</span></div></div>
+    <div class="check"><div class="box"></div><div class="ct"><b>Громкость нормализована</b><span class="hint">Peak пиков сглажен, голос/выстрелы не оглушают. Алгоритм скипает резкие пики.</span></div></div>
+    <div class="check"><div class="box"></div><div class="ct"><b>Заложен триггер коммента</b><span class="hint">Спорный тейк / вопрос / визуальная ошибка-приманка. Без коммента = нет повторного показа.</span></div></div>
+    <div class="check"><div class="box"></div><div class="ct"><b>CTA в конце или в комментах</b><span class="hint">«Подпишись на часть 2», «больше таких — в профиле». Не каждое видео, но 3 из 7 в неделю.</span></div></div>
+    <div class="check"><div class="box"></div><div class="ct"><b>Caption: 1–2 строки + 3–5 хештегов</b><span class="hint">Длинные описания топят пост. #cs2 #fyp + 2–3 нишевых (#mirage, #awp, #clutch).</span></div></div>
+    <div class="check"><div class="box"></div><div class="ct"><b>Цикличность на конце</b><span class="hint">Последний кадр визуально стыкуется с первым → CR растёт за счёт повторных просмотров.</span></div></div>
+    <div class="check"><div class="box"></div><div class="ct"><b>Запись результатов в трекер</b><span class="hint">Через 24ч и через 7 дней. Без замеров не работает ни одна гипотеза.</span></div></div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Стратегия — рабочий документ. Обновляй после каждых 14 дней замеров.<br>
+  Используй вместе с <a href="./index.html">vidos-tracker</a> для замеров метрик.
+</footer>
+
+</body>
+</html>

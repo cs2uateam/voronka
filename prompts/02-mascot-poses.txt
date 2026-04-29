@@ -1,0 +1,152 @@
+ПРОМТ №2 — БИБЛИОТЕКА ПОЗ МАСКОТА
+==================================
+
+ЦЕЛЬ: генерировать маскота в новых позах, сохраняя айдентику с эталона.
+Все позы — с динамичным телом (squash & stretch, наклоны, скрутки).
+
+
+ЗАГРУЗКА В NANO BANANA
+----------------------
+Прикрепить ОДИН файл — твой готовый эталон mascot-canonical.png.
+Логотип уже впечён, отдельный файл логотипа не нужен.
+
+Затем вставить мастер-шаблон ниже + блок нужной позы.
+
+
+===========================================
+МАСТЕР-ШАБЛОН (на английском)
+===========================================
+
+I'm providing 1 reference image: my canonical mascot character (a cartoon grenade in tactical gear).
+
+TASK: Generate a NEW image of the SAME exact character, in a new pose. Keep 100% character identity from the reference — same body design, same vest, same logo on chest plate, same colors, same flat style.
+
+NEW POSE:
+[ВСТАВИТЬ ОПИСАНИЕ ПОЗЫ ИЗ БИБЛИОТЕКИ НИЖЕ]
+
+LOCK IDENTITY (do NOT change):
+- Olive-green grenade body with safety lever and pull-ring on top
+- Same body PROPORTIONS and DESIGN (rounded grenade torso, short stubby limbs) — but the body itself is FULLY POSEABLE: it can squash, stretch, lean, twist, tilt, and bend dynamically as the pose requires. The torso, arms, legs, and head should move expressively to sell the action. This is cartoon animation — NOT a stiff statue.
+- Same face design: thick angular eyebrows, simple cartoon eyes
+- Tactical vest with the brand logo on chest plate (copy logo 1:1 from reference)
+- Ammo belt with shotgun shells
+- Fingerless gloves
+- Combat boots
+
+LOCK STYLE (MOST IMPORTANT — match reference exactly):
+- FLAT colors only — NO gradients, NO shading, NO highlights, NO cel-shading
+- NO shadows — no cast shadow under feet, no ambient occlusion
+- Solid color fills with clean black outline, uniform line weight
+- Same limited 4-5 color palette as reference
+- Vector-style sticker aesthetic
+- DYNAMIC body language: cartoon squash & stretch, exaggerated motion, tilted axis, weight shift, expressive limbs. Avoid stiff symmetrical "T-pose" stances unless explicitly stated.
+
+WEAPON / PROP STYLE (если в позе оружие или предмет):
+- Drawn in the same flat cartoon style as the character
+- Same line weight, no realistic detail, no metal shading
+- Solid fills only
+
+OUTPUT:
+- Full-body, character centered
+- Solid flat dark grey background #1a1a1a or transparent
+- Square 1:1 aspect ratio
+- Same sticker/mascot illustration aesthetic as reference
+
+
+===========================================
+БИБЛИОТЕКА ПОЗ
+===========================================
+
+--- БОЕВЫЕ / ЭКШН ---
+
+[01] AK-СТОЙКА (универсальный hero shot)
+Full-body action stance — holding an AK-47 with both hands, weapon shouldered and aimed forward toward camera, slight forward lean, feet planted shoulder-width apart, finger on trigger, looking down the sights with focused expression. Confident, grounded, ready-to-fire posture.
+
+[02] БРОСАЕТ СМОК
+Throwing a smoke grenade overhead with right hand, left arm extended for balance, mid-motion, dynamic action stance.
+
+[03] AWP ЛЁЖА
+Lying prone on the ground, aiming a long AWP sniper rifle, scope to eye, finger on trigger, fully concentrated.
+
+[04] ДЕФУЗ БОМБЫ
+Kneeling on one knee, both hands working on a defuse kit cable, looking down at the bomb, focused intense expression.
+
+[05] KNEE-SLIDE СО СТРЕЛЬБОЙ
+Sliding forward on one bent knee across the ground, body fully tilted backward at a 45-degree angle, torso twisted slightly to camera-right, the rear leg stretched out long behind for balance, both stubby arms extended forward gripping an AK-47 firing toward the camera with bright muzzle flash, head locked forward with sharp focused expression and squinted eyes. Cape-like motion lines trail behind the body.
+
+[06] СТЕЛС-КРАУЛ ИЗ-ЗА УГЛА
+Belly-down on the floor in a low army crawl, body fully stretched out long like a cartoon lizard, one elbow dragging the body forward while the opposite leg pushes off, torso slightly twisted, head poked around a corner-edge of the frame with only one wide cartoonish eye and the top of the grenade pull-ring visible past the corner. Devious sneaky expression, eyebrow raised.
+
+
+--- ЭМОЦИИ / КЛАТЧ ---
+
+[07] КЛАТЧ-ПОБЕДА
+Both fists raised in the air, head tilted back, screaming victory with mouth wide open, eyes squeezed shut, triumphant celebration.
+
+[08] BACKFLIP-ПОБЕДА
+Full mid-air backflip — body fully inverted upside-down at the peak of rotation, torso curled tight into a ball with stubby legs tucked toward the chest and arms thrown out wide horizontally, head tilted back with mouth wide open in a triumphant scream, eyes squeezed shut with pure joy. Spiral motion arc drawn behind the body. Weightless feeling, exaggerated cartoon physics.
+
+[09] ТИЛЬТ / РЕЙДЖ
+Stomping on a broken keyboard on the ground, fists clenched at sides, face red with rage, steam coming out of head, mouth open yelling.
+
+[10] РАЗМЫШЛЯЕТ / STRAT-CALL
+Standing relaxed, right hand on chin in thinking pose, slight head tilt, raised eyebrow, contemplative expression. Small floating question mark above head.
+
+[11] ЧИЛЛ-ФЛЕКС
+Standing casually with arms crossed over chest, slight smug grin, weight on one leg, confident pose. Hero shot.
+
+
+--- КОНТЕНТНЫЕ / УТИЛИТАРНЫЕ ---
+
+[12] POV-ГЕЙМЕР ЗА СТАНЦИЕЙ
+Sitting in a black gaming chair at a desk, wearing oversized gaming headset over the head, both stubby hands on a mechanical keyboard and gaming mouse, glowing monitor in front showing CS2 gameplay, focused intense face lit by screen glow. Three-quarter view from front.
+
+[13] ПОКАЗЫВАЕТ СКРИН ЧАТА (под Toxic-цитата)
+Standing facing camera, holding up a smartphone with the right hand toward the viewer — phone screen tilted so the chat message on it is clearly readable, left hand on hip, smug "are you kidding me" expression with one raised eyebrow. The phone is the focal point of the composition.
+
+[14] ТАКТИК У КАРТЫ (под обучающий контент)
+Standing next to a large CS2 map illustration (Mirage layout) mounted on a wall, pointing at a specific spot on the map with one extended index finger, head turned back to look at the camera with a confident teaching expression, free hand on hip. Coach / strategist vibe.
+
+
+--- МЕМЫ ---
+
+[15] ПОПКОРН-ВАТЧЕР
+Sitting cross-legged on the floor with body slightly hunched forward in fascination, torso leaned in toward the off-screen drama, one shoulder lifted higher than the other, head tilted with curiosity, holding a giant red-striped popcorn bucket between both stubby hands, mouth open mid-chew, eyes wide and squinting. A few popcorn pieces flying mid-air. Body weight shifted forward, feet relaxed at sides.
+
+[16] НА БОМБЕ ВЕРХОМ (РОДЕО)
+Mid-flight riding a large red C4 bomb like a rodeo bull — body fully arched backward in wild excitement, torso twisted to the side, one stubby leg kicked up high in the air, the other hooked around the bomb, one hand gripping the bomb handle, the other arm thrown up "yeehaw" with finger pointing skyward, head tipped back, mouth wide open yelling. Tilted dynamic axis, exaggerated motion lines around the bomb.
+
+[17] СПИТ ОБНИМАЯ AWP
+Curled up sleeping on the ground in an exaggerated cozy fetal position — torso curved into a soft C-shape, one stubby leg pulled up to the chest, the other stretched out long behind, head buried into the side of a long AWP sniper rifle hugged tightly to the chest, body squashed sideways into the floor as if sinking into it. Cheek pressed into the rifle, peaceful tiny smile, drool bubble, three floating Zzz letters above.
+
+[18] YEET ТИМЕЙТА-ГРАНАТУ
+Mid-throw windup motion — body twisted hard sideways with full torso rotation, back foot planted and front leg lifting off the ground, both stubby arms cocked back over the shoulder gripping a smaller terrified teammate (a tiny stick-figure soldier) by the collar like a grenade about to be thrown, head turned forward with a deranged wide grin, one eye squinted aiming at target. Heavy motion lines behind the throwing arm.
+
+
+===========================================
+ОБЩИЕ ПРАВИЛА
+===========================================
+
+1. Каждый раз пишешь явно: где наклон корпуса, какая рука/нога куда летит,
+   что сжато / что растянуто. Banana буквально читает анатомию.
+
+2. Если возвращается слишком статично — follow-up:
+   "Same image, but make the body more dynamic. Add tilt, twist, weight shift,
+   exaggerated cartoon motion. Avoid stiff symmetrical posing."
+
+3. Если стиль ушёл от flat-эталона — follow-up:
+   "Same character and pose, but return to flat sticker style from reference.
+   Remove all shading, gradients, shadows. Pure flat colors with black outline."
+
+4. Если логотип на жилете слетел / стал кривым — follow-up:
+   "Same image, but re-render the chest logo to match the reference exactly.
+   Flat, undistorted, perfectly centered on the chest plate."
+
+
+===========================================
+СОХРАНЕНИЕ
+===========================================
+
+Каждую готовую позу сохраняй в vidos-tracker/assets/poses/
+с понятным именем: mascot-pose-ak.png, mascot-pose-rage.png, и т.д.
+Это твоя библиотека для оверлеев в видео и стикеров.

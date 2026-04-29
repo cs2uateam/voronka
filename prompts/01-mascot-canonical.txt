@@ -1,0 +1,100 @@
+ПРОМТ №1 — ЭТАЛОН МАСКОТА (упрощённый, flat-стайл)
+====================================================
+
+ЦЕЛЬ: создать мастер-референс маскота с настоящим логотипом.
+Минимум деталей, плоские цвета, без теней. Sticker-friendly look.
+Использовать как основу для всех последующих генераций.
+
+
+ПОДГОТОВКА ЛОГОТИПА
+-------------------
+- Формат: PNG с прозрачным фоном (либо на сплошном белом/чёрном)
+- Разрешение: минимум 512x512, лучше 1024+
+- Версия: финальный цветной вариант, который должен оказаться на жилете
+
+
+ЗАГРУЗКА В NANO BANANA
+----------------------
+Прикрепить ДВА файла в одном сообщении, в таком порядке:
+
+1. Image 1 — исходная фотка маскота-гранаты
+2. Image 2 — логотип бренда (PNG)
+
+Затем вставить промт ниже.
+
+
+===========================================
+ПРОМТ (копировать целиком, на английском)
+===========================================
+
+I'm providing 2 reference images:
+- Image 1: a cartoon grenade mascot character
+- Image 2: my official brand logo
+
+TASK: Create a SIMPLIFIED, FLAT canonical version of the mascot from Image 1, with my real logo from Image 2 applied. This is the master reference — keep it minimal, clean, sticker-friendly.
+
+KEEP THE CHARACTER (from Image 1):
+- Olive-green grenade body shape with safety lever and pull-ring on top
+- Body proportions: rounded grenade torso, short stubby arms and legs
+- Face: thick angular eyebrows, confident neutral expression, simple cartoon eyes
+- Tactical vest with chest plate
+- Ammo belt with shotgun shells (simplified — just a row of shapes)
+- Fingerless gloves
+- Combat boots
+
+REPLACE (using Image 2):
+- The orange X on the chest plate → put my logo from Image 2, copied 1:1, exact shape and colors, centered on the chest plate, completely flat (no fabric texture, no distortion, no shading)
+
+REMOVE / SIMPLIFY:
+- Background — completely removed, solid flat dark grey #1a1a1a or transparent
+- Other soldier in background — removed
+- All debris, bullet casings, smoke, props — removed
+- Wrench/tool in hand — removed, hands empty (relaxed fists)
+- "MOD-G1" patch text — removed
+- Walkie-talkie — removed (declutter the vest)
+- Dog tags — removed
+- MOLLE webbing details — removed or reduced to minimal straight lines
+- Boot laces — simplified to minimum
+
+STYLE — FLAT AND CLEAN (MOST IMPORTANT):
+- FLAT colors only — NO gradients, NO shading, NO highlights, NO cel-shading, NO bevels
+- NO shadows — no cast shadow under feet, no ambient occlusion, no rim light
+- Solid color fills with clean black outline, uniform line weight
+- Minimum detail — only essential shapes and lines
+- Vector-style illustration look, like a sticker or Discord emoji
+- Limited palette: 4-5 colors maximum (olive base, one darker olive for separation, black linework, logo colors, skin tone if visible)
+
+OUTPUT SPECIFICATION:
+- Single full-body hero shot, character centered, facing 3/4 to camera-left
+- Confident grounded stance, arms relaxed at sides, both feet visible
+- Solid flat dark grey background (#1a1a1a) or fully transparent
+- Square 1:1 aspect ratio
+- Sticker / mascot illustration aesthetic
+
+
+===========================================
+ЕСЛИ ВЕРНЁТСЯ С ЛИШНИМИ ДЕТАЛЯМИ
+===========================================
+
+Follow-up для усиления упрощения:
+
+"Same character, but flatter. Remove ALL shading, ALL gradients,
+ALL highlights. Pure flat colors only, like a vector sticker.
+Black outline only, no internal shading lines."
+
+Если тени всё равно остаются:
+
+"Remove all shadows including the one under the character.
+No ambient occlusion. Pure flat fills only."
+
+Если логотип искажается:
+
+"Re-render the chest logo cleanly — copy it 1:1 from Image 2,
+flat, undistorted, perfectly centered on the chest plate."
+
+
+ФИНАЛ
+-----
+Сохранить итог как mascot-canonical.png в папке vidos-tracker/assets/.
+Этот файл — новый референс №1 во всех будущих промтах
+вместо исходной фотки.
