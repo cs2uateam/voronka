@@ -231,6 +231,22 @@
   .hist-btn { background: none; border: none; color: #333; cursor: pointer; font-size: 13px; padding: 3px 5px; border-radius: 5px; transition: color .15s; }
   .hist-btn:hover { color: #f0a030; }
 
+  /* voronka-sync panel */
+  .sync-section { display: none; }
+  .sync-section.show { display: block; }
+  .sync-head { display: flex; align-items: center; justify-content: space-between; }
+  .sync-conn { font-size: 11px; font-weight: 500; color: #666; text-transform: none; letter-spacing: 0; }
+  .sync-conn.ok { color: #3ddc84; }
+  .sync-conn.bad { color: #ff5566; }
+  .sync-textarea { width: 100%; box-sizing: border-box; background: #0a0a0a; color: #e8e8e8; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px; font: inherit; resize: vertical; min-height: 60px; }
+  .sync-textarea:focus { outline: none; border-color: var(--pc, #fe2c55); }
+  .sync-buttons { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .sync-status { font-size: 11px; color: #888; margin-left: auto; }
+  .sync-status.ok { color: #3ddc84; }
+  .sync-status.err { color: #ff5566; }
+  .sync-log { display: none; margin: 10px 0 0 0; background: #0a0a0a; color: #c8c8c8; padding: 10px; border-radius: 6px; font: 11px/1.45 ui-monospace, Consolas, monospace; max-height: 220px; overflow: auto; white-space: pre-wrap; border: 1px solid #1a1a1a; }
+  .sync-log.show { display: block; }
+
   @media (max-width: 800px) {
     .fg-top { grid-template-columns: 1fr 1fr; }
     .fg-mid { grid-template-columns: repeat(3, 1fr); }
@@ -328,6 +344,24 @@
   <div class="view-tabs">
     <button class="vtab active" id="vtTracker" onclick="switchView('tracker')">Трекер</button>
     <button class="vtab"        id="vtFunnel"  onclick="switchView('funnel')">Воронка</button>
+  </div>
+
+  <!-- Voronka-sync panel (YouTube only, requires local server) -->
+  <div class="add-section sync-section" id="syncSection">
+    <div class="sh sync-head">
+      <span>🔄 Sync с YouTube API</span>
+      <span id="syncConnDot" class="sync-conn">проверка соединения…</span>
+    </div>
+    <div class="field">
+      <label>Ссылка(и) на видео — по одной на строку</label>
+      <textarea id="syncUrls" class="sync-textarea" rows="3" placeholder="https://youtube.com/shorts/..."></textarea>
+    </div>
+    <div class="sync-buttons">
+      <button class="btn btn-primary" id="syncAddBtn" onclick="syncAdd()">+ Добавить через API</button>
+      <button class="btn btn-ghost" id="syncRefreshBtn" onclick="syncRefreshAll()">↻ Обновить все</button>
+      <span id="syncStatus" class="sync-status"></span>
+    </div>
+    <pre id="syncLog" class="sync-log"></pre>
   </div>
 
   <!-- Add form -->
@@ -750,6 +784,7 @@ function switchPlatform(plat) {
   document.getElementById('addSection').style.display   = isOverview ? 'none' : '';
   document.getElementById('trackerSec').style.display   = isOverview ? 'none' : '';
   document.getElementById('funnelSec').style.display    = isOverview ? 'none' : '';
+  updateSyncVisibility();
   if (isOverview) { renderOverview(); return; }
   document.documentElement.style.setProperty('--pc', PLATS[plat].color);
   rebuildTypeFilters();
@@ -904,6 +939,7 @@ function switchView(view) {
   document.getElementById('addSection').style.display  = view==='tracker' ? '' : 'none';
   document.getElementById('trackerSec').style.display  = view==='tracker' ? '' : 'none';
   document.getElementById('funnelSec').classList.toggle('vis', view==='funnel');
+  updateSyncVisibility();
   if (view==='funnel') renderFunnel();
 }
 
@@ -1389,6 +1425,99 @@ document.addEventListener('mousemove', e => {
 document.addEventListener('mouseout', e => { if(e.target.closest('[data-tip]')) ttip.style.display='none'; });
 document.getElementById('delModal').addEventListener('click', function(e){ if(e.target===this) closeDelModal(); });
 document.getElementById('histModal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
+
+// ── voronka-sync (local Python server at :8765) ────────────
+const SYNC_BASE = 'http://127.0.0.1:8765';
+let syncOnline = false;
+
+function updateSyncVisibility() {
+  const el = document.getElementById('syncSection');
+  if (!el) return;
+  const show = platform === 'youtube' && currentView === 'tracker';
+  el.classList.toggle('show', show);
+}
+
+async function syncProbe() {
+  const dot = document.getElementById('syncConnDot');
+  try {
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 1500);
+    const r = await fetch(SYNC_BASE + '/status', { signal: ctrl.signal });
+    if (!r.ok) throw new Error('bad status');
+    syncOnline = true;
+    dot.textContent = '✓ сервер запущен';
+    dot.className = 'sync-conn ok';
+  } catch {
+    syncOnline = false;
+    dot.textContent = '✗ запусти voronka.bat';
+    dot.className = 'sync-conn bad';
+  }
+}
+
+function syncSetStatus(text, cls) {
+  const el = document.getElementById('syncStatus');
+  el.textContent = text;
+  el.className = 'sync-status' + (cls ? ' ' + cls : '');
+}
+
+function syncAppendLog(text) {
+  const el = document.getElementById('syncLog');
+  el.textContent = text || '(no output)';
+  el.classList.add('show');
+}
+
+function syncSetBusy(busy) {
+  document.getElementById('syncAddBtn').disabled = busy;
+  document.getElementById('syncRefreshBtn').disabled = busy;
+}
+
+async function syncCall(path, body) {
+  if (!syncOnline) await syncProbe();
+  if (!syncOnline) {
+    syncSetStatus('Сервер не запущен — запусти voronka.bat', 'err');
+    return;
+  }
+  syncSetBusy(true);
+  try {
+    const r = await fetch(SYNC_BASE + path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    });
+    const data = await r.json();
+    syncAppendLog(data.log || '');
+    if (data.ok) {
+      syncSetStatus('Готово ✓', 'ok');
+      await loadFromJsonbin();
+    } else {
+      syncSetStatus('Ошибка: ' + (data.error || 'unknown'), 'err');
+    }
+  } catch (e) {
+    syncOnline = false;
+    document.getElementById('syncConnDot').textContent = '✗ запусти voronka.bat';
+    document.getElementById('syncConnDot').className = 'sync-conn bad';
+    syncSetStatus('Сервер недоступен', 'err');
+  } finally {
+    syncSetBusy(false);
+  }
+}
+
+async function syncAdd() {
+  const ta = document.getElementById('syncUrls');
+  const urls = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!urls.length) { syncSetStatus('Введи хотя бы один URL', 'err'); return; }
+  syncSetStatus(`Добавляю ${urls.length} URL(s)…`);
+  await syncCall('/add', { urls });
+  if (document.getElementById('syncStatus').classList.contains('ok')) ta.value = '';
+}
+
+async function syncRefreshAll() {
+  syncSetStatus('Обновляю метрики (может занять 30–60 сек)…');
+  await syncCall('/refresh');
+}
+
+syncProbe();
+setInterval(syncProbe, 15000);
 </script>
 </body>
 </html>
