@@ -76,20 +76,22 @@
 
   /* Table */
   .table-section { background: #111; border: 1px solid #1e1e1e; border-radius: 14px; overflow: hidden; }
-  .sec-head { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid #1e1e1e; gap: 12px; flex-wrap: wrap; }
+  .sec-head { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-bottom: 1px solid #1c1c1c; gap: 12px; flex-wrap: wrap; }
   .sec-head h2 { font-size: 10px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: .5px; }
   .filters { display: flex; gap: 8px; flex-wrap: wrap; }
-  .filters select, .filters input { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 7px; padding: 5px 9px; color: #ccc; font-size: 12px; outline: none; }
+  .filters select, .filters input { background: #161616; border: 1px solid #262626; border-radius: 7px; padding: 5px 9px; color: #ccc; font-size: 12px; outline: none; }
+  .filters select:focus, .filters input:focus { border-color: #3a3a3a; }
   .twrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 800px; }
-  thead th { padding: 9px 11px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; color: #444; border-bottom: 1px solid #1a1a1a; white-space: nowrap; }
-  tbody tr { border-bottom: 1px solid #161616; transition: background .1s; }
-  tbody tr:hover { background: #161616; }
+  thead th { padding: 8px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #555; border-bottom: 1px solid #1c1c1c; white-space: nowrap; font-weight: 600; }
+  thead th.num-h { text-align: right; }
+  tbody tr { border-bottom: 1px solid #151515; transition: background .12s; }
+  tbody tr:hover { background: #151515; }
   tbody tr:last-child { border-bottom: none; }
-  td { padding: 9px 11px; vertical-align: middle; }
-  td.tc { max-width: 190px; }
-  .tt { font-weight: 500; color: #ddd; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; display: block; }
-  .num { color: #ccc; font-variant-numeric: tabular-nums; }
+  td { padding: 7px 12px; vertical-align: middle; }
+  td.tc { max-width: 240px; }
+  .tt { font-weight: 500; color: #e5e5e5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; display: block; }
+  .num { color: #ccc; font-variant-numeric: tabular-nums; text-align: right; }
 
   /* Tags */
   .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin-top: 3px; }
@@ -231,21 +233,29 @@
   .hist-btn { background: none; border: none; color: #333; cursor: pointer; font-size: 13px; padding: 3px 5px; border-radius: 5px; transition: color .15s; }
   .hist-btn:hover { color: #f0a030; }
 
-  /* voronka-sync panel */
-  .sync-section { display: none; }
+  /* voronka-sync panel — compact bar */
+  .sync-section { display: none; margin-bottom: 14px; }
   .sync-section.show { display: block; }
-  .sync-authbox { padding: 8px 0; }
-  .sync-head { display: flex; align-items: center; justify-content: space-between; }
-  .sync-conn { font-size: 11px; font-weight: 500; color: #666; text-transform: none; letter-spacing: 0; }
+
+  .sync-auth-cta { display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: #111; border: 1px solid #1e1e1e; border-radius: 10px; flex-wrap: wrap; }
+  .sync-auth-text { font-size: 13px; color: #aaa; }
+
+  .sync-bar { display: flex; align-items: center; gap: 8px; padding: 7px 10px 7px 14px; background: #111; border: 1px solid #1e1e1e; border-radius: 10px; flex-wrap: wrap; }
+  .sync-conn { font-size: 14px; line-height: 1; color: #555; }
   .sync-conn.ok { color: #3ddc84; }
   .sync-conn.bad { color: #ff5566; }
-  .sync-textarea { width: 100%; box-sizing: border-box; background: #0a0a0a; color: #e8e8e8; border: 1px solid #2a2a2a; border-radius: 8px; padding: 10px; font: inherit; resize: vertical; min-height: 60px; }
-  .sync-textarea:focus { outline: none; border-color: var(--pc, #fe2c55); }
-  .sync-buttons { display: flex; gap: 8px; align-items: center; margin-top: 10px; flex-wrap: wrap; }
   .sync-status { font-size: 11px; color: #888; margin-left: auto; }
   .sync-status.ok { color: #3ddc84; }
   .sync-status.err { color: #ff5566; }
-  .sync-log { display: none; margin: 10px 0 0 0; background: #0a0a0a; color: #c8c8c8; padding: 10px; border-radius: 6px; font: 11px/1.45 ui-monospace, Consolas, monospace; max-height: 220px; overflow: auto; white-space: pre-wrap; border: 1px solid #1a1a1a; }
+  .sync-icon-btn { background: transparent; border: 1px solid #2a2a2a; color: #888; cursor: pointer; padding: 4px 9px; border-radius: 7px; font-size: 13px; line-height: 1; transition: color .12s, border-color .12s; }
+  .sync-icon-btn:hover { color: #ddd; border-color: #3a3a3a; }
+
+  .sync-add-form { margin-top: 8px; padding: 10px 12px; background: #0d0d0d; border: 1px solid #1e1e1e; border-radius: 10px; }
+  .sync-add-form-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .sync-textarea { width: 100%; box-sizing: border-box; background: #0a0a0a; color: #e8e8e8; border: 1px solid #2a2a2a; border-radius: 7px; padding: 8px 10px; font: 13px/1.4 ui-monospace, Consolas, monospace; resize: vertical; min-height: 44px; }
+  .sync-textarea:focus { outline: none; border-color: var(--pc, #fe2c55); }
+
+  .sync-log { display: none; margin: 8px 0 0 0; background: #0a0a0a; color: #c8c8c8; padding: 9px 12px; border-radius: 7px; font: 11px/1.45 ui-monospace, Consolas, monospace; max-height: 180px; overflow: auto; white-space: pre-wrap; border: 1px solid #1a1a1a; }
   .sync-log.show { display: block; }
 
   @media (max-width: 800px) {
@@ -348,31 +358,34 @@
   </div>
 
   <!-- Voronka-sync panel (YouTube only) -->
-  <div class="add-section sync-section" id="syncSection">
-    <div class="sh sync-head">
-      <span>🔄 Sync с YouTube API</span>
-      <span id="syncConnDot" class="sync-conn">проверка…</span>
+  <div class="sync-section" id="syncSection">
+
+    <!-- Auth CTA when not connected -->
+    <div id="syncAuthBox" class="sync-auth-cta" style="display:none">
+      <span class="sync-auth-text">Подключи YouTube — метрики и новые видео будут подтягиваться автоматически.</span>
+      <a href="/api/auth" class="btn btn-primary btn-sm">🔑 Подключить Google</a>
     </div>
 
-    <!-- Shown when NOT authenticated -->
-    <div id="syncAuthBox" class="sync-authbox" style="display:none">
-      <div style="font-size:13px;color:#bbb;margin-bottom:10px">Чтобы подтягивать метрики автоматически, авторизуйся через Google (один раз).</div>
-      <a href="/api/auth" class="btn btn-primary">🔑 Подключить Google</a>
+    <!-- Compact bar when connected -->
+    <div id="syncWorkBox" class="sync-bar" style="display:none">
+      <span id="syncConnDot" class="sync-conn">●</span>
+      <button class="btn btn-primary btn-sm" id="syncRefreshBtn" onclick="syncRefreshAll()">↻ Sync канал</button>
+      <button class="btn btn-ghost btn-sm" id="syncAddToggleBtn" onclick="syncToggleAdd()">+ URL</button>
+      <span id="syncStatus" class="sync-status"></span>
+      <button class="sync-icon-btn" onclick="syncToggleLog()" title="Лог" aria-label="Лог">≡</button>
     </div>
 
-    <!-- Shown when authenticated -->
-    <div id="syncWorkBox" style="display:none">
-      <div class="field">
-        <label>Ссылка(и) на видео — по одной на строку</label>
-        <textarea id="syncUrls" class="sync-textarea" rows="3" placeholder="https://youtube.com/shorts/..."></textarea>
+    <!-- Add-by-URL form, expanded on demand -->
+    <div id="syncAddForm" class="sync-add-form" style="display:none">
+      <textarea id="syncUrls" class="sync-textarea" rows="2" placeholder="https://youtube.com/shorts/... — одна ссылка на строку"></textarea>
+      <div class="sync-add-form-actions">
+        <button class="btn btn-primary btn-sm" id="syncAddBtn" onclick="syncAdd()">Добавить</button>
+        <button class="btn btn-ghost btn-sm" onclick="syncToggleAdd()">Отмена</button>
       </div>
-      <div class="sync-buttons">
-        <button class="btn btn-primary" id="syncAddBtn" onclick="syncAdd()">+ Добавить через API</button>
-        <button class="btn btn-ghost" id="syncRefreshBtn" onclick="syncRefreshAll()">↻ Обновить все</button>
-        <span id="syncStatus" class="sync-status"></span>
-      </div>
-      <pre id="syncLog" class="sync-log"></pre>
     </div>
+
+    <!-- Log, expanded on demand -->
+    <pre id="syncLog" class="sync-log"></pre>
   </div>
 
   <!-- Add form -->
@@ -783,6 +796,9 @@ function switchPlatform(plat) {
   document.getElementById('addSection').style.display   = isOverview ? 'none' : '';
   document.getElementById('trackerSec').style.display   = isOverview ? 'none' : '';
   document.getElementById('funnelSec').style.display    = isOverview ? 'none' : '';
+  // YouTube has the Sync panel — hide the manual "+ Добавить видео" button to avoid two ways doing the same thing
+  const addBtn = document.getElementById('addToggleBtn');
+  if (addBtn) addBtn.style.display = (plat === 'youtube') ? 'none' : '';
   updateSyncVisibility();
   if (isOverview) { renderOverview(); return; }
   document.documentElement.style.setProperty('--pc', PLATS[plat].color);
@@ -1478,15 +1494,28 @@ function updateSyncVisibility() {
 
 function syncShowAuthState(authed) {
   syncAuthed = authed;
-  document.getElementById('syncAuthBox').style.display = authed ? 'none' : '';
-  document.getElementById('syncWorkBox').style.display = authed ? '' : 'none';
+  document.getElementById('syncAuthBox').style.display = authed ? 'none' : 'flex';
+  document.getElementById('syncWorkBox').style.display = authed ? 'flex' : 'none';
   const dot = document.getElementById('syncConnDot');
-  if (authed) { dot.textContent = '✓ подключено'; dot.className = 'sync-conn ok'; }
-  else        { dot.textContent = '⚠ Google не подключён'; dot.className = 'sync-conn bad'; }
+  if (dot) dot.className = 'sync-conn ' + (authed ? 'ok' : 'bad');
+}
+
+function syncToggleAdd() {
+  const f = document.getElementById('syncAddForm');
+  const open = f.style.display !== 'none' && f.style.display !== '';
+  if (open) {
+    f.style.display = 'none';
+  } else {
+    f.style.display = '';
+    setTimeout(() => document.getElementById('syncUrls')?.focus(), 50);
+  }
+}
+
+function syncToggleLog() {
+  document.getElementById('syncLog').classList.toggle('show');
 }
 
 async function syncProbe() {
-  const dot = document.getElementById('syncConnDot');
   try {
     const ctrl = new AbortController();
     setTimeout(() => ctrl.abort(), 4000);
@@ -1496,10 +1525,8 @@ async function syncProbe() {
     syncShowAuthState(!!data.authenticated);
   } catch {
     syncAuthed = false;
-    document.getElementById('syncAuthBox').style.display = '';
+    document.getElementById('syncAuthBox').style.display = 'flex';
     document.getElementById('syncWorkBox').style.display = 'none';
-    dot.textContent = '✗ сервер недоступен';
-    dot.className = 'sync-conn bad';
   }
 }
 
@@ -1549,12 +1576,13 @@ async function syncAdd() {
   const urls = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
   if (!urls.length) { syncSetStatus('Введи хотя бы один URL', 'err'); return; }
   syncSetBusy(true); syncSetLog('');
-  syncSetStatus(`Добавляю ${urls.length} URL(s)…`);
+  syncSetStatus(`Добавляю ${urls.length}…`);
   try {
     const data = await syncPost('/api/add', { urls });
     syncSetLog(data.log || '');
-    syncSetStatus(`Готово ✓  +${data.added} ↻${data.updated} ✗${data.skipped}`, 'ok');
+    syncSetStatus(`✓ +${data.added} ↻${data.updated} ✗${data.skipped}`, 'ok');
     ta.value = '';
+    document.getElementById('syncAddForm').style.display = 'none';
     await loadFromJsonbin();
   } catch (e) {
     if (e.needs_auth) syncSetStatus('Нужна авторизация Google', 'err');
