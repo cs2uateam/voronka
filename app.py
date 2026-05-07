@@ -3,6 +3,7 @@ from pathlib import Path
 
 from flask import Flask, abort, jsonify, redirect, request, send_from_directory
 
+from lib.jsonbin import data_bin
 from lib.oauth_web import (
     authorization_url,
     exchange_code,
@@ -115,6 +116,26 @@ def api_add():
     except RuntimeError as e:
         msg = str(e)
         return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401
+    except Exception as e:
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+
+
+@app.get("/api/data")
+def api_data_read():
+    try:
+        return jsonify(data_bin().read())
+    except Exception as e:
+        return jsonify(error=f"{type(e).__name__}: {e}"), 500
+
+
+@app.put("/api/data")
+def api_data_write():
+    try:
+        record = request.get_json(silent=True)
+        if record is None or not isinstance(record, dict):
+            return jsonify(ok=False, error="body must be a JSON object"), 400
+        data_bin().write(record)
+        return jsonify(ok=True)
     except Exception as e:
         return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
 

@@ -268,7 +268,7 @@
   <div id="loadingActions" style="display:none; flex-direction:column; gap:8px; margin-top:8px; align-items:center;">
     <button class="btn btn-primary" id="loadingRetryBtn" onclick="retryLoad()">↻ Повторить</button>
     <button class="btn btn-ghost btn-sm" id="loadingCacheBtn" onclick="loadFromCache()" style="display:none">📂 Открыть из кэша (offline)</button>
-    <button class="btn btn-ghost btn-sm" id="loadingChangeBtn" onclick="resetAndSetup()">Сбросить ключ</button>
+    <button class="btn btn-ghost btn-sm" id="loadingChangeBtn" onclick="location.reload()">Перезагрузить</button>
   </div>
 </div>
 
@@ -325,7 +325,7 @@
   </div>
   <div class="header-right">
     <span class="saving" id="savingEl">сохранение...</span>
-    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('setupOv').classList.add('open')">Настройки</button>
+    <button class="btn btn-ghost btn-sm" onclick="location.reload()" title="Перезагрузить данные с сервера">↻ Обновить</button>
   </div>
 </header>
 
@@ -554,7 +554,8 @@ const PLATS = {
 // ── State ─────────────────────────────────────────────────
 
 let data = { tiktok: { entries: [] }, youtube: { entries: [] }, instagram: { entries: [] } };
-let apiKey = '', binId = '';
+// Hosted mode: backend holds JSONBin creds. Sentinel values satisfy legacy guards.
+let apiKey = 'hosted', binId = 'hosted';
 let platform = 'tiktok';
 let currentView = 'tracker';
 let editingId = null;
@@ -566,15 +567,14 @@ const JSONBIN = 'https://api.jsonbin.io/v3/b';
 // ── JSONBin I/O ───────────────────────────────────────────
 
 async function saveData() {
-  if (!apiKey || !binId) return;
   const el = document.getElementById('savingEl');
   el.classList.add('vis');
   // always cache locally first, so data isn't lost if network fails
   try { localStorage.setItem('vt_cache', JSON.stringify(data)); } catch (e) {}
   try {
-    await fetch(`${JSONBIN}/${binId}`, {
+    await fetch('/api/data', {
       method: 'PUT',
-      headers: { 'X-Master-Key': apiKey, 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
   } catch (e) {
@@ -657,10 +657,8 @@ function setLoadingMsg(msg, sub, error) {
   if (cacheBtn) cacheBtn.style.display = (error && localStorage.getItem('vt_cache')) ? 'inline-flex' : 'none';
 }
 function resetAndSetup() {
-  localStorage.removeItem('vt_key'); localStorage.removeItem('vt_bin');
-  apiKey = ''; binId = '';
-  hideLoading();
-  document.getElementById('setupOv').classList.add('open');
+  // Hosted mode: backend owns JSONBin creds, nothing to reset client-side.
+  location.reload();
 }
 
 function retryLoad() {
@@ -688,11 +686,12 @@ function cacheData() {
 function loadFromJsonbin() {
   const t0 = Date.now();
   const ctrl = new AbortController();
-  const timeout = setTimeout(() => ctrl.abort(), 20000);
-  return fetch(`${JSONBIN}/${binId}/latest`, { headers: { 'X-Master-Key': apiKey }, signal: ctrl.signal })
-    .then(r => { clearTimeout(timeout); if (!r.ok) throw new Error('Ошибка ' + r.status + '. Возможно, ключ устарел.'); return r.json(); })
-    .then(json => {
-      const rec = json.record || {};
+  // Render free tier may cold-start (~50s). Allow generous timeout on first hit.
+  const timeout = setTimeout(() => ctrl.abort(), 60000);
+  return fetch('/api/data', { signal: ctrl.signal, cache: 'no-store' })
+    .then(r => { clearTimeout(timeout); if (!r.ok) throw new Error('Ошибка ' + r.status); return r.json(); })
+    .then(rec => {
+      rec = rec || {};
       data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] } };
       cacheData();
       const wait = Math.max(0, 400 - (Date.now() - t0));
@@ -705,21 +704,13 @@ function loadFromJsonbin() {
     })
     .catch(e => {
       clearTimeout(timeout);
-      const msg = e.name === 'AbortError' ? 'Сервер не отвечает (таймаут 20с)' : (e.message || 'Проверь соединение');
+      const msg = e.name === 'AbortError' ? 'Сервер не отвечает (таймаут 60с — возможно cold start, попробуй ещё раз)' : (e.message || 'Проверь соединение');
       setLoadingMsg('Не удалось подключиться', msg, true);
     });
 }
 
 (function init() {
-  const k = localStorage.getItem('vt_key');
-  const b = localStorage.getItem('vt_bin');
-  if (!k || !b) {
-    hideLoading();
-    document.getElementById('setupOv').classList.add('open');
-    return;
-  }
-  apiKey = k; binId = b;
-  setLoadingMsg('Подключение...', 'Загружаем данные из JSONBin');
+  setLoadingMsg('Подключение...', 'Загружаем данные');
   loadFromJsonbin();
 })();
 
