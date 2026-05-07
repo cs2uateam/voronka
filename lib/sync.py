@@ -69,13 +69,30 @@ def _build_entry(public: dict, analytics: dict, url: str, existing: dict | None 
     return base
 
 
+def _bare_entry(video_id: str) -> dict:
+    """A placeholder entry for a discovered video; metrics get filled on refresh."""
+    return {
+        "id": int(time.time() * 1000) + (hash(video_id) & 0xFFF),
+        "title": "",
+        "url": f"https://youtube.com/shorts/{video_id}",
+        "vid_group": "",
+        "date": "",
+        "type": "shorts",
+        "hook": "",
+        "views": 0, "likes": 0, "comments": 0,
+        "retention": 0.0, "shares": 0, "follows": 0,
+    }
+
+
 def add_urls(urls: list[str]) -> dict:
     bin_ = data_bin()
     yt = YouTubeClient(get_credentials())
 
     record = bin_.read()
     record.setdefault("youtube", {}).setdefault("entries", [])
+    record["youtube"].setdefault("deleted_ids", [])
     entries = record["youtube"]["entries"]
+    deleted_ids = record["youtube"]["deleted_ids"]
     by_vid = {extract_video_id(e.get("url", "")): i for i, e in enumerate(entries) if extract_video_id(e.get("url", ""))}
 
     log_lines: list[str] = []
@@ -96,6 +113,10 @@ def add_urls(urls: list[str]) -> dict:
             skipped += 1
             continue
         analytics = yt.fetch_analytics(vid)
+        # un-tombstone if it was previously deleted
+        if vid in deleted_ids:
+            record["youtube"]["deleted_ids"] = [d for d in deleted_ids if d != vid]
+            deleted_ids = record["youtube"]["deleted_ids"]
         if vid in by_vid:
             idx = by_vid[vid]
             entries[idx] = _build_entry(public, analytics, raw, existing=entries[idx])
@@ -119,18 +140,54 @@ def add_urls(urls: list[str]) -> dict:
 def refresh_slice(offset: int, limit: int) -> dict:
     bin_ = data_bin()
     record = bin_.read()
-    entries = (record.get("youtube") or {}).get("entries") or []
-    total = len(entries)
-
-    if offset >= total:
-        return {"processed": 0, "total": total, "done": True, "log": ""}
+    record.setdefault("youtube", {}).setdefault("entries", [])
+    record["youtube"].setdefault("deleted_ids", [])
 
     yt = YouTubeClient(get_credentials())
 
+    discovered = 0
+    discover_error = ""
+
+    # First slice: discover any channel videos that aren't already tracked.
+    if offset == 0:
+        try:
+            entries = record["youtube"]["entries"]
+            existing_ids = {extract_video_id(e.get("url", "")) for e in entries}
+            existing_ids.discard(None)
+            deleted_ids = set(record["youtube"]["deleted_ids"] or [])
+            channel_ids = yt.fetch_channel_uploads()
+            new_ids = [v for v in channel_ids if v not in existing_ids and v not in deleted_ids]
+            # newest first in channel response → prepend in reverse so newest ends up at index 0
+            for vid in reversed(new_ids):
+                entries.insert(0, _bare_entry(vid))
+            discovered = len(new_ids)
+        except Exception as e:
+            discover_error = f"{type(e).__name__}: {e}"
+
+    entries = record["youtube"]["entries"]
+    total = len(entries)
+
+    if offset >= total:
+        if discovered or discover_error:
+            bin_.write(record)
+        return {
+            "processed": 0,
+            "missing": 0,
+            "discovered": discovered,
+            "total": total,
+            "next_offset": offset,
+            "done": True,
+            "log": ("⚠ discovery failed: " + discover_error) if discover_error else "",
+        }
+
     end = min(offset + limit, total)
     log_lines: list[str] = []
-    processed = missing = 0
+    if discovered:
+        log_lines.append(f"+ discovered {discovered} new video(s) from channel")
+    if discover_error:
+        log_lines.append(f"⚠ discovery failed: {discover_error}")
 
+    processed = missing = 0
     for i in range(offset, end):
         entry = entries[i]
         url = entry.get("url", "")
@@ -156,6 +213,7 @@ def refresh_slice(offset: int, limit: int) -> dict:
     return {
         "processed": processed,
         "missing": missing,
+        "discovered": discovered,
         "total": total,
         "next_offset": end,
         "done": done,

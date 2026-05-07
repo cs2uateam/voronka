@@ -29,6 +29,39 @@ class YouTubeClient:
             "comments": int(st.get("commentCount", 0)),
         }
 
+    def fetch_channel_uploads(self, max_videos: int = 500) -> list[str]:
+        """Video IDs from the OAuth-authorized channel's uploads playlist, newest first."""
+        ch = self.data.channels().list(part="contentDetails", mine=True).execute()
+        items = ch.get("items") or []
+        if not items:
+            return []
+        uploads = (
+            items[0].get("contentDetails", {})
+            .get("relatedPlaylists", {})
+            .get("uploads")
+        )
+        if not uploads:
+            return []
+        video_ids: list[str] = []
+        page_token = None
+        while True:
+            resp = self.data.playlistItems().list(
+                part="contentDetails",
+                playlistId=uploads,
+                maxResults=50,
+                pageToken=page_token,
+            ).execute()
+            for it in resp.get("items", []):
+                vid = (it.get("contentDetails") or {}).get("videoId")
+                if vid:
+                    video_ids.append(vid)
+                    if len(video_ids) >= max_videos:
+                        return video_ids
+            page_token = resp.get("nextPageToken")
+            if not page_token:
+                break
+        return video_ids
+
     def fetch_analytics(self, video_id: str) -> dict:
         end = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         try:

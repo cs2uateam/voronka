@@ -488,7 +488,6 @@ const PLATS = {
       { id:'likes',        label:'❤️ Лайки',            parse:'int'   },
       { id:'comments',     label:'💬 Комменты',          parse:'int'   },
       { id:'shares',       label:'↗️ Репосты',           parse:'int'   },
-      { id:'retention',    label:'👀 Stayed to watch %', parse:'float' },
       { id:'follows',      label:'➕ Подписчики',        parse:'int'   },
     ],
     mainMetric: 'views',
@@ -1143,9 +1142,48 @@ function cancelEdit() {
 
 function askDelete(id) { deleteTarget=id; document.getElementById('delModal').classList.add('open'); }
 function closeDelModal() { document.getElementById('delModal').classList.remove('open'); deleteTarget=null; }
+
+// Mirrors lib/url_parser.py extract_video_id — used so deletes record a tombstone
+// that channel-discovery in /api/refresh respects.
+function extractVideoId(url) {
+  if (!url) return null;
+  const idRe = /^[A-Za-z0-9_-]{11}$/;
+  const s = String(url).trim();
+  if (idRe.test(s)) return s;
+  let u;
+  try { u = new URL(s.includes('://') ? s : 'https://' + s); } catch { return null; }
+  let host = (u.hostname || '').toLowerCase().replace(/^www\./, '').replace(/^m\./, '');
+  if (host === 'youtu.be') {
+    const c = u.pathname.replace(/^\//, '').split('/')[0];
+    return idRe.test(c) ? c : null;
+  }
+  if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+    if (u.pathname === '/watch') {
+      const v = u.searchParams.get('v');
+      return v && idRe.test(v) ? v : null;
+    }
+    for (const p of ['/shorts/', '/embed/', '/v/', '/live/']) {
+      if (u.pathname.startsWith(p)) {
+        const c = u.pathname.slice(p.length).split('/')[0];
+        return idRe.test(c) ? c : null;
+      }
+    }
+  }
+  return null;
+}
+
 function confirmDelete() {
   if (deleteTarget===null) return;
-  pdata().entries = pdata().entries.filter(e => e.id!==deleteTarget);
+  const target = pdata().entries.find(e => e.id === deleteTarget);
+  // Tombstone for YouTube only — channel discovery on refresh respects this list
+  if (target && platform === 'youtube') {
+    const vid = extractVideoId(target.url || '');
+    if (vid) {
+      pdata().deleted_ids = pdata().deleted_ids || [];
+      if (!pdata().deleted_ids.includes(vid)) pdata().deleted_ids.push(vid);
+    }
+  }
+  pdata().entries = pdata().entries.filter(e => e.id !== deleteTarget);
   saveData(); renderAll(); closeDelModal();
 }
 
@@ -1528,19 +1566,23 @@ async function syncAdd() {
 
 async function syncRefreshAll() {
   syncSetBusy(true); syncSetLog('');
-  let offset = 0, totalProcessed = 0, totalMissing = 0, total = 0;
+  let offset = 0, totalProcessed = 0, totalMissing = 0, totalDiscovered = 0, total = 0;
   try {
     while (true) {
-      syncSetStatus(total ? `Обновляю ${offset}/${total}…` : 'Обновляю…');
+      syncSetStatus(total ? `Обновляю ${offset}/${total}…` : 'Сканирую канал…');
       const data = await syncPost('/api/refresh', { offset, limit: SYNC_BATCH });
       syncAppendLog(data.log || '');
       total = data.total;
       totalProcessed += data.processed || 0;
       totalMissing += data.missing || 0;
+      totalDiscovered += data.discovered || 0;
       offset = data.next_offset || (offset + SYNC_BATCH);
       if (data.done) break;
     }
-    syncSetStatus(`Готово ✓  ↻${totalProcessed}/${total}` + (totalMissing ? `  ✗${totalMissing}` : ''), 'ok');
+    const parts = [`↻${totalProcessed}/${total}`];
+    if (totalDiscovered) parts.push(`+${totalDiscovered} новых`);
+    if (totalMissing) parts.push(`✗${totalMissing}`);
+    syncSetStatus('Готово ✓  ' + parts.join('  '), 'ok');
     await loadFromJsonbin();
   } catch (e) {
     if (e.needs_auth) syncSetStatus('Нужна авторизация Google', 'err');
