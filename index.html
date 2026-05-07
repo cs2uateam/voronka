@@ -234,6 +234,7 @@
   /* voronka-sync panel */
   .sync-section { display: none; }
   .sync-section.show { display: block; }
+  .sync-authbox { padding: 8px 0; }
   .sync-head { display: flex; align-items: center; justify-content: space-between; }
   .sync-conn { font-size: 11px; font-weight: 500; color: #666; text-transform: none; letter-spacing: 0; }
   .sync-conn.ok { color: #3ddc84; }
@@ -346,22 +347,32 @@
     <button class="vtab"        id="vtFunnel"  onclick="switchView('funnel')">Воронка</button>
   </div>
 
-  <!-- Voronka-sync panel (YouTube only, requires local server) -->
+  <!-- Voronka-sync panel (YouTube only) -->
   <div class="add-section sync-section" id="syncSection">
     <div class="sh sync-head">
       <span>🔄 Sync с YouTube API</span>
-      <span id="syncConnDot" class="sync-conn">проверка соединения…</span>
+      <span id="syncConnDot" class="sync-conn">проверка…</span>
     </div>
-    <div class="field">
-      <label>Ссылка(и) на видео — по одной на строку</label>
-      <textarea id="syncUrls" class="sync-textarea" rows="3" placeholder="https://youtube.com/shorts/..."></textarea>
+
+    <!-- Shown when NOT authenticated -->
+    <div id="syncAuthBox" class="sync-authbox" style="display:none">
+      <div style="font-size:13px;color:#bbb;margin-bottom:10px">Чтобы подтягивать метрики автоматически, авторизуйся через Google (один раз).</div>
+      <a href="/api/auth" class="btn btn-primary">🔑 Подключить Google</a>
     </div>
-    <div class="sync-buttons">
-      <button class="btn btn-primary" id="syncAddBtn" onclick="syncAdd()">+ Добавить через API</button>
-      <button class="btn btn-ghost" id="syncRefreshBtn" onclick="syncRefreshAll()">↻ Обновить все</button>
-      <span id="syncStatus" class="sync-status"></span>
+
+    <!-- Shown when authenticated -->
+    <div id="syncWorkBox" style="display:none">
+      <div class="field">
+        <label>Ссылка(и) на видео — по одной на строку</label>
+        <textarea id="syncUrls" class="sync-textarea" rows="3" placeholder="https://youtube.com/shorts/..."></textarea>
+      </div>
+      <div class="sync-buttons">
+        <button class="btn btn-primary" id="syncAddBtn" onclick="syncAdd()">+ Добавить через API</button>
+        <button class="btn btn-ghost" id="syncRefreshBtn" onclick="syncRefreshAll()">↻ Обновить все</button>
+        <span id="syncStatus" class="sync-status"></span>
+      </div>
+      <pre id="syncLog" class="sync-log"></pre>
     </div>
-    <pre id="syncLog" class="sync-log"></pre>
   </div>
 
   <!-- Add form -->
@@ -1426,9 +1437,10 @@ document.addEventListener('mouseout', e => { if(e.target.closest('[data-tip]')) 
 document.getElementById('delModal').addEventListener('click', function(e){ if(e.target===this) closeDelModal(); });
 document.getElementById('histModal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
 
-// ── voronka-sync (local Python server at :8765) ────────────
-const SYNC_BASE = 'http://127.0.0.1:8765';
-let syncOnline = false;
+// ── voronka-sync (Vercel Functions at /api/*) ──────────────
+const SYNC_BASE = '';  // same origin
+const SYNC_BATCH = 8;  // videos per refresh slice; backend caps at 25
+let syncAuthed = false;
 
 function updateSyncVisibility() {
   const el = document.getElementById('syncSection');
@@ -1437,33 +1449,52 @@ function updateSyncVisibility() {
   el.classList.toggle('show', show);
 }
 
+function syncShowAuthState(authed) {
+  syncAuthed = authed;
+  document.getElementById('syncAuthBox').style.display = authed ? 'none' : '';
+  document.getElementById('syncWorkBox').style.display = authed ? '' : 'none';
+  const dot = document.getElementById('syncConnDot');
+  if (authed) { dot.textContent = '✓ подключено'; dot.className = 'sync-conn ok'; }
+  else        { dot.textContent = '⚠ Google не подключён'; dot.className = 'sync-conn bad'; }
+}
+
 async function syncProbe() {
   const dot = document.getElementById('syncConnDot');
   try {
     const ctrl = new AbortController();
-    setTimeout(() => ctrl.abort(), 1500);
-    const r = await fetch(SYNC_BASE + '/status', { signal: ctrl.signal });
+    setTimeout(() => ctrl.abort(), 4000);
+    const r = await fetch(SYNC_BASE + '/api/status', { signal: ctrl.signal, cache: 'no-store' });
     if (!r.ok) throw new Error('bad status');
-    syncOnline = true;
-    dot.textContent = '✓ сервер запущен';
-    dot.className = 'sync-conn ok';
+    const data = await r.json();
+    syncShowAuthState(!!data.authenticated);
   } catch {
-    syncOnline = false;
-    dot.textContent = '✗ запусти voronka.bat';
+    syncAuthed = false;
+    document.getElementById('syncAuthBox').style.display = '';
+    document.getElementById('syncWorkBox').style.display = 'none';
+    dot.textContent = '✗ сервер недоступен';
     dot.className = 'sync-conn bad';
   }
 }
 
 function syncSetStatus(text, cls) {
   const el = document.getElementById('syncStatus');
+  if (!el) return;
   el.textContent = text;
   el.className = 'sync-status' + (cls ? ' ' + cls : '');
 }
 
-function syncAppendLog(text) {
+function syncSetLog(text) {
   const el = document.getElementById('syncLog');
   el.textContent = text || '(no output)';
   el.classList.add('show');
+}
+
+function syncAppendLog(text) {
+  if (!text) return;
+  const el = document.getElementById('syncLog');
+  el.textContent = (el.textContent && !el.textContent.startsWith('(no')) ? (el.textContent + '\n' + text) : text;
+  el.classList.add('show');
+  el.scrollTop = el.scrollHeight;
 }
 
 function syncSetBusy(busy) {
@@ -1471,53 +1502,73 @@ function syncSetBusy(busy) {
   document.getElementById('syncRefreshBtn').disabled = busy;
 }
 
-async function syncCall(path, body) {
-  if (!syncOnline) await syncProbe();
-  if (!syncOnline) {
-    syncSetStatus('Сервер не запущен — запусти voronka.bat', 'err');
-    return;
+async function syncPost(path, body) {
+  const r = await fetch(SYNC_BASE + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {}),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401 || data.needs_auth) {
+    syncShowAuthState(false);
+    throw Object.assign(new Error('not authenticated'), { needs_auth: true });
   }
-  syncSetBusy(true);
-  try {
-    const r = await fetch(SYNC_BASE + path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body || {}),
-    });
-    const data = await r.json();
-    syncAppendLog(data.log || '');
-    if (data.ok) {
-      syncSetStatus('Готово ✓', 'ok');
-      await loadFromJsonbin();
-    } else {
-      syncSetStatus('Ошибка: ' + (data.error || 'unknown'), 'err');
-    }
-  } catch (e) {
-    syncOnline = false;
-    document.getElementById('syncConnDot').textContent = '✗ запусти voronka.bat';
-    document.getElementById('syncConnDot').className = 'sync-conn bad';
-    syncSetStatus('Сервер недоступен', 'err');
-  } finally {
-    syncSetBusy(false);
-  }
+  if (!data.ok) throw new Error(data.error || `HTTP ${r.status}`);
+  return data;
 }
 
 async function syncAdd() {
   const ta = document.getElementById('syncUrls');
   const urls = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
   if (!urls.length) { syncSetStatus('Введи хотя бы один URL', 'err'); return; }
+  syncSetBusy(true); syncSetLog('');
   syncSetStatus(`Добавляю ${urls.length} URL(s)…`);
-  await syncCall('/add', { urls });
-  if (document.getElementById('syncStatus').classList.contains('ok')) ta.value = '';
+  try {
+    const data = await syncPost('/api/add', { urls });
+    syncSetLog(data.log || '');
+    syncSetStatus(`Готово ✓  +${data.added} ↻${data.updated} ✗${data.skipped}`, 'ok');
+    ta.value = '';
+    await loadFromJsonbin();
+  } catch (e) {
+    if (e.needs_auth) syncSetStatus('Нужна авторизация Google', 'err');
+    else syncSetStatus('Ошибка: ' + e.message, 'err');
+  } finally {
+    syncSetBusy(false);
+  }
 }
 
 async function syncRefreshAll() {
-  syncSetStatus('Обновляю метрики (может занять 30–60 сек)…');
-  await syncCall('/refresh');
+  syncSetBusy(true); syncSetLog('');
+  let offset = 0, totalProcessed = 0, totalMissing = 0, total = 0;
+  try {
+    while (true) {
+      syncSetStatus(total ? `Обновляю ${offset}/${total}…` : 'Обновляю…');
+      const data = await syncPost('/api/refresh', { offset, limit: SYNC_BATCH });
+      syncAppendLog(data.log || '');
+      total = data.total;
+      totalProcessed += data.processed || 0;
+      totalMissing += data.missing || 0;
+      offset = data.next_offset || (offset + SYNC_BATCH);
+      if (data.done) break;
+    }
+    syncSetStatus(`Готово ✓  ↻${totalProcessed}/${total}` + (totalMissing ? `  ✗${totalMissing}` : ''), 'ok');
+    await loadFromJsonbin();
+  } catch (e) {
+    if (e.needs_auth) syncSetStatus('Нужна авторизация Google', 'err');
+    else syncSetStatus('Ошибка: ' + e.message, 'err');
+  } finally {
+    syncSetBusy(false);
+  }
 }
 
 syncProbe();
-setInterval(syncProbe, 15000);
+setInterval(syncProbe, 30000);
+
+// If returning from OAuth callback (auth=success), force a fresh probe.
+if (location.search.includes('auth=')) {
+  syncProbe();
+  history.replaceState(null, '', location.pathname);
+}
 </script>
 </body>
 </html>
