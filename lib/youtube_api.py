@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from googleapiclient.discovery import build
 
-ANALYTICS_METRICS = "estimatedMinutesWatched,averageViewPercentage,shares,subscribersGained"
+ANALYTICS_METRICS = "averageViewPercentage,shares,subscribersGained"
 DATA_START = "2005-02-14"
 
 
@@ -40,13 +40,12 @@ class YouTubeClient:
                 filters=f"video=={video_id}",
             ).execute()
         except Exception:
-            return {"watch_hours": 0.0, "retention": 0.0, "shares": 0, "follows": 0}
+            return {"retention": 0.0, "shares": 0, "follows": 0}
         rows = resp.get("rows") or []
         if not rows:
-            return {"watch_hours": 0.0, "retention": 0.0, "shares": 0, "follows": 0}
-        minutes, retention, shares, subs = rows[0]
+            return {"retention": 0.0, "shares": 0, "follows": 0}
+        retention, shares, subs = rows[0]
         return {
-            "watch_hours": round(float(minutes) / 60.0, 2),
             "retention": round(float(retention), 1),
             "shares": int(shares),
             "follows": int(subs),

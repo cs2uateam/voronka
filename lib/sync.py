@@ -7,7 +7,7 @@ from .url_parser import extract_video_id
 from .youtube_api import YouTubeClient
 
 SHORTS_DURATION_LIMIT_SEC = 60
-METRIC_FIELDS = ("views", "watch_hours", "retention", "likes", "comments", "shares", "follows")
+METRIC_FIELDS = ("views", "retention", "likes", "comments", "shares", "follows")
 
 
 def _parse_iso8601_duration_seconds(s: str) -> int:
@@ -57,7 +57,6 @@ def _build_entry(public: dict, analytics: dict, url: str, existing: dict | None 
         "views": public.get("views", 0),
         "likes": public.get("likes", 0),
         "comments": public.get("comments", 0),
-        "watch_hours": analytics.get("watch_hours", 0.0),
         "retention": analytics.get("retention", 0.0),
         "shares": analytics.get("shares", 0),
         "follows": analytics.get("follows", 0),
