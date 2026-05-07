@@ -1,3 +1,5 @@
+flask>=3.0
+gunicorn>=21.2
 google-api-python-client>=2.100
 google-auth-oauthlib>=1.2
 requests>=2.31
