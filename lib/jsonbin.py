@@ -3,6 +3,17 @@ import requests
 from .env import required
 
 BASE = "https://api.jsonbin.io/v3/b"
+# JSONBin appears to 403 some cloud-host PUT requests without a UA. Cheap mitigation.
+UA = "voronka-sync/1.0 (+https://voronka-cs2uateam.onrender.com)"
+
+
+def _explain(resp: "requests.Response", action: str, url: str) -> str:
+    body = ""
+    try:
+        body = resp.text[:300]
+    except Exception:
+        pass
+    return f"{action} {url} -> {resp.status_code} {resp.reason}: {body}"
 
 
 class JsonBin:
@@ -11,16 +22,21 @@ class JsonBin:
         self.headers = {
             "X-Master-Key": master_key,
             "Content-Type": "application/json",
+            "User-Agent": UA,
         }
 
     def read(self) -> dict:
-        r = requests.get(f"{BASE}/{self.bin_id}/latest", headers=self.headers, timeout=20)
-        r.raise_for_status()
+        url = f"{BASE}/{self.bin_id}/latest"
+        r = requests.get(url, headers=self.headers, timeout=20)
+        if not r.ok:
+            raise RuntimeError(_explain(r, "GET", url))
         return r.json()["record"]
 
     def write(self, record: dict) -> None:
-        r = requests.put(f"{BASE}/{self.bin_id}", headers=self.headers, json=record, timeout=20)
-        r.raise_for_status()
+        url = f"{BASE}/{self.bin_id}"
+        r = requests.put(url, headers=self.headers, json=record, timeout=20)
+        if not r.ok:
+            raise RuntimeError(_explain(r, "PUT", url))
 
 
 def data_bin() -> JsonBin:
