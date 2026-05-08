@@ -11,6 +11,7 @@ from lib.oauth_web import (
     store_refresh_token,
 )
 from lib.sync import add_urls, refresh_slice
+from lib import tiktok_oauth, tiktok_sync
 
 ROOT = Path(__file__).resolve().parent
 
@@ -25,6 +26,10 @@ def _base_url() -> str:
 
 def _redirect_uri() -> str:
     return _base_url() + "/api/auth"
+
+
+def _tiktok_redirect_uri() -> str:
+    return _base_url() + "/api/tiktok/auth"
 
 
 def _html(body_html: str, status: int = 200, extra_headers: dict | None = None):
@@ -136,6 +141,69 @@ def api_data_write():
             return jsonify(ok=False, error="body must be a JSON object"), 400
         data_bin().write(record)
         return jsonify(ok=True)
+    except Exception as e:
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+
+
+@app.get("/api/tiktok/status")
+def api_tiktok_status():
+    try:
+        return jsonify(ok=True, authenticated=tiktok_oauth.is_authenticated())
+    except Exception as e:
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+
+
+@app.get("/api/tiktok/auth")
+def api_tiktok_auth():
+    qs = request.args
+    if "error" in qs:
+        return _html(
+            f"<h1>Авторизация TikTok отклонена</h1><p>{qs.get('error', 'unknown')}</p>"
+            "<a href='/' class='btn'>Назад</a>",
+            400,
+        )
+    if "code" in qs:
+        try:
+            tokens = tiktok_oauth.exchange_code(qs["code"], _tiktok_redirect_uri())
+            # TikTok returns {data: {access_token, refresh_token, ...}, error: ...} OR flat depending on API version
+            data = tokens.get("data") if isinstance(tokens.get("data"), dict) else tokens
+            refresh_token = data.get("refresh_token")
+            access_token = data.get("access_token")
+            if not refresh_token or not access_token:
+                return _html(
+                    f"<h1>Не получили токены от TikTok</h1><pre style='text-align:left;color:#888'>{tokens}</pre>"
+                    "<a href='/' class='btn'>Назад</a>",
+                    400,
+                )
+            import time as _time
+            expires_at = int(_time.time()) + int(data.get("expires_in") or 86400) - 60
+            tiktok_oauth.store_tokens(
+                refresh_token=refresh_token,
+                access_token=access_token,
+                expires_at=expires_at,
+                open_id=data.get("open_id"),
+            )
+            return _html(
+                "<h1>✓ TikTok подключён</h1><p>Sync-панель уже готова.</p>"
+                "<a href='/?auth=tiktok-success' class='btn'>Open voronka</a>",
+                200,
+                extra_headers={"Refresh": "0; url=/?auth=tiktok-success"},
+            )
+        except Exception as e:
+            return _html(f"<h1>TikTok token exchange failed</h1><p>{e}</p>", 500)
+    return redirect(tiktok_oauth.authorization_url(_tiktok_redirect_uri()), code=302)
+
+
+@app.post("/api/tiktok/refresh")
+def api_tiktok_refresh():
+    try:
+        data = request.get_json(silent=True) or {}
+        offset = int(data.get("offset", 0) or 0)
+        limit = int(data.get("limit", 8) or 8)
+        return jsonify(ok=True, **tiktok_sync.refresh_slice(offset=offset, limit=limit))
+    except RuntimeError as e:
+        msg = str(e)
+        return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401
     except Exception as e:
         return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
 

@@ -367,8 +367,8 @@
 
     <!-- Auth CTA when not connected -->
     <div id="syncAuthBox" class="sync-auth-cta" style="display:none">
-      <span class="sync-auth-text">Подключи YouTube — метрики и новые видео будут подтягиваться автоматически.</span>
-      <a href="/api/auth" class="btn btn-primary btn-sm">🔑 Подключить Google</a>
+      <span id="syncAuthText" class="sync-auth-text">Подключи аккаунт — метрики и новые видео будут подтягиваться автоматически.</span>
+      <a id="syncAuthBtn" href="/api/auth" class="btn btn-primary btn-sm">🔑 Подключить</a>
     </div>
 
     <!-- Compact bar when connected -->
@@ -827,15 +827,17 @@ function switchPlatform(plat) {
   document.getElementById('addSection').style.display   = isOverview ? 'none' : '';
   document.getElementById('trackerSec').style.display   = isOverview ? 'none' : '';
   document.getElementById('funnelSec').style.display    = isOverview ? 'none' : '';
-  // YouTube has the Sync panel — hide the manual "+ Добавить видео" button to avoid two ways doing the same thing
+  // Platforms with API sync (YouTube, TikTok) hide the manual "+ Добавить видео" — sync covers it.
   const addBtn = document.getElementById('addToggleBtn');
-  if (addBtn) addBtn.style.display = (plat === 'youtube') ? 'none' : '';
+  if (addBtn) addBtn.style.display = SYNC_CFG[plat] ? 'none' : '';
   updateSyncVisibility();
   if (isOverview) { renderOverview(); return; }
   document.documentElement.style.setProperty('--pc', PLATS[plat].color);
   rebuildTypeFilters();
   rebuildForm();
   renderAll();
+  // Re-probe auth state for the new platform (YT and TikTok have separate tokens).
+  if (SYNC_CFG[plat]) syncProbe();
 }
 
 function renderOverview() {
@@ -1570,11 +1572,53 @@ const SYNC_BASE = '';  // same origin
 const SYNC_BATCH = 8;  // videos per refresh slice; backend caps at 25
 let syncAuthed = false;
 
+// Per-platform sync config: which endpoints to call, what to label the auth button.
+const SYNC_CFG = {
+  youtube: {
+    statusUrl:  '/api/status',
+    authUrl:    '/api/auth',
+    refreshUrl: '/api/refresh',
+    addUrl:     '/api/add',
+    canAddUrls: true,
+    authText:   'Подключи YouTube — метрики и новые видео будут подтягиваться автоматически.',
+    authBtn:    '🔑 Подключить Google',
+    authNeeded: 'Нужна авторизация Google',
+    syncBtn:    '↻ Sync канал',
+  },
+  tiktok: {
+    statusUrl:  '/api/tiktok/status',
+    authUrl:    '/api/tiktok/auth',
+    refreshUrl: '/api/tiktok/refresh',
+    addUrl:     null,
+    canAddUrls: false,
+    authText:   'Подключи TikTok — все твои видео и метрики появятся здесь автоматически.',
+    authBtn:    '🔑 Подключить TikTok',
+    authNeeded: 'Нужна авторизация TikTok',
+    syncBtn:    '↻ Sync TikTok',
+  },
+};
+function syncCfg() { return SYNC_CFG[platform] || null; }
+
 function updateSyncVisibility() {
   const el = document.getElementById('syncSection');
   if (!el) return;
-  const show = platform === 'youtube' && currentView === 'tracker';
+  const show = !!syncCfg() && currentView === 'tracker';
   el.classList.toggle('show', show);
+  if (show) updateSyncAuthBox();
+}
+
+// Rewire the auth CTA button + text when switching platforms.
+function updateSyncAuthBox() {
+  const cfg = syncCfg();
+  if (!cfg) return;
+  const link = document.getElementById('syncAuthBtn');
+  if (link) { link.href = cfg.authUrl; link.textContent = cfg.authBtn; }
+  const txt = document.getElementById('syncAuthText');
+  if (txt) txt.textContent = cfg.authText;
+  const refreshBtn = document.getElementById('syncRefreshBtn');
+  if (refreshBtn) refreshBtn.textContent = cfg.syncBtn;
+  const addBtn = document.getElementById('syncAddToggleBtn');
+  if (addBtn) addBtn.style.display = cfg.canAddUrls ? '' : 'none';
 }
 
 function syncShowAuthState(authed) {
@@ -1601,10 +1645,12 @@ function syncToggleLog() {
 }
 
 async function syncProbe() {
+  const cfg = syncCfg();
+  if (!cfg) return;
   try {
     const ctrl = new AbortController();
     setTimeout(() => ctrl.abort(), 4000);
-    const r = await fetch(SYNC_BASE + '/api/status', { signal: ctrl.signal, cache: 'no-store' });
+    const r = await fetch(SYNC_BASE + cfg.statusUrl, { signal: ctrl.signal, cache: 'no-store' });
     if (!r.ok) throw new Error('bad status');
     const data = await r.json();
     syncShowAuthState(!!data.authenticated);
@@ -1657,20 +1703,22 @@ async function syncPost(path, body) {
 }
 
 async function syncAdd() {
+  const cfg = syncCfg();
+  if (!cfg || !cfg.addUrl) return;
   const ta = document.getElementById('syncUrls');
   const urls = ta.value.split('\n').map(s => s.trim()).filter(Boolean);
   if (!urls.length) { syncSetStatus('Введи хотя бы один URL', 'err'); return; }
   syncSetBusy(true); syncSetLog('');
   syncSetStatus(`Добавляю ${urls.length}…`);
   try {
-    const data = await syncPost('/api/add', { urls });
+    const data = await syncPost(cfg.addUrl, { urls });
     syncSetLog(data.log || '');
     syncSetStatus(`✓ +${data.added} ↻${data.updated} ✗${data.skipped}`, 'ok');
     ta.value = '';
     document.getElementById('syncAddForm').style.display = 'none';
     await loadFromJsonbin();
   } catch (e) {
-    if (e.needs_auth) syncSetStatus('Нужна авторизация Google', 'err');
+    if (e.needs_auth) syncSetStatus(cfg.authNeeded, 'err');
     else syncSetStatus('Ошибка: ' + e.message, 'err');
   } finally {
     syncSetBusy(false);
@@ -1678,12 +1726,14 @@ async function syncAdd() {
 }
 
 async function syncRefreshAll() {
+  const cfg = syncCfg();
+  if (!cfg) return;
   syncSetBusy(true); syncSetLog('');
   let offset = 0, totalProcessed = 0, totalMissing = 0, totalDiscovered = 0, total = 0;
   try {
     while (true) {
-      syncSetStatus(total ? `Обновляю ${offset}/${total}…` : 'Сканирую канал…');
-      const data = await syncPost('/api/refresh', { offset, limit: SYNC_BATCH });
+      syncSetStatus(total ? `Обновляю ${offset}/${total}…` : 'Сканирую…');
+      const data = await syncPost(cfg.refreshUrl, { offset, limit: SYNC_BATCH });
       syncAppendLog(data.log || '');
       total = data.total;
       totalProcessed += data.processed || 0;
@@ -1698,7 +1748,7 @@ async function syncRefreshAll() {
     syncSetStatus('Готово ✓  ' + parts.join('  '), 'ok');
     await loadFromJsonbin();
   } catch (e) {
-    if (e.needs_auth) syncSetStatus('Нужна авторизация Google', 'err');
+    if (e.needs_auth) syncSetStatus(cfg.authNeeded, 'err');
     else syncSetStatus('Ошибка: ' + e.message, 'err');
   } finally {
     syncSetBusy(false);
