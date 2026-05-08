@@ -1164,9 +1164,11 @@ function showHistory(id) {
 
   document.getElementById('histTitle').textContent = '📈 ' + e.title.slice(0,80);
 
-  // Show every metric field for which the entry has data — use current entry + history.
-  const allSources = [e, ...snaps];
-  const cols = cfg.fields.filter(f => allSources.some(s => s && s[f.id]));
+  // Show ALL metric fields the platform tracks, regardless of whether values are 0.
+  // The previous filter only kept columns where some snapshot had a truthy value, which
+  // meant low-engagement entries lost shares/follows/retention columns entirely — exactly
+  // the metrics the user wants to monitor for growth.
+  const cols = cfg.fields;
   const thead = '<tr><th>Когда</th>' + cols.map(f=>`<th>${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim()}</th>`).join('') + '</tr>';
 
   const fmtVal = (f, v) => {
