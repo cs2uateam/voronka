@@ -85,6 +85,8 @@
   table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 800px; }
   thead th { padding: 8px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: #555; border-bottom: 1px solid #1c1c1c; white-space: nowrap; font-weight: 600; }
   thead th.num-h { text-align: right; }
+  thead th.ctr-h { text-align: center; }
+  td.ctr { text-align: center; }
   tbody tr { border-bottom: 1px solid #151515; transition: background .12s; }
   tbody tr:hover { background: #151515; }
   tbody tr:last-child { border-bottom: none; }
@@ -1300,12 +1302,12 @@ function renderTable() {
                 : `<span class="tt">${esc(e.title)}</span>`}
         <span class="${tCls}">${cfg.typeLabels[e.type]||e.type}</span>
       </td>
-      <td class="num">${e.date}</td>
+      <td>${e.date}</td>
       <td><span class="hook-tag">${esc(e.hook||'—')}</span></td>
       ${cfg.fields.map(f => `<td class="num">${e[f.id] ? fmtRaw(e[f.id]) : '—'}</td>`).join('')}
-      ${crLbl ? `<td>${crCell}</td>` : ''}
-      <td><span class="er-badge ${erClass(parseFloat(erVal))}" data-tip="${erTip(parseFloat(erVal))}">${erVal}%</span></td>
-      <td><span class="tier tier-${tier}">${TIER_LABELS[tier]}</span></td>
+      ${crLbl ? `<td class="ctr">${crCell}</td>` : ''}
+      <td class="ctr"><span class="er-badge ${erClass(parseFloat(erVal))}" data-tip="${erTip(parseFloat(erVal))}">${erVal}%</span></td>
+      <td class="ctr"><span class="tier tier-${tier}">${TIER_LABELS[tier]}</span></td>
       <td style="white-space:nowrap">
         ${e.history?.length ? `<button class="hist-btn" onclick="showHistory(${e.id})" title="${e.history.length} снапшот(ов)">📈</button>` : ''}
         <button class="edit-btn" onclick="editEntry(${e.id})" title="Редактировать">✎</button>
@@ -1317,9 +1319,9 @@ function renderTable() {
   container.innerHTML = `<table>
     <thead><tr>
       <th>Название</th><th>Дата</th><th>Хук</th>
-      ${cfg.fields.map(f => `<th>${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim()}</th>`).join('')}
-      ${crLbl ? `<th>${crLbl}</th>` : ''}
-      <th>ER</th><th>Tier</th><th></th>
+      ${cfg.fields.map(f => `<th class="num-h">${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim()}</th>`).join('')}
+      ${crLbl ? `<th class="ctr-h">${crLbl}</th>` : ''}
+      <th class="ctr-h">ER</th><th class="ctr-h">Tier</th><th></th>
     </tr></thead>
     <tbody>${tbody}</tbody>
   </table>`;
