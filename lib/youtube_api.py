@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from googleapiclient.discovery import build
 
-ANALYTICS_METRICS = "averageViewPercentage,shares,subscribersGained"
+ANALYTICS_METRICS = "views,averageViewPercentage,shares,subscribersGained"
 DATA_START = "2005-02-14"
 
 
@@ -62,12 +62,17 @@ class YouTubeClient:
                 break
         return video_ids
 
-    def fetch_analytics(self, video_id: str) -> dict:
-        """Returns analytics for a single video. retention is capped at 100% — for Shorts
-        averageViewPercentage can exceed 100% due to looped playback (1 viewer × 2 loops
-        = 200%), which doesn't make sense as a "Stayed to watch" reading."""
+    def fetch_analytics(self, video_id: str) -> dict | None:
+        """Returns analytics for a single video, or None if YT Analytics hasn't
+        aggregated this video yet (typically the first 24–72h after publish for
+        Shorts). When None, the caller should preserve whatever was previously
+        stored — overwriting with zeros makes published-but-fresh videos look
+        broken in voronka.
+
+        retention is capped at 100% — averageViewPercentage can exceed 100% for
+        Shorts because of looped playback (1 viewer × 2 loops = 200%), which
+        doesn't make sense as a "Stayed to watch" reading."""
         end = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        empty = {"retention": 0.0, "shares": 0, "follows": 0}
         try:
             resp = self.analytics.reports().query(
                 ids="channel==MINE",
@@ -78,12 +83,20 @@ class YouTubeClient:
             ).execute()
         except Exception as e:
             print(f"[analytics] {video_id}: {type(e).__name__}: {e}", flush=True)
-            return empty
+            return None
         rows = resp.get("rows") or []
         if not rows:
-            print(f"[analytics] {video_id}: no rows (likely still aggregating)", flush=True)
-            return empty
-        retention, shares, subs = rows[0]
+            print(f"[analytics] {video_id}: no rows (still aggregating)", flush=True)
+            return None
+        a_views, retention, shares, subs = rows[0]
+        # Aggregation-lag stub: API returns the row but every metric is 0.
+        # We can't tell that from a legitimate "all-zeros, e.g. brand-new video
+        # with literal zero shares" so use a_views as the canary — if a_views=0
+        # for a video that the public Data API confirms has views, this row is
+        # not yet meaningful.
+        if int(a_views or 0) == 0:
+            print(f"[analytics] {video_id}: stub row (views=0, still aggregating)", flush=True)
+            return None
         return {
             "retention": min(round(float(retention or 0), 1), 100.0),
             "shares": int(shares or 0),

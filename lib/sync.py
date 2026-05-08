@@ -45,10 +45,21 @@ def _snapshot(entry: dict) -> dict:
     return snap
 
 
-def _build_entry(public: dict, analytics: dict, url: str, existing: dict | None = None) -> dict:
+def _build_entry(public: dict, analytics: dict | None, url: str, existing: dict | None = None) -> dict:
     duration_sec = _parse_iso8601_duration_seconds(public.get("duration", ""))
     yt_type = "shorts" if duration_sec and duration_sec <= SHORTS_DURATION_LIMIT_SEC else "long"
     pub_date = (public.get("publishedAt", "") or "")[:10]
+
+    # When Analytics API hasn't aggregated this video yet, fetch_analytics
+    # returns None. Preserve whatever was previously stored instead of
+    # overwriting with zeros — matters most for videos in their first 24-72h.
+    if analytics is None:
+        prev = existing or {}
+        analytics = {
+            "retention": prev.get("retention", 0.0),
+            "shares": prev.get("shares", 0),
+            "follows": prev.get("follows", 0),
+        }
 
     base: dict = {
         "id": (existing or {}).get("id") or int(time.time() * 1000),
