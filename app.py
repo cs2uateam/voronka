@@ -105,6 +105,64 @@ def api_auth():
     return redirect(authorization_url(_redirect_uri()), code=302)
 
 
+@app.get("/api/debug_analytics")
+def api_debug_analytics():
+    """Diagnostic: returns raw YouTube Analytics API response for a single video.
+    Helps explain why some entries get retention/shares/follows = 0."""
+    from datetime import datetime, timezone
+    video_id = request.args.get("video_id", "").strip()
+    if not video_id:
+        return jsonify(error="missing ?video_id="), 400
+    try:
+        from lib.oauth_web import get_credentials
+        from googleapiclient.discovery import build
+        creds = get_credentials()
+        analytics = build("youtubeAnalytics", "v2", credentials=creds, cache_discovery=False)
+        end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        attempts = []
+        # Attempt 1: same call we use in production
+        try:
+            r1 = analytics.reports().query(
+                ids="channel==MINE",
+                startDate="2005-02-14",
+                endDate=end_date,
+                metrics="averageViewPercentage,shares,subscribersGained,views,likes,comments",
+                filters=f"video=={video_id}",
+            ).execute()
+            attempts.append({"name": "default", "ok": True, "response": r1})
+        except Exception as e:
+            attempts.append({"name": "default", "ok": False, "error": f"{type(e).__name__}: {e}"})
+        # Attempt 2: with creatorContentType=SHORTS dimension
+        try:
+            r2 = analytics.reports().query(
+                ids="channel==MINE",
+                startDate="2005-02-14",
+                endDate=end_date,
+                metrics="averageViewPercentage,shares,subscribersGained,views",
+                filters=f"video=={video_id};creatorContentType==SHORTS",
+            ).execute()
+            attempts.append({"name": "shorts_filter", "ok": True, "response": r2})
+        except Exception as e:
+            attempts.append({"name": "shorts_filter", "ok": False, "error": f"{type(e).__name__}: {e}"})
+        # Attempt 3: narrower date range (last 90 days)
+        from datetime import timedelta
+        start_recent = (datetime.now(timezone.utc) - timedelta(days=90)).strftime("%Y-%m-%d")
+        try:
+            r3 = analytics.reports().query(
+                ids="channel==MINE",
+                startDate=start_recent,
+                endDate=end_date,
+                metrics="averageViewPercentage,shares,subscribersGained",
+                filters=f"video=={video_id}",
+            ).execute()
+            attempts.append({"name": "last_90d", "ok": True, "response": r3})
+        except Exception as e:
+            attempts.append({"name": "last_90d", "ok": False, "error": f"{type(e).__name__}: {e}"})
+        return jsonify(video_id=video_id, attempts=attempts)
+    except Exception as e:
+        return jsonify(error=f"{type(e).__name__}: {e}"), 500
+
+
 @app.post("/api/add")
 def api_add():
     try:
