@@ -734,6 +734,15 @@ function fmt(n) {
   if (n >= 1_000)     return (n/1_000).toFixed(1)+'K';
   return Math.round(n).toString();
 }
+// Raw integer formatter for table cells — user wants 1518, not "1.5K".
+// fmt() stays for stat cards and other compact UI elements.
+function fmtRaw(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (Number.isInteger(n) || Math.abs(n - Math.round(n)) < 0.05) {
+    return Math.round(n).toLocaleString('ru-RU');
+  }
+  return n.toFixed(1);
+}
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1293,7 +1302,7 @@ function renderTable() {
       </td>
       <td class="num">${e.date}</td>
       <td><span class="hook-tag">${esc(e.hook||'—')}</span></td>
-      ${cfg.fields.map(f => `<td class="num">${e[f.id]?fmt(e[f.id]):'—'}</td>`).join('')}
+      ${cfg.fields.map(f => `<td class="num">${e[f.id] ? fmtRaw(e[f.id]) : '—'}</td>`).join('')}
       ${crLbl ? `<td>${crCell}</td>` : ''}
       <td><span class="er-badge ${erClass(parseFloat(erVal))}" data-tip="${erTip(parseFloat(erVal))}">${erVal}%</span></td>
       <td><span class="tier tier-${tier}">${TIER_LABELS[tier]}</span></td>

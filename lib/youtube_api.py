@@ -63,7 +63,11 @@ class YouTubeClient:
         return video_ids
 
     def fetch_analytics(self, video_id: str) -> dict:
+        """Returns analytics for a single video. retention is capped at 100% — for Shorts
+        averageViewPercentage can exceed 100% due to looped playback (1 viewer × 2 loops
+        = 200%), which doesn't make sense as a "Stayed to watch" reading."""
         end = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        empty = {"retention": 0.0, "shares": 0, "follows": 0}
         try:
             resp = self.analytics.reports().query(
                 ids="channel==MINE",
@@ -72,14 +76,16 @@ class YouTubeClient:
                 metrics=ANALYTICS_METRICS,
                 filters=f"video=={video_id}",
             ).execute()
-        except Exception:
-            return {"retention": 0.0, "shares": 0, "follows": 0}
+        except Exception as e:
+            print(f"[analytics] {video_id}: {type(e).__name__}: {e}", flush=True)
+            return empty
         rows = resp.get("rows") or []
         if not rows:
-            return {"retention": 0.0, "shares": 0, "follows": 0}
+            print(f"[analytics] {video_id}: no rows (likely still aggregating)", flush=True)
+            return empty
         retention, shares, subs = rows[0]
         return {
-            "retention": round(float(retention), 1),
-            "shares": int(shares),
-            "follows": int(subs),
+            "retention": min(round(float(retention or 0), 1), 100.0),
+            "shares": int(shares or 0),
+            "follows": int(subs or 0),
         }
