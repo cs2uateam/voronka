@@ -409,14 +409,7 @@
           <button class="btn btn-primary btn-sm" id="addToggleBtn" onclick="toggleAddForm()">+ Добавить видео</button>
           <input type="text" id="fSearch" placeholder="Поиск..." oninput="renderTable()" style="width:120px" />
           <select id="fType" onchange="renderTable()"><option value="">Все типы</option></select>
-          <select id="fSort" onchange="renderTable()">
-            <option value="date_desc">Дата ↓</option>
-            <option value="date_asc">Дата ↑</option>
-            <option value="views_desc">Просмотры ↓</option>
-            <option value="er_desc">ER ↓</option>
-            <option value="cr_desc">CR/CTR ↓</option>
-            <option value="saves_desc">Сохранения ↓</option>
-          </select>
+          <select id="fSort" onchange="renderTable()"></select>
         </div>
       </div>
       <div class="twrap"><div id="tableContainer"><div class="empty"><div class="icon">📭</div>Нет данных</div></div></div>
@@ -433,12 +426,7 @@
         <h2>По видео</h2>
         <div class="filters">
           <select id="ffType" onchange="renderFunnel()"><option value="">Все типы</option></select>
-          <select id="ffSort" onchange="renderFunnel()">
-            <option value="views_desc">По просмотрам ↓</option>
-            <option value="date_desc">По дате ↓</option>
-            <option value="er_desc">По ER ↓</option>
-            <option value="cr_desc">По CR/CTR ↓</option>
-          </select>
+          <select id="ffSort" onchange="renderFunnel()"></select>
         </div>
       </div>
       <div id="funnelVids"></div>
@@ -518,7 +506,7 @@ const PLATS = {
       { key:'follows',   label:'Подписчики',      cls:'bar-follows',  mode:'ratio', bench:'норма 0.3-1%'  },
     ],
     signals: [
-      { key:'cr',   label:'Avg view %',       bench:'Хорошо >50% · Отлично >70%', good:50, great:70, tip:'averageViewPercentage из YouTube Analytics API (capped 100%). Это НЕ "Stayed to watch %" из YT Studio — Studio считает (views/impressions), а импрессии публичный API не отдаёт.' },
+      { key:'cr',   label:'Avg view %',       bench:'Хорошо >50% · Отлично >70%', good:50, great:70, tip:'averageViewPercentage из YouTube Analytics API. Для Shorts может превышать 100% (зацикленность плеера). Это НЕ "Stayed to watch %" из YT Studio — Studio считает (views/impressions), а импрессии публичный API не отдаёт.' },
       { key:'fr',   label:'Follow Rate',      bench:'Хорошо >0.3% · Отлично >1%', good:.3, great:1,  tip:'% зрителей, подписавшихся после просмотра. Показывает, насколько видео конвертирует в подписчиков.' },
       { key:'er',   label:'Avg ER',           bench:'Хорошо >3% · Отлично >6%',   good:3,  great:6,  tip:'Engagement Rate = (лайки + комменты + репосты) / просмотры × 100.' },
     ],
@@ -975,6 +963,35 @@ function rebuildTypeFilters() {
   const opts = '<option value="">Все типы</option>' + cfg.types.map(t => `<option value="${t}">${cfg.typeLabels[t]}</option>`).join('');
   document.getElementById('fType').innerHTML = opts;
   document.getElementById('ffType').innerHTML = opts;
+  rebuildSortFilters();
+}
+
+// Sort dropdowns are platform-specific: only offer sorts for fields the platform actually has.
+// Keeps "Сохранения" off the YouTube tab and renames CR/CTR to whatever the platform calls it.
+function rebuildSortFilters() {
+  const cfg = p();
+  const mainLbl = cfg.mainMetric === 'reach' ? 'Охват' : 'Просмотры';
+  const fieldIds = new Set(cfg.fields.map(f => f.id));
+  const tableOpts = [
+    `<option value="date_desc">Дата ↓</option>`,
+    `<option value="date_asc">Дата ↑</option>`,
+    `<option value="views_desc">${mainLbl} ↓</option>`,
+    `<option value="er_desc">ER ↓</option>`,
+  ];
+  const funnelOpts = [
+    `<option value="views_desc">По ${mainLbl.toLowerCase()} ↓</option>`,
+    `<option value="date_desc">По дате ↓</option>`,
+    `<option value="er_desc">По ER ↓</option>`,
+  ];
+  if (cfg.crField && cfg.crLabel) {
+    tableOpts.push(`<option value="cr_desc">${cfg.crLabel} ↓</option>`);
+    funnelOpts.push(`<option value="cr_desc">По ${cfg.crLabel} ↓</option>`);
+  }
+  if (fieldIds.has('saves')) {
+    tableOpts.push(`<option value="saves_desc">Сохранения ↓</option>`);
+  }
+  document.getElementById('fSort').innerHTML = tableOpts.join('');
+  document.getElementById('ffSort').innerHTML = funnelOpts.join('');
 }
 
 // ── Form ──────────────────────────────────────────────────
@@ -1232,6 +1249,9 @@ function renderStats() {
 
   const crLbl = cfg.crLabel || 'CR';
   const mainLbl = cfg.mainMetric==='reach' ? 'охват' : 'просмотры';
+  const erParts = ['лайки', 'комменты', 'репосты'];
+  if (cfg.fields.some(f => f.id === 'saves')) erParts.push('сохранения');
+  const erFormula = `(${erParts.join(' + ')}) / ${mainLbl} × 100`;
 
   // secondary metric (e.g. plays for instagram where mainMetric=reach)
   const secField = cfg.fields.find(f => f.id === 'plays' && cfg.mainMetric !== 'plays');
@@ -1249,10 +1269,10 @@ function renderStats() {
     <div class="stat-card"><div class="lbl">Видео</div><div class="val">${entries.length}</div><div class="sub">всего записей</div></div>
     <div class="stat-card" data-tip="Среднее ${mainLbl} на видео."><div class="lbl">Ср. ${mainLbl}</div><div class="val">${entries.length?fmt(avgMain):'—'}</div><div class="sub">на видео</div></div>
     ${secField && avgSec ? `<div class="stat-card" data-tip="Среднее просмотров (plays) на видео."><div class="lbl">Ср. просмотры</div><div class="val">${fmt(avgSec)}</div><div class="sub">на видео</div></div>` : ''}
-    <div class="stat-card" data-tip="Engagement Rate = (лайки + комменты + репосты + сохранения) / ${mainLbl} × 100."><div class="lbl">Ср. ER</div><div class="val">${entries.length?avgER.toFixed(1)+'%':'—'}</div><div class="sub">engagement rate</div></div>
-    ${cfg.crField ? `<div class="stat-card" data-tip="${crLbl} — ключевой алгоритмический сигнал. Норма >50%, для вирального >70%."><div class="lbl">Ср. ${crLbl}</div><div class="val">${avgCR?avgCR.toFixed(0)+'%':'—'}</div><div class="sub">по видео с данными</div></div>` : ''}
-    <div class="stat-card" data-tip="Процент зрителей, сохранивших контент. Норма: 0.5–1.5%."><div class="lbl">Save rate</div><div class="val">${entries.length?avgSR.toFixed(2)+'%':'—'}</div><div class="sub">ср. saves / ${mainLbl}</div></div>
-    ${bestCR&&cfg.crField ? `<div class="stat-card" data-tip="Видео с наибольшим ${crLbl}."><div class="lbl">Лучший ${crLbl}</div><div class="val">${bestCR[cfg.crField].toFixed(0)}%</div><div class="sub">${esc(bestCR.title.slice(0,20))}${bestCR.title.length>20?'…':''}</div></div>` : ''}
+    <div class="stat-card" data-tip="Engagement Rate = ${erFormula}."><div class="lbl">Ср. ER</div><div class="val">${entries.length?avgER.toFixed(1)+'%':'—'}</div><div class="sub">engagement rate</div></div>
+    ${cfg.crField ? `<div class="stat-card" data-tip="${crLbl} — ключевой алгоритмический сигнал. Норма >50%, для вирального >70%."><div class="lbl">Ср. ${crLbl}</div><div class="val">${avgCR?avgCR.toFixed(1)+'%':'—'}</div><div class="sub">по видео с данными</div></div>` : ''}
+    ${cfg.fields.some(f=>f.id==='saves') ? `<div class="stat-card" data-tip="Процент зрителей, сохранивших контент. Норма: 0.5–1.5%."><div class="lbl">Save rate</div><div class="val">${entries.length?avgSR.toFixed(2)+'%':'—'}</div><div class="sub">ср. saves / ${mainLbl}</div></div>` : ''}
+    ${bestCR&&cfg.crField ? `<div class="stat-card" data-tip="Видео с наибольшим ${crLbl}."><div class="lbl">Лучший ${crLbl}</div><div class="val">${bestCR[cfg.crField].toFixed(1)}%</div><div class="sub">${esc(bestCR.title.slice(0,20))}${bestCR.title.length>20?'…':''}</div></div>` : ''}
     ${bestER ? `<div class="stat-card" data-tip="Видео с наибольшим Engagement Rate."><div class="lbl">Лучший ER</div><div class="val">${erOf(bestER).toFixed(1)}%</div><div class="sub">${esc(bestER.title.slice(0,20))}${bestER.title.length>20?'…':''}</div></div>` : ''}
     <div class="stats-group-label" style="margin-top:10px">Всего</div>
     <div class="stat-card"><div class="lbl">Всего ${mainLbl}</div><div class="val">${fmt(totMain)}</div><div class="sub">сумма</div></div>
@@ -1339,10 +1359,16 @@ function stepsHtml(entry) {
     const val = entry[s.key] || 0;
 
     if (s.mode==='top')   { pct=100; label=fmt(val||0); }
-    else if (s.mode==='cr')    { pct=Math.min(100,val); label=val?val.toFixed(0)+'%':'—'; }
+    else if (s.mode==='cr')    { pct=Math.min(100,val); label=val?val.toFixed(1)+'%':'—'; }
     else if (s.mode==='imp')   { pct=Math.min(100,top?val/top*100:0); label=val?fmt(val):'—'; }
     else if (s.mode==='reach') { pct=Math.min(100,top?val/top*100:0); label=val?fmt(val):'—'; }
-    else { pct=Math.min(100,top?val/top*100:0); label=val?pct.toFixed(1)+'%':'—'; }
+    else {
+      const raw = top ? val/top*100 : 0;
+      pct = Math.min(100, raw);
+      // Small ratios (0.03% likes/views) collapsed to "0.0%" before — show 2 decimals when < 10.
+      const fixed = raw >= 10 ? raw.toFixed(1) : raw.toFixed(2);
+      label = val ? fixed + '%' : '—';
+    }
 
     const bench = s.bench ? `<span class="bench">${s.bench}</span>` : '';
     return `<div class="fstep">

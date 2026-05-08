@@ -69,9 +69,9 @@ class YouTubeClient:
         stored — overwriting with zeros makes published-but-fresh videos look
         broken in voronka.
 
-        retention is capped at 100% — averageViewPercentage can exceed 100% for
-        Shorts because of looped playback (1 viewer × 2 loops = 200%), which
-        doesn't make sense as a "Stayed to watch" reading."""
+        retention = raw averageViewPercentage. For Shorts it can exceed 100%
+        because of looped playback (one viewer × 2 loops = 200%) — we keep
+        that signal because it's useful (high % = lots of looping = engagement)."""
         end = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         try:
             resp = self.analytics.reports().query(
@@ -98,7 +98,7 @@ class YouTubeClient:
             print(f"[analytics] {video_id}: stub row (views=0, still aggregating)", flush=True)
             return None
         return {
-            "retention": min(round(float(retention or 0), 1), 100.0),
+            "retention": round(float(retention or 0), 1),
             "shares": int(shares or 0),
             "follows": int(subs or 0),
         }
