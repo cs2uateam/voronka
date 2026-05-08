@@ -218,6 +218,9 @@
   .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; }
   .modal-bg.open { display: flex; }
   .modal { background: #111; border: 1px solid #222; border-radius: 16px; padding: 28px; max-width: 560px; width: 90%; max-height: 85vh; overflow-y: auto; }
+  #histModal .modal { max-width: 1100px; }
+  .hist-now-row td { background: #161616; color: #e8e8e8; font-weight: 500; }
+  .hist-now-row td:first-child { color: #3ddc84; }
   .modal h2 { font-size: 16px; margin-bottom: 8px; color: #fff; }
   .modal p  { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.5; }
   .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
@@ -1159,34 +1162,48 @@ function showHistory(id) {
   const cfg = p();
   const snaps = [...e.history].reverse(); // новые сначала
 
-  document.getElementById('histTitle').textContent = '📈 ' + e.title.slice(0,40);
+  document.getElementById('histTitle').textContent = '📈 ' + e.title.slice(0,80);
 
-  const cols = cfg.fields.filter(f => snaps.some(s => s[f.id]));
-  const thead = '<tr><th>Правка</th>' + cols.map(f=>`<th>${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim()}</th>`).join('') + '<th></th></tr>';
+  // Show every metric field for which the entry has data — use current entry + history.
+  const allSources = [e, ...snaps];
+  const cols = cfg.fields.filter(f => allSources.some(s => s && s[f.id]));
+  const thead = '<tr><th>Когда</th>' + cols.map(f=>`<th>${f.label.replace(/[🎯👁❤️💬↗️🔖👤➕📊📡⏱✅]/u,'').trim()}</th>`).join('') + '</tr>';
 
-  const rows = snaps.map((s, i) => {
-    const prev = snaps[i+1];
-    const cells = cols.map(f => {
-      const val = s[f.id] || 0;
-      let delta = '';
-      if (prev) {
-        const diff = val - (prev[f.id]||0);
-        if (diff !== 0) {
-          const sign = diff > 0 ? '+' : '';
-          const cls  = diff > 0 ? 'up' : 'down';
-          delta = `<span class="hist-delta ${cls}">${sign}${fmt(Math.abs(diff))}</span>`;
-        }
-      }
-      return `<td>${fmt(val)}${delta}</td>`;
-    }).join('');
+  const fmtVal = (f, v) => {
+    if (v === undefined || v === null) return '—';
+    if (f.parse === 'float') return v.toFixed(1);
+    return fmt(v);
+  };
+
+  const deltaCell = (f, curr, prev) => {
+    const val = curr ?? 0;
+    if (prev === undefined || prev === null) return `<td>${fmtVal(f, val)}</td>`;
+    const diff = val - prev;
+    if (diff === 0) return `<td>${fmtVal(f, val)}</td>`;
+    const cls  = diff > 0 ? 'up' : 'down';
+    const sign = diff > 0 ? '+' : '−';
+    const absDiff = Math.abs(diff);
+    const label = sign + (f.parse === 'float' ? absDiff.toFixed(1) : fmt(absDiff));
+    return `<td>${fmtVal(f, val)}<span class="hist-delta ${cls}">${label}</span></td>`;
+  };
+
+  // First row: CURRENT state, with delta vs the latest snapshot (snaps[0] = newest history entry)
+  const latest = snaps[0] || {};
+  const nowCells = cols.map(f => deltaCell(f, e[f.id], latest[f.id])).join('');
+  const nowRow = `<tr class="hist-now-row"><td style="white-space:nowrap">● Сейчас</td>${nowCells}</tr>`;
+
+  // Historical rows: each compared to the snapshot below it (older)
+  const histRows = snaps.map((s, i) => {
+    const prev = snaps[i+1] || {};
+    const cells = cols.map(f => deltaCell(f, s[f.id], prev[f.id])).join('');
     const d = new Date(s.at);
-    const dateStr = d.toLocaleDateString('ru', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
-    return `<tr><td style="color:#555;white-space:nowrap">${dateStr}</td>${cells}<td><button class="hist-btn" onclick="deleteHistSnap(${id},${i})" title="Удалить" style="color:#333;font-size:11px">✕</button></td></tr>`;
+    const dateStr = d.toLocaleString('ru', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+    return `<tr><td style="color:#666;white-space:nowrap">${dateStr}</td>${cells}</tr>`;
   }).join('');
 
   document.getElementById('histBody').innerHTML = `
-    <p style="font-size:12px;color:#444;margin-bottom:12px">${snaps.length} снапшот${snaps.length===1?'':'ов'} — данные <b style="color:#666">до</b> каждого обновления</p>
-    <div style="overflow-x:auto"><table class="hist-table"><thead>${thead}</thead><tbody>${rows}</tbody></table></div>`;
+    <p style="font-size:12px;color:#666;margin-bottom:12px">${snaps.length} снапшот${snaps.length===1?'':'ов'}. Дельта рядом с числом — изменение с предыдущей записи.</p>
+    <div style="overflow-x:auto"><table class="hist-table"><thead>${thead}</thead><tbody>${nowRow}${histRows}</tbody></table></div>`;
 
   document.getElementById('histModal').classList.add('open');
 }
