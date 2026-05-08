@@ -736,12 +736,13 @@ function fmt(n) {
   if (n >= 1_000)     return (n/1_000).toFixed(1)+'K';
   return Math.round(n).toString();
 }
-// Raw integer formatter for table cells — user wants 1518, not "1.5K".
+// Raw integer formatter for table cells — user wants 1518, not "1.5K",
+// and prefers comma thousand-separators (1,518) over space (1 518).
 // fmt() stays for stat cards and other compact UI elements.
 function fmtRaw(n) {
   if (n === null || n === undefined || isNaN(n)) return '—';
   if (Number.isInteger(n) || Math.abs(n - Math.round(n)) < 0.05) {
-    return Math.round(n).toLocaleString('ru-RU');
+    return Math.round(n).toLocaleString('en-US');
   }
   return n.toFixed(1);
 }
