@@ -105,6 +105,46 @@ def api_auth():
     return redirect(authorization_url(_redirect_uri()), code=302)
 
 
+@app.get("/api/debug_channel")
+def api_debug_channel():
+    """Diagnostic: list channels accessible via OAuth, and lookup ownership of a specific video."""
+    video_id = request.args.get("video_id", "").strip()
+    try:
+        from lib.oauth_web import get_credentials
+        from googleapiclient.discovery import build
+        creds = get_credentials()
+        yt = build("youtube", "v3", credentials=creds, cache_discovery=False)
+        out = {}
+        # All channels the OAuth user owns
+        ch = yt.channels().list(part="id,snippet,contentDetails", mine=True).execute()
+        out["my_channels"] = [
+            {
+                "id": c.get("id"),
+                "title": (c.get("snippet") or {}).get("title"),
+                "uploads_playlist": (c.get("contentDetails") or {}).get("relatedPlaylists", {}).get("uploads"),
+            }
+            for c in (ch.get("items") or [])
+        ]
+        if video_id:
+            v = yt.videos().list(part="snippet,status", id=video_id).execute()
+            items = v.get("items") or []
+            if items:
+                sn = items[0].get("snippet") or {}
+                st = items[0].get("status") or {}
+                out["video_lookup"] = {
+                    "id": video_id,
+                    "channelId": sn.get("channelId"),
+                    "channelTitle": sn.get("channelTitle"),
+                    "publishedAt": sn.get("publishedAt"),
+                    "privacyStatus": st.get("privacyStatus"),
+                }
+            else:
+                out["video_lookup"] = {"id": video_id, "found": False}
+        return jsonify(out)
+    except Exception as e:
+        return jsonify(error=f"{type(e).__name__}: {e}"), 500
+
+
 @app.get("/api/debug_analytics")
 def api_debug_analytics():
     """Diagnostic: returns raw YouTube Analytics API response for a single video.
