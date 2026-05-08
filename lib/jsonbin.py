@@ -34,7 +34,12 @@ class JsonBin:
 
     def write(self, record: dict) -> None:
         url = f"{BASE}/{self.bin_id}"
-        r = requests.put(url, headers=self.headers, json=record, timeout=20)
+        # X-Bin-Versioning: false → the bin is overwritten in place instead of
+        # creating a new version. Free tier caps at 100 versions per bin and
+        # then 403's every PUT, which is exactly what we hit. We don't use
+        # JSONBin versioning anyway — entry history lives in record.youtube.history[].
+        headers = {**self.headers, "X-Bin-Versioning": "false"}
+        r = requests.put(url, headers=headers, json=record, timeout=20)
         if not r.ok:
             raise RuntimeError(_explain(r, "PUT", url))
 

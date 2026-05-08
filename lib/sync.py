@@ -8,6 +8,10 @@ from .youtube_api import YouTubeClient
 
 SHORTS_DURATION_LIMIT_SEC = 60
 METRIC_FIELDS = ("views", "retention", "likes", "comments", "shares", "follows")
+# JSONBin free tier rejects PUTs >100KB. With ~30 entries × full history, each
+# entry's history must stay bounded. 15 snapshots per video gives enough trend
+# data while keeping the whole bin well under the cap.
+HISTORY_CAP = 15
 
 
 def _parse_iso8601_duration_seconds(s: str) -> int:
@@ -64,6 +68,8 @@ def _build_entry(public: dict, analytics: dict, url: str, existing: dict | None 
     history = list((existing or {}).get("history") or [])
     if existing:
         history.append(_snapshot(existing))
+    if len(history) > HISTORY_CAP:
+        history = history[-HISTORY_CAP:]
     if history:
         base["history"] = history
     return base
