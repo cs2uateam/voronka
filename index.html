@@ -499,7 +499,7 @@ const PLATS = {
     erBase: 'views',
     funnelSteps: [
       { key:'views',     label:'Просмотры',  cls:'bar-views',    mode:'top',   bench:null            },
-      { key:'retention', label:'Avg view %', cls:'bar-cr',       mode:'cr',    bench:'норма >30%'    },
+      { key:'retention', label:'Avg view %', cls:'bar-cr',       mode:'cr',    bench:'норма >50%'    },
       { key:'likes',     label:'Лайки',           cls:'bar-likes',    mode:'ratio', bench:'норма 2-5%'    },
       { key:'comments',  label:'Комменты',        cls:'bar-comments', mode:'ratio', bench:'норма 0.3-1%'  },
       { key:'shares',    label:'Репосты',         cls:'bar-shares',   mode:'ratio', bench:'норма 0.1-0.3%'},
@@ -753,7 +753,26 @@ function crOf(e) {
 function erClass(v)  { return v>=8?'er-high':v>=3?'er-mid':'er-low'; }
 function crClass(v)  { return v>=70?'cr-great':v>=50?'cr-good':v>=35?'cr-mid':'cr-low'; }
 
+// Per-platform tooltip body for the "Average crLbl" stat-card.
+function crTipForCfg(cfg) {
+  if (platform === 'youtube') {
+    return `${cfg.crLabel} — averageViewPercentage из YouTube Analytics. Для Shorts может превышать 100% (зацикленность). Норма для Shorts: >50%, отлично >70%. НЕ совпадает с "Stayed to watch %" из YT Studio.`;
+  }
+  return `${cfg.crLabel} — ключевой алгоритмический сигнал. Норма >50%, для вирального >70%.`;
+}
+
 function crTip(v, lbl) {
+  // For YouTube the metric is averageViewPercentage (can exceed 100% on Shorts because of looped views).
+  // For TikTok/IG it's Completion Rate / Avg watch %, bounded ≤ 100%.
+  if (platform === 'youtube') {
+    const num = v.toFixed(1);
+    if (v>=100) return `${lbl} ${num}% — петля ✅ Зрители пересматривают. Сильный сигнал удержания.`;
+    if (v>=70)  return `${lbl} ${num}% — отлично ✅ Большинство досматривает. Норма для Shorts: >50%.`;
+    if (v>=50)  return `${lbl} ${num}% — хорошо. Норма для Shorts: >50%.`;
+    if (v>=35)  return `${lbl} ${num}% — средне ⚠️ Часть уходит к середине.`;
+    return `${lbl} ${num}% — низко 🔴 Уходят рано. Проверь хук и первые 3 сек.`;
+  }
+  // TikTok / IG semantics
   if (v>=70) return `${lbl} ${v.toFixed(0)}% — отлично ✅ Алгоритм активно распространяет. Норма: >70%.`;
   if (v>=50) return `${lbl} ${v.toFixed(0)}% — хорошо. Видео рассматривается для расширения. Норма: >50%.`;
   if (v>=35) return `${lbl} ${v.toFixed(0)}% — средне ⚠️ Зрители уходят на середине. Норма: >50%.`;
@@ -761,6 +780,15 @@ function crTip(v, lbl) {
 }
 
 function erTip(v) {
+  // YouTube Shorts: typical ER 1–3%, anything above 3% is strong.
+  // TikTok / IG: typical ER 4–8%.
+  if (platform === 'youtube') {
+    if (v>=4) return `ER ${v.toFixed(1)}% — отлично ✅ Сильное вовлечение. Норма для Shorts: 1–3%.`;
+    if (v>=2) return `ER ${v.toFixed(1)}% — хорошо. Норма для Shorts: 1–3%.`;
+    if (v>=1) return `ER ${v.toFixed(1)}% — норма. Норма для Shorts: 1–3%.`;
+    if (v>=0.5) return `ER ${v.toFixed(1)}% — ниже нормы ⚠️ Норма для Shorts: 1–3%.`;
+    return `ER ${v.toFixed(1)}% — низко 🔴 Норма для Shorts: 1–3%.`;
+  }
   if (v>=8) return `ER ${v.toFixed(1)}% — отлично ✅ Норма: 4–8%.`;
   if (v>=4) return `ER ${v.toFixed(1)}% — норма. Норма: 4–8%.`;
   if (v>=2) return `ER ${v.toFixed(1)}% — ниже нормы ⚠️ Норма: 4–8%.`;
@@ -1270,7 +1298,7 @@ function renderStats() {
     <div class="stat-card" data-tip="Среднее ${mainLbl} на видео."><div class="lbl">Ср. ${mainLbl}</div><div class="val">${entries.length?fmt(avgMain):'—'}</div><div class="sub">на видео</div></div>
     ${secField && avgSec ? `<div class="stat-card" data-tip="Среднее просмотров (plays) на видео."><div class="lbl">Ср. просмотры</div><div class="val">${fmt(avgSec)}</div><div class="sub">на видео</div></div>` : ''}
     <div class="stat-card" data-tip="Engagement Rate = ${erFormula}."><div class="lbl">Ср. ER</div><div class="val">${entries.length?avgER.toFixed(1)+'%':'—'}</div><div class="sub">engagement rate</div></div>
-    ${cfg.crField ? `<div class="stat-card" data-tip="${crLbl} — ключевой алгоритмический сигнал. Норма >50%, для вирального >70%."><div class="lbl">Ср. ${crLbl}</div><div class="val">${avgCR?avgCR.toFixed(1)+'%':'—'}</div><div class="sub">по видео с данными</div></div>` : ''}
+    ${cfg.crField ? `<div class="stat-card" data-tip="${crTipForCfg(cfg)}"><div class="lbl">Ср. ${crLbl}</div><div class="val">${avgCR?avgCR.toFixed(1)+'%':'—'}</div><div class="sub">по видео с данными</div></div>` : ''}
     ${cfg.fields.some(f=>f.id==='saves') ? `<div class="stat-card" data-tip="Процент зрителей, сохранивших контент. Норма: 0.5–1.5%."><div class="lbl">Save rate</div><div class="val">${entries.length?avgSR.toFixed(2)+'%':'—'}</div><div class="sub">ср. saves / ${mainLbl}</div></div>` : ''}
     ${bestCR&&cfg.crField ? `<div class="stat-card" data-tip="Видео с наибольшим ${crLbl}."><div class="lbl">Лучший ${crLbl}</div><div class="val">${bestCR[cfg.crField].toFixed(1)}%</div><div class="sub">${esc(bestCR.title.slice(0,20))}${bestCR.title.length>20?'…':''}</div></div>` : ''}
     ${bestER ? `<div class="stat-card" data-tip="Видео с наибольшим Engagement Rate."><div class="lbl">Лучший ER</div><div class="val">${erOf(bestER).toFixed(1)}%</div><div class="sub">${esc(bestER.title.slice(0,20))}${bestER.title.length>20?'…':''}</div></div>` : ''}
