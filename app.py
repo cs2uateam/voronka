@@ -105,48 +105,6 @@ def api_auth():
     return redirect(authorization_url(_redirect_uri()), code=302)
 
 
-@app.get("/api/debug_stw")
-def api_debug_stw():
-    """Diagnostic: probe several Analytics API metric combinations for one video
-    to find which (if any) matches YT Studio's 'Stayed to watch %' number."""
-    from datetime import datetime, timezone
-    video_id = request.args.get("video_id", "").strip()
-    if not video_id:
-        return jsonify(error="missing ?video_id="), 400
-    try:
-        from lib.oauth_web import get_credentials
-        from googleapiclient.discovery import build
-        creds = get_credentials()
-        analytics = build("youtubeAnalytics", "v2", credentials=creds, cache_discovery=False)
-        end_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        attempts = []
-
-        def try_query(name: str, **kwargs):
-            try:
-                resp = analytics.reports().query(
-                    ids="channel==MINE",
-                    startDate="2005-02-14",
-                    endDate=end_date,
-                    filters=f"video=={video_id}",
-                    **kwargs,
-                ).execute()
-                attempts.append({"name": name, "ok": True, "response": resp})
-            except Exception as e:
-                attempts.append({"name": name, "ok": False, "error": f"{type(e).__name__}: {e}"})
-
-        try_query("averageViewPercentage", metrics="averageViewPercentage,views")
-        try_query("averageViewDuration", metrics="averageViewDuration,views")
-        try_query("audienceWatchRatio_no_dim", metrics="audienceWatchRatio")
-        try_query("audienceWatchRatio_w_dim",
-                  metrics="audienceWatchRatio",
-                  dimensions="elapsedVideoTimeRatio")
-        try_query("relativeRetentionPerformance", metrics="relativeRetentionPerformance")
-        try_query("redViews_views", metrics="views,redViews,estimatedMinutesWatched,averageViewDuration")
-        return jsonify(video_id=video_id, attempts=attempts)
-    except Exception as e:
-        return jsonify(error=f"{type(e).__name__}: {e}"), 500
-
-
 @app.post("/api/add")
 def api_add():
     try:
