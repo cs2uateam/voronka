@@ -27,7 +27,10 @@ def _snapshot(entry: dict) -> dict:
 
 def _build_entry(post: dict, existing: dict | None = None) -> dict:
     base: dict = {
-        "id": (existing or {}).get("id") or int(time.time() * 1000),
+        # Use Telegram's msg_id as the stable primary-key id for new entries.
+        # int(time.time()*1000) collides when many new posts are added in one
+        # refresh loop — they all land in the same millisecond.
+        "id": (existing or {}).get("id") or int(post["msg_id"]),
         "msg_id": post["msg_id"],
         "title": post.get("title", ""),
         "url": post.get("url", ""),

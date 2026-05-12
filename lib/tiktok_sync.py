@@ -42,8 +42,12 @@ def _build_entry(video: dict, existing: dict | None = None) -> dict:
         desc = (video.get("video_description") or "").strip()
         title = desc.splitlines()[0] if desc else ""
 
+    # TikTok video IDs are numeric Snowflake-style identifiers — stable + unique
+    # across the channel, so they make a fine primary key when we're inserting
+    # a never-before-seen video. Existing entries keep their original id.
+    new_id = int(video.get("id") or 0) or int(time.time() * 1000)
     base: dict = {
-        "id": (existing or {}).get("id") or int(time.time() * 1000),
+        "id": (existing or {}).get("id") or new_id,
         "title": title,
         "url": video.get("share_url") or f"https://www.tiktok.com/video/{video.get('id')}",
         "vid_group": (existing or {}).get("vid_group", ""),

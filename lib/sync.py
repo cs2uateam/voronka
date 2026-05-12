@@ -9,13 +9,12 @@ HISTORY_CAP stays at 5 because more history doesn't tell us much beyond trend
 direction; trimming aggressively keeps each entry small and refresh snappy.
 """
 
+import hashlib
 import time
 from datetime import datetime, timezone
 
 from .oauth_web import get_credentials
 from .store import (
-    add_deleted_id,
-    delete_entry,
     read_deleted_ids,
     read_entries,
     upsert_entries,
@@ -26,6 +25,12 @@ from .youtube_api import YouTubeClient
 SHORTS_DURATION_LIMIT_SEC = 60
 METRIC_FIELDS = ("views", "retention", "likes", "comments", "shares", "follows")
 HISTORY_CAP = 5
+
+
+def _stable_id(s: str) -> int:
+    """Deterministic 60-bit id from a string (YouTube video_id) — stable
+    across runs so re-discovering the same video reuses the same row."""
+    return int(hashlib.sha1((s or "").encode("utf-8")).hexdigest()[:15], 16)
 
 
 def _parse_iso8601_duration_seconds(s: str) -> int:
@@ -72,8 +77,9 @@ def _build_entry(public: dict, analytics: dict | None, url: str, existing: dict 
             "follows": prev.get("follows", 0),
         }
 
+    vid = extract_video_id(url) or url
     base: dict = {
-        "id": (existing or {}).get("id") or int(time.time() * 1000),
+        "id": (existing or {}).get("id") or _stable_id(vid),
         "title": public.get("title", ""),
         "url": url,
         "vid_group": (existing or {}).get("vid_group", ""),
@@ -100,7 +106,7 @@ def _build_entry(public: dict, analytics: dict | None, url: str, existing: dict 
 def _bare_entry(video_id: str) -> dict:
     """A placeholder entry for a discovered video; metrics get filled on first refresh."""
     return {
-        "id": int(time.time() * 1000) + (hash(video_id) & 0xFFF),
+        "id": _stable_id(video_id),
         "title": "",
         "url": f"https://youtube.com/shorts/{video_id}",
         "vid_group": "",

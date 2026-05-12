@@ -54,8 +54,15 @@ def _build_entry(media: dict, insights: dict, existing: dict | None = None) -> d
     shares = int(insights.get("shares") or 0)
     saves = int(insights.get("saved") or 0)
 
+    # IG media IDs are long numeric strings (Graph API returns them as digits).
+    # Use as primary key for new entries; falls back to time-millis if parse fails.
+    raw_mid = str(media.get("id") or "").split("_")[0]
+    try:
+        new_id = int(raw_mid)
+    except ValueError:
+        new_id = int(time.time() * 1000)
     base: dict = {
-        "id": (existing or {}).get("id") or int(time.time() * 1000),
+        "id": (existing or {}).get("id") or new_id,
         "title": title,
         "url": media.get("permalink") or "",
         "vid_group": (existing or {}).get("vid_group", ""),
