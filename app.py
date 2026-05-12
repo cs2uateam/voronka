@@ -11,7 +11,7 @@ from lib.oauth_web import (
     store_refresh_token,
 )
 from lib.sync import add_urls, refresh_slice
-from lib import tiktok_oauth, tiktok_sync
+from lib import tiktok_oauth, tiktok_sync, instagram_oauth, instagram_sync
 
 ROOT = Path(__file__).resolve().parent
 
@@ -30,6 +30,10 @@ def _redirect_uri() -> str:
 
 def _tiktok_redirect_uri() -> str:
     return _base_url() + "/api/tiktok/auth"
+
+
+def _instagram_redirect_uri() -> str:
+    return _base_url() + "/api/instagram/auth"
 
 
 def _html(body_html: str, status: int = 200, extra_headers: dict | None = None):
@@ -201,6 +205,62 @@ def api_tiktok_refresh():
         offset = int(data.get("offset", 0) or 0)
         limit = int(data.get("limit", 8) or 8)
         return jsonify(ok=True, **tiktok_sync.refresh_slice(offset=offset, limit=limit))
+    except RuntimeError as e:
+        msg = str(e)
+        return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401
+    except Exception as e:
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+
+
+@app.get("/api/instagram/status")
+def api_instagram_status():
+    try:
+        return jsonify(ok=True, authenticated=instagram_oauth.is_authenticated())
+    except Exception as e:
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+
+
+@app.get("/api/instagram/auth")
+def api_instagram_auth():
+    qs = request.args
+    if "error" in qs:
+        return _html(
+            f"<h1>Авторизация Instagram отклонена</h1><p>{qs.get('error_description', qs.get('error', 'unknown'))}</p>"
+            "<a href='/' class='btn'>Назад</a>",
+            400,
+        )
+    if "code" in qs:
+        try:
+            redirect_uri = _instagram_redirect_uri()
+            short_token = instagram_oauth.exchange_code(qs["code"], redirect_uri)
+            long_token = instagram_oauth.exchange_long_lived(short_token)
+            info = instagram_oauth.find_ig_business_account(long_token)
+            instagram_oauth.store_auth(
+                page_access_token=info["page_access_token"],
+                ig_user_id=info["ig_user_id"],
+                page_id=info["page_id"],
+                ig_username=info.get("ig_username", ""),
+                page_name=info.get("page_name", ""),
+            )
+            return _html(
+                f"<h1>✓ Instagram подключён</h1>"
+                f"<p>IG @{info.get('ig_username','')} · Page {info.get('page_name','')}</p>"
+                "<a href='/?auth=ig-success' class='btn'>Open voronka</a>",
+                200,
+                extra_headers={"Refresh": "0; url=/?auth=ig-success"},
+            )
+        except Exception as e:
+            return _html(f"<h1>Instagram auth failed</h1><p>{e}</p>", 500)
+    return redirect(instagram_oauth.authorization_url(_instagram_redirect_uri()), code=302)
+
+
+@app.post("/api/instagram/refresh")
+def api_instagram_refresh():
+    try:
+        data = request.get_json(silent=True) or {}
+        offset = int(data.get("offset", 0) or 0)
+        limit = int(data.get("limit", 8) or 8)
+        return jsonify(ok=True, **instagram_sync.refresh_slice(offset=offset, limit=limit))
     except RuntimeError as e:
         msg = str(e)
         return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401

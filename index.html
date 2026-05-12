@@ -581,6 +581,17 @@ const SYNC_CFG = {
     authNeeded: 'Нужна авторизация TikTok',
     syncBtn:    '↻ Sync TikTok',
   },
+  instagram: {
+    statusUrl:  '/api/instagram/status',
+    authUrl:    '/api/instagram/auth',
+    refreshUrl: '/api/instagram/refresh',
+    addUrl:     null,
+    canAddUrls: false,
+    authText:   'Подключи Instagram через Facebook Login — Reels и метрики появятся автоматически. Требуется IG Business/Creator + связанная Facebook Page.',
+    authBtn:    '🔑 Подключить Instagram',
+    authNeeded: 'Нужна авторизация Instagram',
+    syncBtn:    '↻ Sync Instagram',
+  },
 };
 function syncCfg() { return SYNC_CFG[platform] || null; }
 
