@@ -19,7 +19,7 @@ from urllib.parse import urlencode
 import requests
 
 from .env import required
-from .jsonbin import JsonBin
+from .store import read_auth, write_auth
 
 GRAPH_VERSION = "v22.0"
 FB_AUTH_URL = f"https://www.facebook.com/{GRAPH_VERSION}/dialog/oauth"
@@ -36,10 +36,6 @@ SCOPES = ",".join([
 
 def _app() -> tuple[str, str]:
     return required("META_APP_ID"), required("META_APP_SECRET")
-
-
-def _auth_bin() -> JsonBin:
-    return JsonBin(required("JSONBIN_INSTAGRAM_AUTH_BIN_ID"), required("JSONBIN_MASTER_KEY"))
 
 
 def authorization_url(redirect_uri: str, state: str = "") -> str:
@@ -134,20 +130,18 @@ def find_ig_business_account(user_token: str) -> dict:
 
 def store_auth(page_access_token: str, ig_user_id: str, page_id: str,
                ig_username: str = "", page_name: str = "") -> None:
-    bin_ = _auth_bin()
-    record = {
+    write_auth("instagram", {
         "page_access_token": page_access_token,
         "ig_user_id": ig_user_id,
         "page_id": page_id,
         "ig_username": ig_username,
         "page_name": page_name,
-    }
-    bin_.write(record)
+    })
 
 
 def load_auth() -> dict | None:
     try:
-        rec = _auth_bin().read() or {}
+        rec = read_auth("instagram") or {}
         if rec.get("page_access_token") and rec.get("ig_user_id"):
             return rec
     except Exception:

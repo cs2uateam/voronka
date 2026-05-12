@@ -1,4 +1,4 @@
-"""Instagram refresh logic — fetch all media, pull insights per item, merge into bin."""
+"""Instagram sync — Supabase-backed."""
 
 import re
 import time
@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from .instagram_api import InstagramClient
 from .instagram_oauth import get_credentials
-from .jsonbin import data_bin
+from .store import read_deleted_ids, read_entries, upsert_entries
 
 HISTORY_CAP = 5
 METRIC_FIELDS = ("plays", "reach", "likes", "comments", "shares", "saves", "follows", "profile_visits")
@@ -25,7 +25,6 @@ def _snapshot(entry: dict) -> dict:
 
 
 def extract_shortcode(url: str) -> str | None:
-    """Pull the IG shortcode (e.g. 'DXpQpx-CNIk') from a permalink URL."""
     if not url:
         return None
     m = IG_SHORTCODE_RE.search(url)
@@ -33,7 +32,6 @@ def extract_shortcode(url: str) -> str | None:
 
 
 def _build_entry(media: dict, insights: dict, existing: dict | None = None) -> dict:
-    """Map IG media + insights → voronka entry, preserving manual fields."""
     timestamp = media.get("timestamp", "")
     pub_date = timestamp[:10] if timestamp else ""
 
@@ -42,7 +40,6 @@ def _build_entry(media: dict, insights: dict, existing: dict | None = None) -> d
 
     media_type = media.get("media_type") or "IMAGE"
     media_product = media.get("media_product_type") or ""
-    # type field: voronka has 'reels' / 'фото' / 'карусель' / 'story'
     if media_product == "REELS" or (media_type == "VIDEO"):
         type_v = "reels"
     elif media_type == "CAROUSEL_ALBUM":
@@ -50,7 +47,6 @@ def _build_entry(media: dict, insights: dict, existing: dict | None = None) -> d
     else:
         type_v = "фото"
 
-    # IG API: 'views' (new) ~ voronka 'plays'. Fall back to media.like_count when insights are sparse.
     plays = int(insights.get("views") or insights.get("plays") or 0)
     reach = int(insights.get("reach") or 0)
     likes = int(media.get("like_count") or insights.get("likes") or 0)
@@ -66,14 +62,12 @@ def _build_entry(media: dict, insights: dict, existing: dict | None = None) -> d
         "date": (existing or {}).get("date") or pub_date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "type": (existing or {}).get("type") or type_v,
         "hook": (existing or {}).get("hook", ""),
-        # From API
         "plays": plays,
         "reach": reach,
         "likes": likes,
         "comments": comments,
         "shares": shares,
         "saves": saves,
-        # Manual / not available per-media in IG API
         "avg_watch": (existing or {}).get("avg_watch", 0),
         "profile_visits": (existing or {}).get("profile_visits", 0),
         "follows": (existing or {}).get("follows", 0),
@@ -89,22 +83,14 @@ def _build_entry(media: dict, insights: dict, existing: dict | None = None) -> d
 
 
 def refresh_slice(offset: int, limit: int) -> dict:
-    """Fetch all IG media + per-media insights, merge into bin, write once.
-
-    offset/limit accepted for parity with YT/TikTok but everything runs on
-    offset==0 (IG list is paginated server-side, we walk it all in one pass)."""
     if offset > 0:
         return {
             "processed": 0, "missing": 0, "discovered": 0,
             "total": 0, "next_offset": offset, "done": True, "log": "",
         }
 
-    bin_ = data_bin()
-    record = bin_.read()
-    record.setdefault("instagram", {}).setdefault("entries", [])
-    record["instagram"].setdefault("deleted_ids", [])
-    entries = record["instagram"]["entries"]
-    deleted_ids = set(record["instagram"]["deleted_ids"] or [])
+    entries = read_entries("instagram")
+    deleted_ids = set(read_deleted_ids("instagram"))
 
     log_lines: list[str] = []
     discovered = 0
@@ -121,7 +107,6 @@ def refresh_slice(offset: int, limit: int) -> dict:
             "log": f"⚠ Instagram API error: {type(e).__name__}: {e}",
         }
 
-    # Index existing entries by IG media id (preferred) and by shortcode (fallback for manual URLs)
     existing_by_mid: dict[str, int] = {}
     for i, e in enumerate(entries):
         mid = e.get("ig_media_id")
@@ -129,21 +114,21 @@ def refresh_slice(offset: int, limit: int) -> dict:
             existing_by_mid[str(mid)] = i
 
     media_by_id = {str(m.get("id")): m for m in media_list if m.get("id")}
+    changed: list[dict] = []
 
-    # 1. Update existing matches by ig_media_id
     for mid, idx in list(existing_by_mid.items()):
         if mid not in media_by_id:
             continue
         media = media_by_id[mid]
         insights = client.fetch_insights(mid, media.get("media_type", "VIDEO"))
         new_entry = _build_entry(media, insights, existing=entries[idx])
-        new_entry["ig_media_id"] = mid  # keep the linkage
+        new_entry["ig_media_id"] = mid
         entries[idx] = new_entry
+        changed.append(new_entry)
         refreshed += 1
         log_lines.append(f"↻ {new_entry.get('title','')[:60]} — {new_entry.get('plays', 0)} plays")
 
-    # 2. Discover new media — by ig_media_id not already linked, and not tombstoned
-    for mid in reversed(list(media_by_id.keys())):  # reversed so newest ends up at index 0
+    for mid in reversed(list(media_by_id.keys())):
         if mid in existing_by_mid or mid in deleted_ids:
             continue
         media = media_by_id[mid]
@@ -151,10 +136,11 @@ def refresh_slice(offset: int, limit: int) -> dict:
         new_entry = _build_entry(media, insights)
         new_entry["ig_media_id"] = mid
         entries.insert(0, new_entry)
+        changed.append(new_entry)
         discovered += 1
         log_lines.append(f"+ added: {new_entry.get('title','')[:60]} — {new_entry.get('plays', 0)} plays")
 
-    bin_.write(record)
+    upsert_entries("instagram", changed)
     total = len(entries)
     return {
         "processed": refreshed,

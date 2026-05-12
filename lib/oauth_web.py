@@ -1,4 +1,5 @@
-import json
+"""YouTube OAuth (Google) — Supabase-backed token storage."""
+
 from urllib.parse import urlencode
 
 import requests
@@ -6,7 +7,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 
 from .env import required
-from .jsonbin import auth_bin
+from .store import read_auth, write_auth
 
 SCOPES = [
     "https://www.googleapis.com/auth/youtube.readonly",
@@ -54,22 +55,16 @@ def exchange_code(code: str, redirect_uri: str) -> dict:
 
 
 def store_refresh_token(refresh_token: str) -> None:
-    bin_ = auth_bin()
-    record = {}
-    try:
-        record = bin_.read() or {}
-    except Exception:
-        record = {}
-    record["refresh_token"] = refresh_token
-    bin_.write(record)
+    payload = read_auth("youtube") or {}
+    payload["refresh_token"] = refresh_token
+    write_auth("youtube", payload)
 
 
 def load_refresh_token() -> str | None:
     try:
-        record = auth_bin().read() or {}
+        return (read_auth("youtube") or {}).get("refresh_token") or None
     except Exception:
         return None
-    return record.get("refresh_token")
 
 
 def get_credentials() -> Credentials:

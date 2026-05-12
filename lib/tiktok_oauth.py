@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 import requests
 
 from .env import required
-from .jsonbin import JsonBin
+from .store import read_auth, write_auth
 
 AUTH_URL = "https://www.tiktok.com/v2/auth/authorize/"
 TOKEN_URL = "https://open.tiktokapis.com/v2/oauth/token/"
@@ -22,10 +22,6 @@ SCOPES = ["user.info.basic", "video.list"]
 
 def _client() -> tuple[str, str]:
     return required("TIKTOK_CLIENT_KEY"), required("TIKTOK_CLIENT_SECRET")
-
-
-def _auth_bin() -> JsonBin:
-    return JsonBin(required("JSONBIN_TIKTOK_AUTH_BIN_ID"), required("JSONBIN_MASTER_KEY"))
 
 
 def authorization_url(redirect_uri: str, state: str = "") -> str:
@@ -61,12 +57,7 @@ def exchange_code(code: str, redirect_uri: str) -> dict:
 
 def store_tokens(refresh_token: str, access_token: str | None = None,
                  expires_at: int | None = None, open_id: str | None = None) -> None:
-    bin_ = _auth_bin()
-    record = {}
-    try:
-        record = bin_.read() or {}
-    except Exception:
-        record = {}
+    record = read_auth("tiktok") or {}
     record["refresh_token"] = refresh_token
     if access_token is not None:
         record["access_token"] = access_token
@@ -74,12 +65,12 @@ def store_tokens(refresh_token: str, access_token: str | None = None,
         record["expires_at"] = expires_at
     if open_id is not None:
         record["open_id"] = open_id
-    bin_.write(record)
+    write_auth("tiktok", record)
 
 
 def load_refresh_token() -> str | None:
     try:
-        return (_auth_bin().read() or {}).get("refresh_token") or None
+        return (read_auth("tiktok") or {}).get("refresh_token") or None
     except Exception:
         return None
 
@@ -90,15 +81,13 @@ def is_authenticated() -> bool:
 
 def get_access_token() -> str:
     """Returns a fresh access_token, refreshing it transparently if expired."""
-    bin_ = _auth_bin()
-    record = bin_.read() or {}
+    record = read_auth("tiktok") or {}
     refresh_token = record.get("refresh_token")
     if not refresh_token:
         raise RuntimeError("not authenticated — run /api/tiktok/auth first")
 
     access_token = record.get("access_token")
     expires_at = int(record.get("expires_at") or 0)
-    # 60-second safety margin so we don't hand out a token that expires mid-request.
     if access_token and expires_at > int(time.time()) + 60:
         return access_token
 
@@ -127,5 +116,5 @@ def get_access_token() -> str:
     record["refresh_token"] = new_refresh
     record["access_token"] = new_access
     record["expires_at"] = new_expires_at
-    bin_.write(record)
+    write_auth("tiktok", record)
     return new_access

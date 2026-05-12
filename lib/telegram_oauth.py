@@ -17,32 +17,24 @@ simple and stateless, matches Render's serverless-ish runtime model.
 import asyncio
 
 from telethon import TelegramClient
-from telethon.errors import (
-    PhoneCodeInvalidError,
-    SessionPasswordNeededError,
-)
+from telethon.errors import SessionPasswordNeededError
 from telethon.sessions import StringSession
 
 from .env import required
-from .jsonbin import JsonBin
+from .store import read_auth, write_auth
 
 
 def _api() -> tuple[int, str]:
     return int(required("TELEGRAM_API_ID")), required("TELEGRAM_API_HASH")
 
 
-def _auth_bin() -> JsonBin:
-    return JsonBin(required("JSONBIN_TELEGRAM_AUTH_BIN_ID"), required("JSONBIN_MASTER_KEY"))
-
-
 def _save_session(session_str: str) -> None:
-    _auth_bin().write({"session": session_str})
+    write_auth("telegram", {"session": session_str})
 
 
 def _load_session() -> str | None:
     try:
-        rec = _auth_bin().read() or {}
-        return rec.get("session") or None
+        return (read_auth("telegram") or {}).get("session") or None
     except Exception:
         return None
 

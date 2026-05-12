@@ -1,19 +1,31 @@
+"""YouTube sync — now backed by Supabase via lib.store instead of JSONBin.
+
+Same external shape as before: refresh_slice(offset, limit) returns the same
+dict the frontend's loop expects. Internally we read entries from Postgres,
+do all the discovery/refresh work in Python, then upsert changes back.
+
+No more MAX_ENTRIES cap — Supabase 500MB tier holds ~1M entries comfortably.
+HISTORY_CAP stays at 5 because more history doesn't tell us much beyond trend
+direction; trimming aggressively keeps each entry small and refresh snappy.
+"""
+
 import time
 from datetime import datetime, timezone
 
-from .jsonbin import data_bin
 from .oauth_web import get_credentials
+from .store import (
+    add_deleted_id,
+    delete_entry,
+    read_deleted_ids,
+    read_entries,
+    upsert_entries,
+)
 from .url_parser import extract_video_id
 from .youtube_api import YouTubeClient
 
 SHORTS_DURATION_LIMIT_SEC = 60
 METRIC_FIELDS = ("views", "retention", "likes", "comments", "shares", "follows")
-# JSONBin free tier rejects PUTs >100KB. With ~30 entries × full history, each
-# entry's history must stay bounded. 5 snapshots per video keeps the whole bin
-# comfortably under the cap even with 80+ YouTube videos + 50 Telegram posts.
 HISTORY_CAP = 5
-# Cap discovered+manual YT entries to bound bin size as the channel grows.
-MAX_ENTRIES = 80
 
 
 def _parse_iso8601_duration_seconds(s: str) -> int:
@@ -52,9 +64,6 @@ def _build_entry(public: dict, analytics: dict | None, url: str, existing: dict 
     yt_type = "shorts" if duration_sec and duration_sec <= SHORTS_DURATION_LIMIT_SEC else "long"
     pub_date = (public.get("publishedAt", "") or "")[:10]
 
-    # When Analytics API hasn't aggregated this video yet, fetch_analytics
-    # returns None. Preserve whatever was previously stored instead of
-    # overwriting with zeros — matters most for videos in their first 24-72h.
     if analytics is None:
         prev = existing or {}
         analytics = {
@@ -89,7 +98,7 @@ def _build_entry(public: dict, analytics: dict | None, url: str, existing: dict 
 
 
 def _bare_entry(video_id: str) -> dict:
-    """A placeholder entry for a discovered video; metrics get filled on refresh."""
+    """A placeholder entry for a discovered video; metrics get filled on first refresh."""
     return {
         "id": int(time.time() * 1000) + (hash(video_id) & 0xFFF),
         "title": "",
@@ -104,18 +113,15 @@ def _bare_entry(video_id: str) -> dict:
 
 
 def add_urls(urls: list[str]) -> dict:
-    bin_ = data_bin()
     yt = YouTubeClient(get_credentials())
 
-    record = bin_.read()
-    record.setdefault("youtube", {}).setdefault("entries", [])
-    record["youtube"].setdefault("deleted_ids", [])
-    entries = record["youtube"]["entries"]
-    deleted_ids = record["youtube"]["deleted_ids"]
+    entries = read_entries("youtube")
+    deleted_ids = set(read_deleted_ids("youtube"))
     by_vid = {extract_video_id(e.get("url", "")): i for i, e in enumerate(entries) if extract_video_id(e.get("url", ""))}
 
     log_lines: list[str] = []
     added = updated = skipped = 0
+    changed: list[dict] = []
 
     for raw in urls:
         raw = (raw or "").strip()
@@ -134,20 +140,27 @@ def add_urls(urls: list[str]) -> dict:
         analytics = yt.fetch_analytics(vid)
         # un-tombstone if it was previously deleted
         if vid in deleted_ids:
-            record["youtube"]["deleted_ids"] = [d for d in deleted_ids if d != vid]
-            deleted_ids = record["youtube"]["deleted_ids"]
+            # PostgREST DELETE by (platform, external_id) — handled via store directly
+            from .store import _request  # local import to keep public API tidy
+            _request("DELETE", f"deleted_ids?platform=eq.youtube&external_id=eq.{vid}",
+                     prefer="return=minimal")
+            deleted_ids.discard(vid)
         if vid in by_vid:
             idx = by_vid[vid]
-            entries[idx] = _build_entry(public, analytics, raw, existing=entries[idx])
+            entry = _build_entry(public, analytics, raw, existing=entries[idx])
+            entries[idx] = entry
+            changed.append(entry)
             log_lines.append(f"↻ updated: {public['title'][:60]} — {public['views']} views")
             updated += 1
         else:
-            entries.insert(0, _build_entry(public, analytics, raw))
+            entry = _build_entry(public, analytics, raw)
+            entries.insert(0, entry)
             by_vid[vid] = 0
+            changed.append(entry)
             log_lines.append(f"+ added:   {public['title'][:60]} — {public['views']} views")
             added += 1
 
-    bin_.write(record)
+    upsert_entries("youtube", changed)
     return {
         "added": added,
         "updated": updated,
@@ -157,12 +170,10 @@ def add_urls(urls: list[str]) -> dict:
 
 
 def refresh_slice(offset: int, limit: int) -> dict:
-    bin_ = data_bin()
-    record = bin_.read()
-    record.setdefault("youtube", {}).setdefault("entries", [])
-    record["youtube"].setdefault("deleted_ids", [])
-
     yt = YouTubeClient(get_credentials())
+
+    entries = read_entries("youtube")
+    deleted_ids = set(read_deleted_ids("youtube"))
 
     discovered = 0
     discover_error = ""
@@ -170,25 +181,19 @@ def refresh_slice(offset: int, limit: int) -> dict:
     # First slice: discover any channel videos that aren't already tracked.
     if offset == 0:
         try:
-            entries = record["youtube"]["entries"]
             existing_ids = {extract_video_id(e.get("url", "")) for e in entries}
             existing_ids.discard(None)
-            deleted_ids = set(record["youtube"]["deleted_ids"] or [])
             channel_ids = yt.fetch_channel_uploads()
             new_ids = [v for v in channel_ids if v not in existing_ids and v not in deleted_ids]
-            # newest first in channel response → prepend in reverse so newest ends up at index 0
             for vid in reversed(new_ids):
                 entries.insert(0, _bare_entry(vid))
             discovered = len(new_ids)
         except Exception as e:
             discover_error = f"{type(e).__name__}: {e}"
 
-    entries = record["youtube"]["entries"]
     total = len(entries)
 
     if offset >= total:
-        if discovered or discover_error:
-            bin_.write(record)
         return {
             "processed": 0,
             "missing": 0,
@@ -207,6 +212,7 @@ def refresh_slice(offset: int, limit: int) -> dict:
         log_lines.append(f"⚠ discovery failed: {discover_error}")
 
     processed = missing = 0
+    changed: list[dict] = []
     for i in range(offset, end):
         entry = entries[i]
         url = entry.get("url", "")
@@ -223,16 +229,16 @@ def refresh_slice(offset: int, limit: int) -> dict:
         analytics = yt.fetch_analytics(vid)
         new_entry = _build_entry(public, analytics, url, existing=entry)
         entries[i] = new_entry
+        changed.append(new_entry)
         log_lines.append(f"↻ {public['title'][:60]} — {public['views']} views")
         processed += 1
 
-    # Cap YouTube entries so the bin stays under JSONBin's 100KB free-tier ceiling.
-    if len(entries) > MAX_ENTRIES:
-        record["youtube"]["entries"] = entries[:MAX_ENTRIES]
-        log_lines.append(f"… capped to {MAX_ENTRIES} newest entries (bin-size guard)")
-        total = MAX_ENTRIES
-
-    bin_.write(record)
+    # Persist updates + any freshly-discovered bare entries from this slice.
+    if offset == 0 and discovered:
+        # Discovered bare entries live at positions 0..discovered-1 — upsert them too.
+        upsert_entries("youtube", entries[:discovered] + changed)
+    else:
+        upsert_entries("youtube", changed)
 
     done = end >= total
     return {

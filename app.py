@@ -3,13 +3,13 @@ from pathlib import Path
 
 from flask import Flask, abort, jsonify, redirect, request, send_from_directory
 
-from lib.jsonbin import data_bin
 from lib.oauth_web import (
     authorization_url,
     exchange_code,
     is_authenticated,
     store_refresh_token,
 )
+from lib.store import read_full_record, write_full_record
 from lib.sync import add_urls, refresh_slice
 from lib import (
     tiktok_oauth, tiktok_sync,
@@ -136,7 +136,7 @@ def api_add():
 @app.get("/api/data")
 def api_data_read():
     try:
-        return jsonify(data_bin().read())
+        return jsonify(read_full_record())
     except Exception as e:
         return jsonify(error=f"{type(e).__name__}: {e}"), 500
 
@@ -147,7 +147,7 @@ def api_data_write():
         record = request.get_json(silent=True)
         if record is None or not isinstance(record, dict):
             return jsonify(ok=False, error="body must be a JSON object"), 400
-        data_bin().write(record)
+        write_full_record(record)
         return jsonify(ok=True)
     except Exception as e:
         return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
