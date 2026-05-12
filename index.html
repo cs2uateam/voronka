@@ -554,6 +554,36 @@ const PLATS = {
   },
 };
 
+// Per-platform sync config — must be declared BEFORE switchPlatform's
+// first call (init runs switchPlatform('tiktok') before reaching the
+// bottom of the file, so leaving SYNC_CFG near the sync helpers caused
+// a TDZ ReferenceError that killed platform-switching).
+const SYNC_CFG = {
+  youtube: {
+    statusUrl:  '/api/status',
+    authUrl:    '/api/auth',
+    refreshUrl: '/api/refresh',
+    addUrl:     '/api/add',
+    canAddUrls: true,
+    authText:   'Подключи YouTube — метрики и новые видео будут подтягиваться автоматически.',
+    authBtn:    '🔑 Подключить Google',
+    authNeeded: 'Нужна авторизация Google',
+    syncBtn:    '↻ Sync канал',
+  },
+  tiktok: {
+    statusUrl:  '/api/tiktok/status',
+    authUrl:    '/api/tiktok/auth',
+    refreshUrl: '/api/tiktok/refresh',
+    addUrl:     null,
+    canAddUrls: false,
+    authText:   'Подключи TikTok — все твои видео и метрики появятся здесь автоматически.',
+    authBtn:    '🔑 Подключить TikTok',
+    authNeeded: 'Нужна авторизация TikTok',
+    syncBtn:    '↻ Sync TikTok',
+  },
+};
+function syncCfg() { return SYNC_CFG[platform] || null; }
+
 // ── State ─────────────────────────────────────────────────
 
 let data = { tiktok: { entries: [] }, youtube: { entries: [] }, instagram: { entries: [] } };
@@ -1568,36 +1598,11 @@ document.getElementById('delModal').addEventListener('click', function(e){ if(e.
 document.getElementById('histModal').addEventListener('click', function(e){ if(e.target===this) this.classList.remove('open'); });
 
 // ── voronka-sync (Vercel Functions at /api/*) ──────────────
+// SYNC_CFG and syncCfg() are declared near the top of the script (next to PLATS),
+// because switchPlatform — which uses SYNC_CFG — fires at init before this block.
 const SYNC_BASE = '';  // same origin
 const SYNC_BATCH = 8;  // videos per refresh slice; backend caps at 25
 let syncAuthed = false;
-
-// Per-platform sync config: which endpoints to call, what to label the auth button.
-const SYNC_CFG = {
-  youtube: {
-    statusUrl:  '/api/status',
-    authUrl:    '/api/auth',
-    refreshUrl: '/api/refresh',
-    addUrl:     '/api/add',
-    canAddUrls: true,
-    authText:   'Подключи YouTube — метрики и новые видео будут подтягиваться автоматически.',
-    authBtn:    '🔑 Подключить Google',
-    authNeeded: 'Нужна авторизация Google',
-    syncBtn:    '↻ Sync канал',
-  },
-  tiktok: {
-    statusUrl:  '/api/tiktok/status',
-    authUrl:    '/api/tiktok/auth',
-    refreshUrl: '/api/tiktok/refresh',
-    addUrl:     null,
-    canAddUrls: false,
-    authText:   'Подключи TikTok — все твои видео и метрики появятся здесь автоматически.',
-    authBtn:    '🔑 Подключить TikTok',
-    authNeeded: 'Нужна авторизация TikTok',
-    syncBtn:    '↻ Sync TikTok',
-  },
-};
-function syncCfg() { return SYNC_CFG[platform] || null; }
 
 function updateSyncVisibility() {
   const el = document.getElementById('syncSection');
