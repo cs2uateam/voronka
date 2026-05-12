@@ -11,7 +11,11 @@ from lib.oauth_web import (
     store_refresh_token,
 )
 from lib.sync import add_urls, refresh_slice
-from lib import tiktok_oauth, tiktok_sync, instagram_oauth, instagram_sync
+from lib import (
+    tiktok_oauth, tiktok_sync,
+    instagram_oauth, instagram_sync,
+    telegram_oauth, telegram_sync,
+)
 
 ROOT = Path(__file__).resolve().parent
 
@@ -261,6 +265,97 @@ def api_instagram_refresh():
         offset = int(data.get("offset", 0) or 0)
         limit = int(data.get("limit", 8) or 8)
         return jsonify(ok=True, **instagram_sync.refresh_slice(offset=offset, limit=limit))
+    except RuntimeError as e:
+        msg = str(e)
+        return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401
+    except Exception as e:
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+
+
+@app.get("/api/telegram/status")
+def api_telegram_status():
+    try:
+        return jsonify(ok=True, authenticated=telegram_oauth.is_authenticated())
+    except Exception as e:
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+
+
+def _tg_auth_form(step: str, **fields) -> tuple[str, int, dict]:
+    """Inline phone/code form for Telegram auth — there's no OAuth redirect to ride on."""
+    hidden_inputs = "".join(
+        f'<input type="hidden" name="{k}" value="{v}">' for k, v in fields.items()
+    )
+    if step == "phone":
+        body = """
+        <h1>🔑 Подключить Telegram</h1>
+        <p style='text-align:left'>Шаг 1/2: введи номер телефона аккаунта Telegram, у которого есть права админа в канале (со статистикой). Код придёт в твой Telegram (в чате от Telegram, не SMS).</p>
+        <form method="POST" style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px">
+          <input type="hidden" name="step" value="send_code">
+          <input type="tel" name="phone" placeholder="+380501234567" required
+            style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;font:14px monospace;width:100%;max-width:280px">
+          <button class="btn" style="background:#fe2c55;color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:600">Получить код</button>
+        </form>"""
+    elif step == "code":
+        body = f"""
+        <h1>🔑 Подключить Telegram</h1>
+        <p style='text-align:left'>Шаг 2/2: открой Telegram → чат от <b>Telegram</b> (официальный, не SMS) → скопируй код и введи здесь.</p>
+        <form method="POST" style="display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:16px">
+          {hidden_inputs}
+          <input type="hidden" name="step" value="verify_code">
+          <input type="text" name="code" placeholder="12345" required pattern="\\d+" autocomplete="one-time-code"
+            style="background:#0a0a0a;color:#fff;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;font:18px monospace;letter-spacing:6px;width:140px;text-align:center">
+          <input type="password" name="password" placeholder="2FA password (если включён)"
+            style="background:#0a0a0a;color:#aaa;border:1px solid #2a2a2a;border-radius:8px;padding:8px 12px;font:13px sans-serif;width:100%;max-width:280px">
+          <button class="btn" style="background:#fe2c55;color:#fff;border:0;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:600">Подтвердить</button>
+        </form>"""
+    else:
+        body = "<h1>Unknown step</h1>"
+    return _html(body, 200)
+
+
+@app.route("/api/telegram/auth", methods=["GET", "POST"])
+def api_telegram_auth():
+    if request.method == "GET":
+        return _tg_auth_form("phone")
+    step = request.form.get("step", "")
+    try:
+        if step == "send_code":
+            phone = (request.form.get("phone") or "").strip()
+            if not phone:
+                return _tg_auth_form("phone")
+            result = telegram_oauth.send_code(phone)
+            return _tg_auth_form(
+                "code",
+                phone=phone,
+                phone_code_hash=result["phone_code_hash"],
+                pending_session=result["session_pending"],
+            )
+        if step == "verify_code":
+            phone = request.form.get("phone", "")
+            code = (request.form.get("code") or "").strip()
+            phone_code_hash = request.form.get("phone_code_hash", "")
+            pending_session = request.form.get("pending_session", "")
+            password = request.form.get("password") or None
+            telegram_oauth.verify_code(phone, code, phone_code_hash, pending_session, password)
+            return _html(
+                "<h1>✓ Telegram подключён</h1><p>Можно возвращаться в voronka и нажимать Sync.</p>"
+                "<a href='/?auth=tg-success' class='btn'>Open voronka</a>",
+                200,
+                extra_headers={"Refresh": "0; url=/?auth=tg-success"},
+            )
+    except Exception as e:
+        return _html(f"<h1>Telegram auth failed</h1><p>{type(e).__name__}: {e}</p>"
+                     "<a href='/api/telegram/auth' class='btn'>Попробовать ещё раз</a>", 400)
+    return _tg_auth_form("phone")
+
+
+@app.post("/api/telegram/refresh")
+def api_telegram_refresh():
+    try:
+        data = request.get_json(silent=True) or {}
+        offset = int(data.get("offset", 0) or 0)
+        limit = int(data.get("limit", 8) or 8)
+        return jsonify(ok=True, **telegram_sync.refresh_slice(offset=offset, limit=limit))
     except RuntimeError as e:
         msg = str(e)
         return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401

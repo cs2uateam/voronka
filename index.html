@@ -350,6 +350,7 @@
     <button class="ptab active" data-plat="tiktok"    onclick="switchPlatform('tiktok')">   <span class="picon">🎵</span> TikTok    </button>
     <button class="ptab"        data-plat="youtube"   onclick="switchPlatform('youtube')">  <span class="picon">▶️</span> YouTube   </button>
     <button class="ptab"        data-plat="instagram" onclick="switchPlatform('instagram')"><span class="picon">📸</span> Instagram </button>
+    <button class="ptab"        data-plat="telegram"  onclick="switchPlatform('telegram')"> <span class="picon">✈️</span> Telegram  </button>
     <button class="ptab"        data-plat="overview"  onclick="switchPlatform('overview')" style="margin-left:auto"><span class="picon">📊</span> Всего </button>
   </div>
 
@@ -552,6 +553,34 @@ const PLATS = {
       { key:'er',   label:'Avg ER',          bench:'Хорошо >3% · Отлично >6%',   good:3,  great:6,  tip:'Engagement Rate = (лайки + комменты + сохранения + репосты) / охват × 100.' },
     ],
   },
+
+  telegram: {
+    label: 'Telegram', color: '#0088cc',
+    types: ['video','photo','album','text','link','audio','other'],
+    typeLabels: { video:'Видео', photo:'Фото', album:'Альбом', text:'Текст', link:'Ссылка', audio:'Аудио', other:'Другое' },
+    hooks: ['анонс','инсайт','мем','новость','цитата','список','опрос','другое'],
+    fields: [
+      { id:'views',     label:'👁 Просмотры',    parse:'int'   },
+      { id:'reactions', label:'❤️ Реакции',      parse:'int'   },
+      { id:'forwards',  label:'↗️ Репосты',      parse:'int'   },
+      { id:'comments',  label:'💬 Комменты',     parse:'int'   },
+    ],
+    mainMetric: 'views',
+    crField: null,
+    crLabel: null,
+    erBase: 'views',
+    funnelSteps: [
+      { key:'views',     label:'Просмотры',     cls:'bar-views',    mode:'top',   bench:null             },
+      { key:'reactions', label:'Реакции',       cls:'bar-likes',    mode:'ratio', bench:'норма 3-10%'    },
+      { key:'forwards',  label:'Репосты',       cls:'bar-shares',   mode:'ratio', bench:'норма 0.5-3%'   },
+      { key:'comments',  label:'Комменты',      cls:'bar-comments', mode:'ratio', bench:'норма 0.1-1%'   },
+    ],
+    signals: [
+      { key:'rr',  label:'Reaction Rate',  bench:'Хорошо >3% · Отлично >7%', good:3, great:7, tip:'% подписчиков, оставивших реакцию (сумма всех эмодзи / просмотры × 100). В Telegram реакции — главный сигнал вовлечения.' },
+      { key:'shr', label:'Forward Rate',   bench:'Хорошо >0.5% · Отлично >2%', good:.5, great:2, tip:'% зрителей, переславших пост. Главный сигнал вирусности в Telegram — алгоритма нет, рост идёт через шеры.' },
+      { key:'er',  label:'Avg ER',         bench:'Хорошо >5% · Отлично >10%', good:5, great:10, tip:'Engagement Rate = (реакции + комменты + репосты) / просмотры × 100.' },
+    ],
+  },
 };
 
 // Per-platform sync config — must be declared BEFORE switchPlatform's
@@ -592,12 +621,23 @@ const SYNC_CFG = {
     authNeeded: 'Нужна авторизация Instagram',
     syncBtn:    '↻ Sync Instagram',
   },
+  telegram: {
+    statusUrl:  '/api/telegram/status',
+    authUrl:    '/api/telegram/auth',
+    refreshUrl: '/api/telegram/refresh',
+    addUrl:     null,
+    canAddUrls: false,
+    authText:   'Подключи Telegram — посты канала и метрики появятся автоматически. Нужны api_id+hash с my.telegram.org и доступ админа к каналу.',
+    authBtn:    '🔑 Подключить Telegram',
+    authNeeded: 'Нужна авторизация Telegram',
+    syncBtn:    '↻ Sync Telegram',
+  },
 };
 function syncCfg() { return SYNC_CFG[platform] || null; }
 
 // ── State ─────────────────────────────────────────────────
 
-let data = { tiktok: { entries: [] }, youtube: { entries: [] }, instagram: { entries: [] } };
+let data = { tiktok: { entries: [] }, youtube: { entries: [] }, instagram: { entries: [] }, telegram: { entries: [] } };
 // Hosted mode: backend holds JSONBin creds. Sentinel values satisfy legacy guards.
 let apiKey = 'hosted', binId = 'hosted';
 let platform = 'tiktok';
@@ -736,7 +776,8 @@ function loadFromJsonbin() {
     .then(r => { clearTimeout(timeout); if (!r.ok) throw new Error('Ошибка ' + r.status); return r.json(); })
     .then(rec => {
       rec = rec || {};
-      data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] } };
+      data = rec.tiktok ? rec : { tiktok: { entries: rec.entries || [] }, youtube: { entries: [] }, instagram: { entries: [] }, telegram: { entries: [] } };
+      if (!data.telegram) data.telegram = { entries: [] };
       cacheData();
       const wait = Math.max(0, 400 - (Date.now() - t0));
       setLoadingMsg('Готово ✓', 'Данные загружены');
@@ -883,8 +924,8 @@ function switchPlatform(plat) {
 
 function renderOverview() {
   document.documentElement.style.setProperty('--pc', '#888');
-  const platKeys = ['tiktok','youtube','instagram'];
-  const platIcons = { tiktok:'🎵', youtube:'▶️', instagram:'📸' };
+  const platKeys = ['tiktok','youtube','instagram','telegram'];
+  const platIcons = { tiktok:'🎵', youtube:'▶️', instagram:'📸', telegram:'✈️' };
 
   // helper: views-equivalent for any entry, prioritizing plays > views > reach
   const viewsOf = e => e.plays || e.views || e.reach || 0;
@@ -938,7 +979,7 @@ function renderOverview() {
 
   // group entries by vid_group across all platforms
   const groups = {};
-  const platIcons2 = { tiktok:'🎵', youtube:'▶️', instagram:'📸' };
+  const platIcons2 = { tiktok:'🎵', youtube:'▶️', instagram:'📸', telegram:'✈️' };
   platKeys.forEach(k => {
     (data[k]||{entries:[]}).entries.forEach(e => {
       if (!e.vid_group) return;
