@@ -211,9 +211,11 @@ def api_tiktok_refresh():
         return jsonify(ok=True, **tiktok_sync.refresh_slice(offset=offset, limit=limit))
     except RuntimeError as e:
         msg = str(e)
-        return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401
+        if "not authenticated" in msg:
+            return jsonify(ok=False, error=msg, needs_auth=True), 401
+        return jsonify(ok=False, error=msg), 200
     except Exception as e:
-        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 200
 
 
 @app.get("/api/instagram/status")
@@ -267,9 +269,11 @@ def api_instagram_refresh():
         return jsonify(ok=True, **instagram_sync.refresh_slice(offset=offset, limit=limit))
     except RuntimeError as e:
         msg = str(e)
-        return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401
+        if "not authenticated" in msg:
+            return jsonify(ok=False, error=msg, needs_auth=True), 401
+        return jsonify(ok=False, error=msg), 200
     except Exception as e:
-        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 200
 
 
 @app.get("/api/telegram/status")
@@ -358,9 +362,11 @@ def api_telegram_refresh():
         return jsonify(ok=True, **telegram_sync.refresh_slice(offset=offset, limit=limit))
     except RuntimeError as e:
         msg = str(e)
-        return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401
+        if "not authenticated" in msg:
+            return jsonify(ok=False, error=msg, needs_auth=True), 401
+        return jsonify(ok=False, error=msg), 200
     except Exception as e:
-        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 200
 
 
 @app.post("/api/refresh")
@@ -373,9 +379,11 @@ def api_refresh():
         return jsonify(ok=True, **refresh_slice(offset=offset, limit=limit))
     except RuntimeError as e:
         msg = str(e)
-        return jsonify(ok=False, error=msg, needs_auth="not authenticated" in msg), 401
+        if "not authenticated" in msg:
+            return jsonify(ok=False, error=msg, needs_auth=True), 401
+        return jsonify(ok=False, error=msg), 200
     except Exception as e:
-        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 200
 
 
 if __name__ == "__main__":

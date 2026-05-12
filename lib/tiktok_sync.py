@@ -17,7 +17,7 @@ from .jsonbin import data_bin
 from .tiktok_api import TikTokClient
 from .tiktok_oauth import get_access_token
 
-HISTORY_CAP = 15
+HISTORY_CAP = 5
 METRIC_FIELDS = ("views", "likes", "comments", "shares")
 TIKTOK_VIDEO_ID_RE = re.compile(r"/video/(\d+)")
 

@@ -29,8 +29,8 @@ from .env import required
 from .jsonbin import data_bin
 from .telegram_api import fetch_channel_posts
 
-HISTORY_CAP = 10
-MAX_ENTRIES = 100  # Newest N posts only — protects JSONBin's 100KB write cap.
+HISTORY_CAP = 5
+MAX_ENTRIES = 50  # Newest N posts only — protects JSONBin's 100KB write cap.
 METRIC_FIELDS = ("views", "forwards", "reactions", "comments")
 
 

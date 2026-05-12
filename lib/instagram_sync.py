@@ -8,7 +8,7 @@ from .instagram_api import InstagramClient
 from .instagram_oauth import get_credentials
 from .jsonbin import data_bin
 
-HISTORY_CAP = 15
+HISTORY_CAP = 5
 METRIC_FIELDS = ("plays", "reach", "likes", "comments", "shares", "saves", "follows", "profile_visits")
 IG_SHORTCODE_RE = re.compile(r"/(?:reel|p)/([A-Za-z0-9_-]+)")
 

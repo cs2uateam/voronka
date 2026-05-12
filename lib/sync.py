@@ -9,9 +9,11 @@ from .youtube_api import YouTubeClient
 SHORTS_DURATION_LIMIT_SEC = 60
 METRIC_FIELDS = ("views", "retention", "likes", "comments", "shares", "follows")
 # JSONBin free tier rejects PUTs >100KB. With ~30 entries × full history, each
-# entry's history must stay bounded. 15 snapshots per video gives enough trend
-# data while keeping the whole bin well under the cap.
-HISTORY_CAP = 15
+# entry's history must stay bounded. 5 snapshots per video keeps the whole bin
+# comfortably under the cap even with 80+ YouTube videos + 50 Telegram posts.
+HISTORY_CAP = 5
+# Cap discovered+manual YT entries to bound bin size as the channel grows.
+MAX_ENTRIES = 80
 
 
 def _parse_iso8601_duration_seconds(s: str) -> int:
@@ -223,6 +225,12 @@ def refresh_slice(offset: int, limit: int) -> dict:
         entries[i] = new_entry
         log_lines.append(f"↻ {public['title'][:60]} — {public['views']} views")
         processed += 1
+
+    # Cap YouTube entries so the bin stays under JSONBin's 100KB free-tier ceiling.
+    if len(entries) > MAX_ENTRIES:
+        record["youtube"]["entries"] = entries[:MAX_ENTRIES]
+        log_lines.append(f"… capped to {MAX_ENTRIES} newest entries (bin-size guard)")
+        total = MAX_ENTRIES
 
     bin_.write(record)
 
