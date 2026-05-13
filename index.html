@@ -1370,6 +1370,19 @@ function renderStats() {
   const bestCR   = withCR.length ? withCR.reduce((a,b)=>a[cfg.crField]>b[cfg.crField]?a:b) : null;
   const bestER   = entries.length ? entries.reduce((a,b)=>erOf(a)>erOf(b)?a:b) : null;
 
+  // Derived engagement ratios — surface to the main view so they aren't buried under "Воронка".
+  const baseField = cfg.erBase;
+  const avgLR    = entries.length ? entries.reduce((s,e)=>s+(e[baseField]?(e.likes||0)/e[baseField]*100:0),0)/entries.length : 0;
+  const avgComR  = entries.length ? entries.reduce((s,e)=>s+(e[baseField]?(e.comments||0)/e[baseField]*100:0),0)/entries.length : 0;
+  const avgShR   = entries.length ? entries.reduce((s,e)=>s+(e[baseField]?(e.shares||0)/e[baseField]*100:0),0)/entries.length : 0;
+  const avgShLR  = entries.length ? entries.reduce((s,e)=>s+(e.likes?(e.shares||0)/e.likes:0),0)/entries.length : 0;
+  const nowMs    = Date.now();
+  const avgVPD   = entries.length ? entries.reduce((s,e)=>{
+    const dParsed = e.date ? Date.parse(e.date) : NaN;
+    const days = isNaN(dParsed) ? 1 : Math.max(1, Math.floor((nowMs-dParsed)/86400000));
+    return s + (e[baseField]||0)/days;
+  }, 0)/entries.length : 0;
+
   const crLbl = cfg.crLabel || 'CR';
   const mainLbl = cfg.mainMetric==='reach' ? 'охват' : 'просмотры';
   const erParts = ['лайки', 'комменты', 'репосты'];
@@ -1397,6 +1410,12 @@ function renderStats() {
     ${cfg.fields.some(f=>f.id==='saves') ? `<div class="stat-card" data-tip="Процент зрителей, сохранивших контент. Норма: 0.5–1.5%."><div class="lbl">Save rate</div><div class="val">${entries.length?avgSR.toFixed(2)+'%':'—'}</div><div class="sub">ср. saves / ${mainLbl}</div></div>` : ''}
     ${bestCR&&cfg.crField ? `<div class="stat-card" data-tip="Видео с наибольшим ${crLbl}."><div class="lbl">Лучший ${crLbl}</div><div class="val">${bestCR[cfg.crField].toFixed(1)}%</div><div class="sub">${esc(bestCR.title.slice(0,20))}${bestCR.title.length>20?'…':''}</div></div>` : ''}
     ${bestER ? `<div class="stat-card" data-tip="Видео с наибольшим Engagement Rate."><div class="lbl">Лучший ER</div><div class="val">${erOf(bestER).toFixed(1)}%</div><div class="sub">${esc(bestER.title.slice(0,20))}${bestER.title.length>20?'…':''}</div></div>` : ''}
+    <div class="stats-group-label" style="margin-top:10px">Залученість</div>
+    <div class="stat-card" data-tip="Like Rate = Лайки / ${mainLbl} × 100. Базовий сигнал що контент подобається."><div class="lbl">Like Rate</div><div class="val">${entries.length?avgLR.toFixed(2)+'%':'—'}</div><div class="sub">avg по видео</div></div>
+    <div class="stat-card" data-tip="Comment Rate = Комменты / ${mainLbl} × 100. Глибше залучення — провокує дискусію."><div class="lbl">Comment Rate</div><div class="val">${entries.length?avgComR.toFixed(2)+'%':'—'}</div><div class="sub">avg по видео</div></div>
+    <div class="stat-card" data-tip="Share Rate = Репости / ${mainLbl} × 100. Найважчий алгоритмічний сигнал — репости в TikTok мають ×3 вагу від лайків."><div class="lbl">Share Rate</div><div class="val">${entries.length?avgShR.toFixed(2)+'%':'—'}</div><div class="sub">avg по видео</div></div>
+    <div class="stat-card" data-tip="Share:Like ratio = Репости / Лайки. Швидкий сигнал віральності."><div class="lbl">Share:Like</div><div class="val">${entries.length?avgShLR.toFixed(2):'—'}</div><div class="sub">avg ratio</div></div>
+    <div class="stat-card" data-tip="Views/day — середня швидкість набору переглядів на видео (views ÷ днів з публікації)."><div class="lbl">Views/day</div><div class="val">${entries.length?fmt(Math.round(avgVPD)):'—'}</div><div class="sub">avg по видео</div></div>
     <div class="stats-group-label" style="margin-top:10px">Всего</div>
     <div class="stat-card"><div class="lbl">Всего ${mainLbl}</div><div class="val">${fmt(totMain)}</div><div class="sub">сумма</div></div>
     ${totals.map(t=>`<div class="stat-card"><div class="lbl">Всего ${t.label}</div><div class="val">${fmt(t.val)}</div><div class="sub">сумма</div></div>`).join('')}
