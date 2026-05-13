@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy — voronka</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #e0e0e0; line-height: 1.7; }
+  main { max-width: 760px; margin: 0 auto; padding: 48px 24px 80px; }
+  h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; letter-spacing: -0.5px; }
+  .updated { color: #777; font-size: 13px; margin-bottom: 32px; }
+  h2 { font-size: 18px; font-weight: 600; color: #fff; margin-top: 32px; margin-bottom: 12px; }
+  p, li { color: #c8c8c8; font-size: 14px; margin-bottom: 12px; }
+  ul { padding-left: 22px; }
+  a { color: #6aa8ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .back { display: inline-block; margin-top: 24px; color: #777; font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Privacy Policy</h1>
+  <div class="updated">Last updated: May 13, 2026</div>
+
+  <p>voronka ("we", "the service") is a personal-use analytics dashboard operated by the cs2uateam team to track our own social-media content performance across YouTube, TikTok, Instagram, and Telegram. This policy describes what data the service collects and how it is handled.</p>
+
+  <h2>1. Who this service is for</h2>
+  <p>voronka is an internal analytics tool used solely by the operator (cs2uateam) to monitor the performance of content we ourselves have published. It is not offered to end users, does not accept third-party signups, and has no public account-creation flow.</p>
+
+  <h2>2. What data we access</h2>
+  <p>Through OAuth-authorized connections to TikTok, YouTube, Instagram, and Telegram, the service reads:</p>
+  <ul>
+    <li>Basic profile info of the connected account (display name, open_id, avatar) — used to confirm which account is authorized.</li>
+    <li>Public video metadata posted by the connected account: title, caption, publish date, thumbnail, video duration, share URL.</li>
+    <li>Aggregate public metrics for each video posted by the connected account: view count, like count, comment count, share count, and (where available) completion rate, reach, profile visits, and follower changes.</li>
+  </ul>
+  <p>The service does <strong>not</strong> access private messages, direct messages, content posted by other users, or any data unrelated to the authenticated account's own posts.</p>
+
+  <h2>3. How the data is stored</h2>
+  <ul>
+    <li>OAuth refresh tokens are stored encrypted at rest in a Supabase Postgres database hosted in the EU (Frankfurt).</li>
+    <li>Video metadata and metrics are stored in the same database and used only to render the analytics dashboard for the operator.</li>
+    <li>No data is shared with third parties, sold, or used for advertising.</li>
+  </ul>
+
+  <h2>4. How long we keep data</h2>
+  <p>Because the dashboard also functions as a content archive, video metadata and metric history are retained indefinitely. OAuth tokens are kept only while the integration is active and are deleted when the operator disconnects the account or revokes access via the source platform.</p>
+
+  <h2>5. Revocation and deletion</h2>
+  <p>The operator can revoke voronka's access to any connected account at any time via the respective platform's app-permission settings (TikTok / YouTube / Instagram / Telegram). To request deletion of stored data, contact <a href="mailto:alexprofiev@gmail.com">alexprofiev@gmail.com</a>.</p>
+
+  <h2>6. Compliance</h2>
+  <p>voronka's use of TikTok APIs conforms to the <a href="https://developers.tiktok.com/doc/tiktok-api-terms-of-service">TikTok API Terms of Service</a> and the TikTok Developer Policy. Use of Google APIs (YouTube) conforms to the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements. Use of Meta APIs (Instagram) conforms to the Meta Platform Terms.</p>
+
+  <h2>7. Contact</h2>
+  <p>Questions about this policy or any data we hold: <a href="mailto:alexprofiev@gmail.com">alexprofiev@gmail.com</a>.</p>
+
+  <a href="/" class="back">← back to voronka</a>
+</main>
+</body>
+</html>
