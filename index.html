@@ -269,6 +269,98 @@
     .platform-tabs { gap: 4px; }
     .ptab { padding: 7px 12px; font-size: 12px; }
   }
+
+  /* ── TikTok-specific tracker view ──────────────────────── */
+  #tiktokTracker { padding: 0 24px 80px; max-width: 1400px; margin: 0 auto; }
+
+  .tt-section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: #666; margin: 26px 0 10px; font-weight: 600; }
+  .tt-section-label:first-child { margin-top: 16px; }
+
+  /* Hero */
+  .tt-hero { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 12px; }
+  .tt-hero-card { background: linear-gradient(180deg, #161616 0%, #101010 100%); border: 1px solid #1f1f1f; border-radius: 14px; padding: 18px 20px; position: relative; overflow: hidden; }
+  .tt-hero-card.primary { background: linear-gradient(135deg, rgba(254,44,85,.10) 0%, #131313 60%); border-color: rgba(254,44,85,.25); }
+  .tt-hero-card .lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: #888; margin-bottom: 8px; font-weight: 600; }
+  .tt-hero-card .val { font-size: 30px; font-weight: 800; color: #fff; letter-spacing: -1px; line-height: 1; }
+  .tt-hero-card.primary .val { font-size: 38px; }
+  .tt-hero-card .sub { font-size: 12px; color: #777; margin-top: 6px; }
+  .tt-hero-card .delta { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 600; vertical-align: middle; }
+  .tt-hero-card .delta.up   { color: #2ecc71; background: rgba(46,204,113,.12); }
+  .tt-hero-card .delta.down { color: #e74c3c; background: rgba(231,76,60,.12); }
+  .tt-hero-card .delta.flat { color: #888;    background: rgba(136,136,136,.10); }
+
+  /* Top-3 */
+  .tt-top3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .tt-top-card { background: #131313; border: 1px solid #1f1f1f; border-radius: 12px; padding: 14px; display: flex; gap: 12px; cursor: pointer; transition: border-color .15s, transform .15s; }
+  .tt-top-card:hover { border-color: #fe2c55; transform: translateY(-2px); }
+  .tt-top-card .rank { font-size: 22px; font-weight: 800; min-width: 24px; }
+  .tt-top-card .rank.r1 { color: #ffd700; }
+  .tt-top-card .rank.r2 { color: #c0c0c0; }
+  .tt-top-card .rank.r3 { color: #cd7f32; }
+  .tt-top-card .thumb { width: 56px; height: 80px; border-radius: 8px; background: #222 center/cover no-repeat; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .tt-top-card .body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .tt-top-card .title { font-size: 13px; color: #e0e0e0; line-height: 1.3; max-height: 34px; overflow: hidden; }
+  .tt-top-card .stats { display: flex; gap: 12px; font-size: 11px; color: #888; }
+  .tt-top-card .stats b { color: #fff; font-weight: 600; }
+
+  /* Engagement metric cards with health colors */
+  .tt-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .tt-mcard { background: #131313; border: 1px solid #1f1f1f; border-left: 3px solid #444; border-radius: 10px; padding: 14px 16px; position: relative; }
+  .tt-mcard.h-great { border-left-color: #2ecc71; }
+  .tt-mcard.h-good  { border-left-color: #f1c40f; }
+  .tt-mcard.h-mid   { border-left-color: #e67e22; }
+  .tt-mcard.h-low   { border-left-color: #e74c3c; }
+  .tt-mcard.h-none  { border-left-color: #333; }
+  .tt-mcard .lbl { font-size: 10.5px; text-transform: uppercase; letter-spacing: .5px; color: #888; font-weight: 600; margin-bottom: 6px; }
+  .tt-mcard .val { font-size: 22px; font-weight: 700; color: #fff; line-height: 1; }
+  .tt-mcard .sub { font-size: 11px; color: #666; margin-top: 4px; }
+  .tt-mcard .badge { position: absolute; top: 10px; right: 12px; font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600; }
+  .tt-mcard.h-great .badge { color: #2ecc71; background: rgba(46,204,113,.12); }
+  .tt-mcard.h-good  .badge { color: #f1c40f; background: rgba(241,196,15,.12); }
+  .tt-mcard.h-mid   .badge { color: #e67e22; background: rgba(230,126,34,.12); }
+  .tt-mcard.h-low   .badge { color: #e74c3c; background: rgba(231,76,60,.12); }
+
+  /* Filter bar */
+  .tt-filterbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; background: #111; border: 1px solid #1c1c1c; border-radius: 12px; padding: 12px 14px; margin-top: 12px; }
+  .tt-chip-group { display: flex; gap: 4px; align-items: center; }
+  .tt-chip-label { font-size: 10px; text-transform: uppercase; letter-spacing: .6px; color: #666; margin-right: 6px; font-weight: 600; }
+  .tt-chip { background: transparent; border: 1px solid #2a2a2a; color: #aaa; padding: 5px 11px; border-radius: 16px; cursor: pointer; font-size: 12px; transition: all .15s; }
+  .tt-chip:hover { border-color: #444; color: #fff; }
+  .tt-chip.active { background: #fe2c55; border-color: #fe2c55; color: #fff; }
+  .tt-search { background: #0a0a0a; border: 1px solid #2a2a2a; color: #e0e0e0; padding: 6px 12px; border-radius: 16px; font-size: 12px; width: 160px; outline: none; }
+  .tt-search:focus { border-color: #fe2c55; }
+  .tt-viewtoggle { margin-left: auto; display: flex; background: #0a0a0a; border: 1px solid #2a2a2a; border-radius: 8px; padding: 2px; }
+  .tt-viewtoggle button { background: transparent; border: 0; color: #888; padding: 5px 12px; cursor: pointer; font-size: 12px; border-radius: 6px; }
+  .tt-viewtoggle button.active { background: #fe2c55; color: #fff; }
+
+  /* Grid mode video cards */
+  .tt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 14px; }
+  .tt-vcard { background: #131313; border: 1px solid #1f1f1f; border-radius: 12px; overflow: hidden; cursor: pointer; transition: transform .15s, border-color .15s; display: flex; flex-direction: column; }
+  .tt-vcard:hover { transform: translateY(-2px); border-color: #fe2c55; }
+  .tt-vcard .thumb-wrap { aspect-ratio: 9/16; background: #222 center/cover no-repeat; position: relative; }
+  .tt-vcard .thumb-wrap.placeholder { display: flex; align-items: center; justify-content: center; font-size: 36px; opacity: .4; }
+  .tt-vcard .er-tag { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,.1); }
+  .tt-vcard .er-tag.h-great { color: #2ecc71; }
+  .tt-vcard .er-tag.h-good  { color: #f1c40f; }
+  .tt-vcard .er-tag.h-mid   { color: #e67e22; }
+  .tt-vcard .er-tag.h-low   { color: #e74c3c; }
+  .tt-vcard .vbody { padding: 11px 12px 12px; }
+  .tt-vcard .vtitle { font-size: 12.5px; color: #e0e0e0; line-height: 1.35; max-height: 50px; overflow: hidden; margin-bottom: 9px; }
+  .tt-vcard .vmeta { display: flex; gap: 8px; font-size: 10.5px; color: #777; flex-wrap: wrap; margin-bottom: 8px; }
+  .tt-vcard .vmeta .typ { background: rgba(254,44,85,.12); color: #fe2c55; padding: 1px 6px; border-radius: 3px; }
+  .tt-vcard .vstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; padding-top: 8px; border-top: 1px solid #1c1c1c; }
+  .tt-vcard .vstats div { text-align: center; }
+  .tt-vcard .vstats .v { font-size: 12px; color: #fff; font-weight: 600; line-height: 1.2; }
+  .tt-vcard .vstats .l { font-size: 9.5px; color: #666; text-transform: uppercase; letter-spacing: .3px; }
+
+  @media (max-width: 1000px) {
+    .tt-hero { grid-template-columns: 1fr 1fr; }
+    .tt-top3 { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .tt-hero { grid-template-columns: 1fr; }
+    .tt-grid { grid-template-columns: repeat(2, 1fr); }
+  }
 </style>
 </head>
 <body>
@@ -418,6 +510,21 @@
       </div>
       <div class="twrap"><div id="tableContainer"><div class="empty"><div class="icon">📭</div>Нет данных</div></div></div>
     </div>
+  </div>
+
+  <!-- TikTok-specific tracker view -->
+  <div id="tiktokTracker" style="display:none">
+    <div class="tt-section-label">Огляд</div>
+    <div class="tt-hero" id="ttHero"></div>
+
+    <div class="tt-section-label">🏆 Топ-3 за Engagement Rate</div>
+    <div class="tt-top3" id="ttTop3"></div>
+
+    <div class="tt-section-label">Залученість</div>
+    <div class="tt-metrics" id="ttMetrics"></div>
+
+    <div class="tt-filterbar" id="ttFilterbar"></div>
+    <div id="ttContent"></div>
   </div>
 
   <!-- Funnel view -->
@@ -905,10 +1012,11 @@ function switchPlatform(plat) {
   const addBtn = document.getElementById('addToggleBtn');
   if (addBtn) addBtn.style.display = SYNC_CFG[plat] ? 'none' : '';
   updateSyncVisibility();
-  if (isOverview) { renderOverview(); return; }
+  if (isOverview) { applyTiktokOverrides(); renderOverview(); return; }
   document.documentElement.style.setProperty('--pc', PLATS[plat].color);
   rebuildTypeFilters();
   rebuildForm();
+  applyTiktokOverrides();
   renderAll();
   // Re-probe auth state for the new platform (YT and TikTok have separate tokens).
   if (SYNC_CFG[plat]) syncProbe();
@@ -1061,8 +1169,25 @@ function switchView(view) {
   document.getElementById('addSection').style.display  = view==='tracker' ? '' : 'none';
   document.getElementById('trackerSec').style.display  = view==='tracker' ? '' : 'none';
   document.getElementById('funnelSec').classList.toggle('vis', view==='funnel');
+  applyTiktokOverrides();
   updateSyncVisibility();
   if (view==='funnel') renderFunnel();
+  if (isTiktokTrackerView()) renderTiktokTracker();
+}
+
+function isTiktokTrackerView() {
+  return platform === 'tiktok' && currentView === 'tracker';
+}
+
+function applyTiktokOverrides() {
+  const isTtT = isTiktokTrackerView();
+  const ttEl = document.getElementById('tiktokTracker');
+  if (!ttEl) return;
+  ttEl.style.display = isTtT ? '' : 'none';
+  if (isTtT) {
+    document.getElementById('statsRow').style.display = 'none';
+    document.getElementById('trackerSec').style.display = 'none';
+  }
 }
 
 function rebuildTypeFilters() {
@@ -1624,9 +1749,291 @@ function renderFunnelVids() {
 function renderFunnel() { renderSignals(); renderFunnelCats(); renderFunnelVids(); }
 
 function renderAll() {
-  renderStats();
-  renderTable();
+  if (isTiktokTrackerView()) {
+    renderTiktokTracker();
+  } else {
+    renderStats();
+    renderTable();
+  }
   if (currentView==='funnel') renderFunnel();
+}
+
+// ── TikTok-specific tracker view ──────────────────────────
+
+const ttState = { type: '', dateRange: 'all', search: '', view: 'grid' };
+
+function ttHcls(v, good, great) {
+  if (v == null || isNaN(v)) return 'h-none';
+  if (v >= great) return 'h-great';
+  if (v >= good)  return 'h-good';
+  if (v >= good * .5) return 'h-mid';
+  return 'h-low';
+}
+function ttHlabel(cls) {
+  return { 'h-great':'great', 'h-good':'good', 'h-mid':'mid', 'h-low':'low', 'h-none':'' }[cls];
+}
+
+function ttDaysSince(dateStr) {
+  if (!dateStr) return 1;
+  const t = Date.parse(dateStr);
+  if (isNaN(t)) return 1;
+  return Math.max(1, Math.floor((Date.now() - t) / 86400000));
+}
+
+function ttFilterEntries(entries) {
+  let r = entries.slice();
+  if (ttState.type) r = r.filter(e => e.type === ttState.type);
+  if (ttState.dateRange !== 'all') {
+    const days = parseInt(ttState.dateRange, 10);
+    r = r.filter(e => ttDaysSince(e.date) <= days);
+  }
+  if (ttState.search) {
+    const q = ttState.search.toLowerCase();
+    r = r.filter(e => (e.title || '').toLowerCase().includes(q));
+  }
+  return r;
+}
+
+function ttErOf(e) {
+  const v = e.views || 0;
+  if (!v) return 0;
+  return ((e.likes || 0) + (e.comments || 0) + (e.shares || 0)) / v * 100;
+}
+
+function renderTiktokTracker() {
+  renderTtHero();
+  renderTtTop3();
+  renderTtMetrics();
+  renderTtFilters();
+  renderTtContent();
+}
+
+function renderTtHero() {
+  const all = (data.tiktok || {entries:[]}).entries;
+  const entries = ttFilterEntries(all);
+  const totViews = entries.reduce((s,e)=>s+(e.views||0), 0);
+  const avgER = entries.length ? entries.reduce((s,e)=>s+ttErOf(e), 0) / entries.length : 0;
+  const bestER = entries.length ? entries.reduce((a,b)=>ttErOf(a)>ttErOf(b)?a:b) : null;
+  const bestERVal = bestER ? ttErOf(bestER) : 0;
+  const dateLabel = ttState.dateRange === 'all' ? 'за весь час' : `останні ${ttState.dateRange} днів`;
+
+  const erCls = ttHcls(avgER, 5, 10);
+  const bestCls = ttHcls(bestERVal, 5, 10);
+
+  document.getElementById('ttHero').innerHTML = `
+    <div class="tt-hero-card primary">
+      <div class="lbl">Всього переглядів</div>
+      <div class="val">${fmt(totViews)}</div>
+      <div class="sub">${entries.length} видео · ${dateLabel}</div>
+    </div>
+    <div class="tt-hero-card">
+      <div class="lbl">Avg ER</div>
+      <div class="val" style="color:${erCls==='h-great'?'#2ecc71':erCls==='h-good'?'#f1c40f':erCls==='h-mid'?'#e67e22':erCls==='h-low'?'#e74c3c':'#fff'}">${entries.length?avgER.toFixed(1)+'%':'—'}</div>
+      <div class="sub">engagement rate</div>
+    </div>
+    <div class="tt-hero-card">
+      <div class="lbl">🏆 Найкраще видео</div>
+      <div class="val" style="font-size:18px;color:${bestCls==='h-great'?'#2ecc71':bestCls==='h-good'?'#f1c40f':bestCls==='h-mid'?'#e67e22':bestCls==='h-low'?'#e74c3c':'#fff'}">${bestER?bestERVal.toFixed(1)+'%':'—'}</div>
+      <div class="sub">${bestER?esc((bestER.title||'').slice(0,28)+((bestER.title||'').length>28?'…':'')):'немає даних'}</div>
+    </div>
+    <div class="tt-hero-card">
+      <div class="lbl">Швидкість зростання</div>
+      <div class="val">${entries.length?fmt(Math.round(entries.reduce((s,e)=>s+(e.views||0)/ttDaysSince(e.date),0)/entries.length)):'—'}</div>
+      <div class="sub">avg views/day на видео</div>
+    </div>
+  `;
+}
+
+function renderTtTop3() {
+  const all = (data.tiktok || {entries:[]}).entries;
+  const entries = ttFilterEntries(all);
+  const top = entries.slice().sort((a,b)=>ttErOf(b)-ttErOf(a)).slice(0, 3);
+  const typeIcons = { fomo:'🔥', meme:'😂', обучающий:'📚', ugc:'👥' };
+
+  if (!top.length) {
+    document.getElementById('ttTop3').innerHTML = `<div class="empty" style="grid-column:1/-1;padding:24px;border:1px dashed #1f1f1f;border-radius:12px;text-align:center;color:#666">Немає видео за цим фільтром</div>`;
+    return;
+  }
+
+  document.getElementById('ttTop3').innerHTML = top.map((e, i) => {
+    const er = ttErOf(e);
+    const rank = i + 1;
+    const thumb = e.cover_image_url
+      ? `<div class="thumb" style="background-image:url('${esc(e.cover_image_url)}')"></div>`
+      : `<div class="thumb">${typeIcons[e.type] || '🎵'}</div>`;
+    const url = esc(e.url || '#');
+    return `
+      <div class="tt-top-card" onclick="window.open('${url}', '_blank')">
+        <div class="rank r${rank}">#${rank}</div>
+        ${thumb}
+        <div class="body">
+          <div class="title">${esc((e.title || 'Без назви').slice(0, 80))}</div>
+          <div class="stats">
+            <span>ER <b>${er.toFixed(1)}%</b></span>
+            <span>👁 <b>${fmt(e.views||0)}</b></span>
+            <span>❤️ <b>${fmt(e.likes||0)}</b></span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderTtMetrics() {
+  const all = (data.tiktok || {entries:[]}).entries;
+  const entries = ttFilterEntries(all);
+  if (!entries.length) { document.getElementById('ttMetrics').innerHTML = ''; return; }
+
+  const avgER   = entries.reduce((s,e)=>s+ttErOf(e),0) / entries.length;
+  const avgLR   = entries.reduce((s,e)=>s+(e.views?(e.likes||0)/e.views*100:0),0) / entries.length;
+  const avgComR = entries.reduce((s,e)=>s+(e.views?(e.comments||0)/e.views*100:0),0) / entries.length;
+  const avgShR  = entries.reduce((s,e)=>s+(e.views?(e.shares||0)/e.views*100:0),0) / entries.length;
+  const avgShLR = entries.reduce((s,e)=>s+(e.likes?(e.shares||0)/e.likes:0),0) / entries.length;
+
+  const cards = [
+    { lbl:'Engagement Rate',    val:avgER.toFixed(1)+'%',   sub:'(L+C+S) / views',  cls:ttHcls(avgER, 5, 10) },
+    { lbl:'Like Rate',          val:avgLR.toFixed(2)+'%',   sub:'likes / views',    cls:ttHcls(avgLR, 5, 10) },
+    { lbl:'Comment Rate',       val:avgComR.toFixed(2)+'%', sub:'comments / views', cls:ttHcls(avgComR, .5, 1.5) },
+    { lbl:'Share Rate',         val:avgShR.toFixed(2)+'%',  sub:'shares / views · ×3 вага',  cls:ttHcls(avgShR, .1, .3) },
+    { lbl:'Share:Like',         val:avgShLR.toFixed(2),     sub:'віральність',      cls:ttHcls(avgShLR, .1, .3) },
+  ];
+
+  document.getElementById('ttMetrics').innerHTML = cards.map(c => `
+    <div class="tt-mcard ${c.cls}">
+      <div class="badge">${ttHlabel(c.cls)}</div>
+      <div class="lbl">${c.lbl}</div>
+      <div class="val">${c.val}</div>
+      <div class="sub">${c.sub}</div>
+    </div>
+  `).join('');
+}
+
+function renderTtFilters() {
+  const cfg = PLATS.tiktok;
+  const typeChips = ['', ...cfg.types].map(t => {
+    const lbl = t === '' ? 'Всі' : (cfg.typeLabels[t] || t);
+    return `<button class="tt-chip ${ttState.type===t?'active':''}" onclick="ttSet('type', '${t}')">${lbl}</button>`;
+  }).join('');
+
+  const dateOptions = [
+    {v:'all', l:'Все'},
+    {v:'7',   l:'7 днів'},
+    {v:'30',  l:'30 днів'},
+    {v:'90',  l:'90 днів'},
+  ];
+  const dateChips = dateOptions.map(o =>
+    `<button class="tt-chip ${ttState.dateRange===o.v?'active':''}" onclick="ttSet('dateRange', '${o.v}')">${o.l}</button>`
+  ).join('');
+
+  document.getElementById('ttFilterbar').innerHTML = `
+    <div class="tt-chip-group">
+      <span class="tt-chip-label">Тип</span>
+      ${typeChips}
+    </div>
+    <div class="tt-chip-group">
+      <span class="tt-chip-label">Період</span>
+      ${dateChips}
+    </div>
+    <input type="text" class="tt-search" placeholder="Пошук..." value="${esc(ttState.search)}" oninput="ttSet('search', this.value)" />
+    <div class="tt-viewtoggle">
+      <button class="${ttState.view==='grid'?'active':''}" onclick="ttSet('view', 'grid')">⊞ Картки</button>
+      <button class="${ttState.view==='table'?'active':''}" onclick="ttSet('view', 'table')">☰ Таблиця</button>
+    </div>
+  `;
+}
+
+function ttSet(key, val) {
+  ttState[key] = val;
+  renderTiktokTracker();
+}
+
+function renderTtContent() {
+  const all = (data.tiktok || {entries:[]}).entries;
+  const entries = ttFilterEntries(all);
+
+  const container = document.getElementById('ttContent');
+  if (!entries.length) {
+    container.innerHTML = `<div class="empty" style="margin-top:14px;padding:32px;border:1px dashed #1f1f1f;border-radius:12px;text-align:center;color:#666"><div class="icon">📭</div>Немає видео за цим фільтром</div>`;
+    return;
+  }
+
+  if (ttState.view === 'table') {
+    container.innerHTML = renderTtTable(entries);
+    return;
+  }
+
+  // Grid
+  const typeIcons = { fomo:'🔥', meme:'😂', обучающий:'📚', ugc:'👥' };
+  const cfg = PLATS.tiktok;
+  const cards = entries.slice().sort((a,b)=>(b.views||0)-(a.views||0)).map(e => {
+    const er = ttErOf(e);
+    const erCls = ttHcls(er, 5, 10);
+    const thumb = e.cover_image_url
+      ? `<div class="thumb-wrap" style="background-image:url('${esc(e.cover_image_url)}')"><span class="er-tag ${erCls}">ER ${er.toFixed(1)}%</span></div>`
+      : `<div class="thumb-wrap placeholder">${typeIcons[e.type] || '🎵'}<span class="er-tag ${erCls}">ER ${er.toFixed(1)}%</span></div>`;
+    const typeLbl = cfg.typeLabels[e.type] || e.type || '—';
+    const url = esc(e.url || '#');
+    return `
+      <div class="tt-vcard" onclick="window.open('${url}', '_blank')">
+        ${thumb}
+        <div class="vbody">
+          <div class="vtitle">${esc((e.title || 'Без назви').slice(0, 90))}</div>
+          <div class="vmeta">
+            <span class="typ">${esc(typeLbl)}</span>
+            <span>${esc(e.date || '')}</span>
+            ${e.hook ? `<span>· ${esc(e.hook)}</span>` : ''}
+          </div>
+          <div class="vstats">
+            <div><div class="v">${fmt(e.views||0)}</div><div class="l">👁 views</div></div>
+            <div><div class="v">${fmt(e.likes||0)}</div><div class="l">❤️ likes</div></div>
+            <div><div class="v">${fmt(e.comments||0)}</div><div class="l">💬 com</div></div>
+            <div><div class="v">${fmt(e.shares||0)}</div><div class="l">↗️ sh</div></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  container.innerHTML = `<div class="tt-grid">${cards}</div>`;
+}
+
+function renderTtTable(entries) {
+  const cfg = PLATS.tiktok;
+  const sorted = entries.slice().sort((a,b)=>(b.views||0)-(a.views||0));
+  const rows = sorted.map(e => {
+    const er = ttErOf(e);
+    const erCls = ttHcls(er, 5, 10);
+    const erColor = { 'h-great':'#2ecc71', 'h-good':'#f1c40f', 'h-mid':'#e67e22', 'h-low':'#e74c3c' }[erCls] || '#aaa';
+    const typeLbl = cfg.typeLabels[e.type] || e.type || '—';
+    const url = esc(e.url || '#');
+    const td = 'padding:11px 14px;border-top:1px solid #1c1c1c';
+    return `
+      <tr style="cursor:pointer" onclick="window.open('${url}', '_blank')" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
+        <td style="${td};max-width:280px"><div style="font-size:13px;color:#e0e0e0;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc((e.title || 'Без назви').slice(0, 120))}</div></td>
+        <td style="${td};text-align:center"><span style="background:rgba(254,44,85,.12);color:#fe2c55;padding:2px 8px;border-radius:4px;font-size:11px">${esc(typeLbl)}</span></td>
+        <td style="${td};text-align:center;color:#888;font-size:12px">${esc(e.date || '')}</td>
+        <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.views||0)}</td>
+        <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.likes||0)}</td>
+        <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.comments||0)}</td>
+        <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.shares||0)}</td>
+        <td style="${td};text-align:right"><span style="color:${erColor};font-weight:700">${er.toFixed(1)}%</span></td>
+      </tr>`;
+  }).join('');
+  return `
+    <div style="margin-top:14px;background:#0f0f0f;border:1px solid #1c1c1c;border-radius:12px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:#161616;color:#888;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px">
+            <th style="text-align:left;padding:10px 14px">Назва</th>
+            <th style="text-align:center;padding:10px 8px">Тип</th>
+            <th style="text-align:center;padding:10px 8px">Дата</th>
+            <th style="text-align:right;padding:10px 14px">👁 Views</th>
+            <th style="text-align:right;padding:10px 14px">❤️ Likes</th>
+            <th style="text-align:right;padding:10px 14px">💬 Com</th>
+            <th style="text-align:right;padding:10px 14px">↗️ Shares</th>
+            <th style="text-align:right;padding:10px 14px">ER</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
 }
 
 function onHookChange() {

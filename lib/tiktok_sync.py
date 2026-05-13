@@ -50,6 +50,7 @@ def _build_entry(video: dict, existing: dict | None = None) -> dict:
         "id": (existing or {}).get("id") or new_id,
         "title": title,
         "url": video.get("share_url") or f"https://www.tiktok.com/video/{video.get('id')}",
+        "cover_image_url": video.get("cover_image_url") or (existing or {}).get("cover_image_url", ""),
         "vid_group": (existing or {}).get("vid_group", ""),
         "date": (existing or {}).get("date") or pub_date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "type": (existing or {}).get("type") or "fomo",
