@@ -2022,7 +2022,7 @@ function renderTtTable(entries) {
         <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.comments||0)}</td>
         <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.shares||0)}</td>
         <td style="${td};text-align:right"><span style="color:${erColor};font-weight:700">${er.toFixed(1)}%</span></td>
-        <td style="${td};text-align:center"><button class="tt-open-link" title="Відкрити в TikTok" style="margin:0 auto" onclick="event.stopPropagation(); window.open('${url}', '_blank')">↗</button></td>
+        <td style="${td};text-align:center"><button title="Відкрити в TikTok" onclick="event.stopPropagation(); window.open('${url}', '_blank')" style="background:rgba(254,44,85,.12);color:#fe2c55;border:1px solid rgba(254,44,85,.3);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.background='#fe2c55';this.style.color='#fff'" onmouseout="this.style.background='rgba(254,44,85,.12)';this.style.color='#fe2c55'">↗</button></td>
       </tr>`;
   }).join('');
   return `
@@ -2039,7 +2039,7 @@ function renderTtTable(entries) {
             <th style="text-align:right;padding:10px 14px">💬 Com</th>
             <th style="text-align:right;padding:10px 14px">↗️ Shares</th>
             <th style="text-align:right;padding:10px 14px">ER</th>
-            <th style="text-align:center;padding:10px 8px">↗</th>
+            <th style="text-align:center;padding:10px 8px">Відео</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
