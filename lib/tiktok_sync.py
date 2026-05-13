@@ -58,10 +58,6 @@ def _build_entry(video: dict, existing: dict | None = None) -> dict:
         "likes": int(video.get("like_count") or 0),
         "comments": int(video.get("comment_count") or 0),
         "shares": int(video.get("share_count") or 0),
-        "saves": (existing or {}).get("saves", 0),
-        "completion_rate": (existing or {}).get("completion_rate", 0),
-        "profile_visits": (existing or {}).get("profile_visits", 0),
-        "follows": (existing or {}).get("follows", 0),
     }
     history = list((existing or {}).get("history") or [])
     if existing:

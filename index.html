@@ -453,35 +453,27 @@ const PLATS = {
     typeLabels: { fomo:'Fomo', meme:'Meme', обучающий:'Обучающий', ugc:'UGC' },
     hooks: ['Tilt','Clutch','Diff','Ratio','Toxic','вопрос','контраст','проблема','тренд/звук','цифра/факт','другое'],
     fields: [
-      { id:'views',           label:'👁 Просмотры',       parse:'int'   },
-      { id:'likes',           label:'❤️ Лайки',           parse:'int'   },
-      { id:'comments',        label:'💬 Комменты',        parse:'int'   },
-      { id:'shares',          label:'↗️ Репосты',         parse:'int'   },
-      { id:'saves',           label:'🔖 Сохранения',      parse:'int'   },
-      { id:'completion_rate', label:'✅ CR %',            parse:'float' },
-      { id:'profile_visits',  label:'👤 Визиты профиля',  parse:'int'   },
-      { id:'follows',         label:'➕ Подписки',        parse:'int'   },
+      { id:'views',    label:'👁 Просмотры', parse:'int' },
+      { id:'likes',    label:'❤️ Лайки',    parse:'int' },
+      { id:'comments', label:'💬 Комменты',  parse:'int' },
+      { id:'shares',   label:'↗️ Репосты',   parse:'int' },
     ],
     mainMetric: 'views',
-    crField: 'completion_rate',
-    crLabel: 'CR',
+    crField: null,
+    crLabel: null,
     erBase: 'views',
     funnelSteps: [
-      { key:'views',           label:'Просмотры',      cls:'bar-views',   mode:'top',   bench:null          },
-      { key:'completion_rate', label:'Досмотрели',     cls:'bar-cr',      mode:'cr',    bench:'норма >50%'  },
-      { key:'likes',           label:'Лайки',          cls:'bar-likes',   mode:'ratio', bench:'норма 5-10%' },
-      { key:'comments',        label:'Комменты',       cls:'bar-comments',mode:'ratio', bench:'норма 0.5-1.5%'},
-      { key:'saves',           label:'Сохранения',     cls:'bar-saves',   mode:'ratio', bench:'норма 0.5-1.5%'},
-      { key:'shares',          label:'Репосты',        cls:'bar-shares',  mode:'ratio', bench:'норма 0.1-0.3%'},
-      { key:'profile_visits',  label:'Визиты профиля', cls:'bar-profile', mode:'ratio', bench:'норма 1-3%'  },
-      { key:'follows',         label:'Подписки',       cls:'bar-follows', mode:'ratio', bench:'норма 0.1-0.3%'},
+      { key:'views',    label:'Просмотры', cls:'bar-views',    mode:'top',   bench:null              },
+      { key:'likes',    label:'Лайки',     cls:'bar-likes',    mode:'ratio', bench:'норма 5-10%'     },
+      { key:'comments', label:'Комменты',  cls:'bar-comments', mode:'ratio', bench:'норма 0.5-1.5%'  },
+      { key:'shares',   label:'Репосты',   cls:'bar-shares',   mode:'ratio', bench:'норма 0.1-0.3%'  },
     ],
     signals: [
-      { key:'cr',    label:'Avg CR',          bench:'Хорошо >50% · Отлично >70%', good:50, great:70, tip:'Completion Rate — % досмотревших до конца. Главный алгоритмический сигнал (40–50% веса). Ниже 50% — широкого распределения не будет.' },
-      { key:'slr',   label:'Save:Like ratio', bench:'Хорошо >0.2 · Отлично >0.5', good:.2, great:.5, tip:'Отношение сохранений к лайкам. Saves = намерение вернуться. Высокое значение = контент реально ценный.' },
-      { key:'shlr',  label:'Share:Like ratio',bench:'Хорошо >0.1 · Отлично >0.3', good:.1, great:.3, tip:'Репосты весят ×3 от лайков в алгоритме TikTok.' },
-      { key:'pvr',   label:'Profile Visit %', bench:'Хорошо >1% · Отлично >3%',  good:1,  great:3,  tip:'% зрителей, перешедших на профиль. Разница между вирусным развлечением и контентом, который строит аудиторию.' },
-      { key:'fc',    label:'Follow Conv.',    bench:'Хорошо >10% · Отлично >20%', good:10, great:20, tip:'% посетителей профиля, которые подписались.' },
+      { key:'er',    label:'Avg ER',           bench:'Хорошо >5% · Отлично >10%',   good:5,   great:10,  tip:'Engagement Rate = (лайки + комменты + репосты) / просмотры × 100. Сумарна залученість на одне відео.' },
+      { key:'lr',    label:'Like Rate',        bench:'Хорошо >5% · Отлично >10%',   good:5,   great:10,  tip:'Likes / Views × 100. Базовий сигнал що контент подобається — TikTok його використовує як швидкий feedback на перших секундах розповсюдження.' },
+      { key:'comr',  label:'Comment Rate',     bench:'Хорошо >0.5% · Отлично >1.5%',good:.5,  great:1.5, tip:'Comments / Views × 100. Коменти важать більше за лайки — глибше залучення, провокує дискусію.' },
+      { key:'shr',   label:'Share Rate',       bench:'Хорошо >0.1% · Отлично >0.3%',good:.1,  great:.3,  tip:'Shares / Views × 100. Найважчий алгоритмічний сигнал — репости в TikTok мають ~×3 вагу від лайків.' },
+      { key:'shlr',  label:'Share:Like ratio', bench:'Хорошо >0.1 · Отлично >0.3',  good:.1,  great:.3,  tip:'Shares / Likes. Швидкий сигнал віральності — наскільки часто люди шерять відносно того як часто лайкають.' },
     ],
   },
 
@@ -1527,6 +1519,8 @@ function renderSignals() {
     if (key==='er')   return entries.reduce((s,e)=>s+erOf(e),0)/entries.length;
     if (key==='sr')   return entries.reduce((s,e)=>s+(e[cfg.erBase]?(e.saves||0)/e[cfg.erBase]*100:0),0)/entries.length;
     if (key==='shr')  return entries.reduce((s,e)=>s+(e[cfg.erBase]?(e.shares||0)/e[cfg.erBase]*100:0),0)/entries.length;
+    if (key==='lr')   return entries.reduce((s,e)=>s+(e[cfg.erBase]?(e.likes||0)/e[cfg.erBase]*100:0),0)/entries.length;
+    if (key==='comr') return entries.reduce((s,e)=>s+(e[cfg.erBase]?(e.comments||0)/e[cfg.erBase]*100:0),0)/entries.length;
     return null;
   }
 
