@@ -339,7 +339,11 @@
   .tt-vcard:hover { transform: translateY(-2px); border-color: #fe2c55; }
   .tt-vcard .thumb-wrap { aspect-ratio: 9/16; background: #222 center/cover no-repeat; position: relative; }
   .tt-vcard .thumb-wrap.placeholder { display: flex; align-items: center; justify-content: center; font-size: 36px; opacity: .4; }
-  .tt-vcard .er-tag { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,.1); }
+  .tt-vcard .er-tag { position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); color: #fff; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,.1); }
+  .tt-open-link { position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; background: rgba(0,0,0,.7); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,.12); border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; transition: background .15s, transform .15s; }
+  .tt-open-link:hover { background: #fe2c55; transform: scale(1.1); }
+  .tt-edit-hint { position: absolute; bottom: 8px; right: 8px; font-size: 10px; color: rgba(255,255,255,.6); background: rgba(0,0,0,.5); padding: 2px 7px; border-radius: 10px; backdrop-filter: blur(4px); opacity: 0; transition: opacity .15s; pointer-events: none; }
+  .tt-vcard:hover .tt-edit-hint { opacity: 1; }
   .tt-vcard .er-tag.h-great { color: #2ecc71; }
   .tt-vcard .er-tag.h-good  { color: #f1c40f; }
   .tt-vcard .er-tag.h-mid   { color: #e67e22; }
@@ -1863,7 +1867,8 @@ function renderTtTop3() {
       : `<div class="thumb">${typeIcons[e.type] || '🎵'}</div>`;
     const url = esc(e.url || '#');
     return `
-      <div class="tt-top-card" onclick="window.open('${url}', '_blank')">
+      <div class="tt-top-card" onclick="editEntry(${e.id})" style="position:relative">
+        <button class="tt-open-link" title="Відкрити в TikTok" style="position:absolute;top:8px;right:8px" onclick="event.stopPropagation(); window.open('${url}', '_blank')">↗</button>
         <div class="rank r${rank}">#${rank}</div>
         ${thumb}
         <div class="body">
@@ -1967,13 +1972,14 @@ function renderTtContent() {
   const cards = entries.slice().sort((a,b)=>(b.views||0)-(a.views||0)).map(e => {
     const er = ttErOf(e);
     const erCls = ttHcls(er, 5, 10);
-    const thumb = e.cover_image_url
-      ? `<div class="thumb-wrap" style="background-image:url('${esc(e.cover_image_url)}')"><span class="er-tag ${erCls}">ER ${er.toFixed(1)}%</span></div>`
-      : `<div class="thumb-wrap placeholder">${typeIcons[e.type] || '🎵'}<span class="er-tag ${erCls}">ER ${er.toFixed(1)}%</span></div>`;
-    const typeLbl = cfg.typeLabels[e.type] || e.type || '—';
     const url = esc(e.url || '#');
+    const overlay = `<span class="er-tag ${erCls}">ER ${er.toFixed(1)}%</span><button class="tt-open-link" title="Відкрити в TikTok" onclick="event.stopPropagation(); window.open('${url}', '_blank')">↗</button><span class="tt-edit-hint">✎ редагувати</span>`;
+    const thumb = e.cover_image_url
+      ? `<div class="thumb-wrap" style="background-image:url('${esc(e.cover_image_url)}')">${overlay}</div>`
+      : `<div class="thumb-wrap placeholder">${typeIcons[e.type] || '🎵'}${overlay}</div>`;
+    const typeLbl = cfg.typeLabels[e.type] || e.type || '—';
     return `
-      <div class="tt-vcard" onclick="window.open('${url}', '_blank')">
+      <div class="tt-vcard" onclick="editEntry(${e.id})">
         ${thumb}
         <div class="vbody">
           <div class="vtitle">${esc((e.title || 'Без назви').slice(0, 90))}</div>
@@ -2004,16 +2010,19 @@ function renderTtTable(entries) {
     const typeLbl = cfg.typeLabels[e.type] || e.type || '—';
     const url = esc(e.url || '#');
     const td = 'padding:11px 14px;border-top:1px solid #1c1c1c';
+    const hookLbl = e.hook ? esc(e.hook) : '<span style="color:#444">—</span>';
     return `
-      <tr style="cursor:pointer" onclick="window.open('${url}', '_blank')" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
+      <tr style="cursor:pointer" onclick="editEntry(${e.id})" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
         <td style="${td};max-width:280px"><div style="font-size:13px;color:#e0e0e0;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc((e.title || 'Без назви').slice(0, 120))}</div></td>
         <td style="${td};text-align:center"><span style="background:rgba(254,44,85,.12);color:#fe2c55;padding:2px 8px;border-radius:4px;font-size:11px">${esc(typeLbl)}</span></td>
+        <td style="${td};text-align:center;color:#bbb;font-size:12px">${hookLbl}</td>
         <td style="${td};text-align:center;color:#888;font-size:12px">${esc(e.date || '')}</td>
         <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.views||0)}</td>
         <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.likes||0)}</td>
         <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.comments||0)}</td>
         <td style="${td};text-align:right;color:#fff;font-weight:600">${fmt(e.shares||0)}</td>
         <td style="${td};text-align:right"><span style="color:${erColor};font-weight:700">${er.toFixed(1)}%</span></td>
+        <td style="${td};text-align:center"><button class="tt-open-link" title="Відкрити в TikTok" style="margin:0 auto" onclick="event.stopPropagation(); window.open('${url}', '_blank')">↗</button></td>
       </tr>`;
   }).join('');
   return `
@@ -2023,12 +2032,14 @@ function renderTtTable(entries) {
           <tr style="background:#161616;color:#888;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px">
             <th style="text-align:left;padding:10px 14px">Назва</th>
             <th style="text-align:center;padding:10px 8px">Тип</th>
+            <th style="text-align:center;padding:10px 8px">Hook</th>
             <th style="text-align:center;padding:10px 8px">Дата</th>
             <th style="text-align:right;padding:10px 14px">👁 Views</th>
             <th style="text-align:right;padding:10px 14px">❤️ Likes</th>
             <th style="text-align:right;padding:10px 14px">💬 Com</th>
             <th style="text-align:right;padding:10px 14px">↗️ Shares</th>
             <th style="text-align:right;padding:10px 14px">ER</th>
+            <th style="text-align:center;padding:10px 8px">↗</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
