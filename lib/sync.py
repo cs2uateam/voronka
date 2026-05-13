@@ -240,9 +240,13 @@ def refresh_slice(offset: int, limit: int) -> dict:
         processed += 1
 
     # Persist updates + any freshly-discovered bare entries from this slice.
+    # Discovered entries occupy positions 0..discovered-1; processed ones occupy
+    # offset..end-1. When discovered <= end the two ranges overlap, so the previous
+    # `entries[:discovered] + changed` shape contained duplicate ids and PostgREST
+    # rejected the batch with "ON CONFLICT DO UPDATE cannot affect row a second time".
+    # Slicing entries[:max(discovered, end)] covers both ranges without duplicates.
     if offset == 0 and discovered:
-        # Discovered bare entries live at positions 0..discovered-1 — upsert them too.
-        upsert_entries("youtube", entries[:discovered] + changed)
+        upsert_entries("youtube", entries[:max(discovered, end)])
     else:
         upsert_entries("youtube", changed)
 
