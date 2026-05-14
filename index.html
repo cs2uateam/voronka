@@ -359,6 +359,12 @@
   .tt-vcard .vstats .v { font-size: 12px; color: #fff; font-weight: 600; line-height: 1.2; }
   .tt-vcard .vstats .l { font-size: 9.5px; color: #666; text-transform: uppercase; letter-spacing: .3px; }
 
+  /* Inline edit form — when placed inside the grid/table after a card/row */
+  .add-section.inline-edit { grid-column: 1 / -1; margin-top: 0; margin-bottom: 0; border: 1px solid var(--pc); border-radius: 12px; padding: 14px 16px; background: #0f0f0f; box-shadow: 0 4px 20px rgba(0,0,0,.5); }
+  .add-section.inline-edit .sh { color: var(--pc); }
+  #ttInlineEditRow > td { padding: 0 !important; background: #0a0a0a; }
+  #ttInlineEditRow .add-section.inline-edit { margin: 10px 14px; }
+
   @media (max-width: 1000px) {
     .tt-hero { grid-template-columns: 1fr 1fr; }
     .tt-top3 { grid-template-columns: 1fr; }
@@ -1011,9 +1017,15 @@ function switchPlatform(plat) {
   document.getElementById('statsRow').style.display     = isOverview ? 'none' : '';
   document.getElementById('overviewSec').style.display  = isOverview ? '' : 'none';
   document.querySelector('.view-tabs').style.display    = isOverview ? 'none' : '';
-  document.getElementById('addSection').style.display   = isOverview ? 'none' : '';
-  document.getElementById('trackerSec').style.display   = isOverview ? 'none' : '';
-  document.getElementById('funnelSec').style.display    = isOverview ? 'none' : '';
+  // Tracker/Funnel/AddSection visibility is driven by *currentView*, not by
+  // platform — forcing them visible when switching platforms exposed the
+  // tracker sync bar while the user was on the Funnel tab. Mirror switchView's
+  // logic here so the active view stays the active view across platform swaps.
+  const onTracker = !isOverview && currentView === 'tracker';
+  const onFunnel  = !isOverview && currentView === 'funnel';
+  document.getElementById('addSection').style.display   = onTracker ? '' : 'none';
+  document.getElementById('trackerSec').style.display   = onTracker ? '' : 'none';
+  document.getElementById('funnelSec').classList.toggle('vis', onFunnel);
   // Platforms with API sync (YouTube, TikTok) hide the manual "+ Добавить видео" — sync covers it.
   const addBtn = document.getElementById('addToggleBtn');
   if (addBtn) addBtn.style.display = SYNC_CFG[plat] ? 'none' : '';
@@ -1321,7 +1333,7 @@ function addEntry() {
   saveData(); cancelEdit(); renderAll();
 }
 
-function editEntry(id) {
+function editEntry(id, event) {
   const e = pdata().entries.find(x => x.id===id);
   if (!e) return;
   editingId = id;
@@ -1340,7 +1352,65 @@ function editEntry(id) {
   document.getElementById('submitBtn').textContent = 'Сохранить';
   const btn = document.getElementById('addToggleBtn');
   if (btn) btn.textContent = '✕ Закрыть';
-  document.getElementById('addSection').scrollIntoView({ behavior:'smooth', block:'start' });
+  // On the new tracker view, drop the form right under the clicked card/row
+  // instead of yanking the page back to the top of the document.
+  if (isTiktokTrackerView() && event && event.currentTarget) {
+    inlineEditPlace(event.currentTarget);
+  } else {
+    document.getElementById('addSection').scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+}
+
+// Remember where #addSection lived in the DOM so we can put it back when
+// the user closes the form. Captured lazily on first inline edit.
+let _addSectionHome = null;
+
+function inlineEditPlace(anchor) {
+  const addSection = document.getElementById('addSection');
+  if (!_addSectionHome) {
+    _addSectionHome = { parent: addSection.parentNode, before: addSection.nextSibling };
+  }
+  // Wipe any previous inline-edit placement before placing again
+  inlineEditClearWrapper();
+  addSection.classList.add('inline-edit');
+
+  if (anchor.tagName === 'TR') {
+    // Table mode: wrap in a full-span row directly under the clicked row
+    const cols = anchor.children.length;
+    const wrapper = document.createElement('tr');
+    wrapper.id = 'ttInlineEditRow';
+    const td = document.createElement('td');
+    td.colSpan = cols;
+    wrapper.appendChild(td);
+    td.appendChild(addSection);
+    anchor.insertAdjacentElement('afterend', wrapper);
+  } else {
+    // Grid mode (.tt-vcard) or top-3 card — make form span all columns of its grid
+    const grid = anchor.parentElement;
+    grid.insertBefore(addSection, anchor.nextElementSibling);
+  }
+
+  // Scroll only enough to bring the form into view, not the whole page to top
+  addSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function inlineEditClearWrapper() {
+  const wrapper = document.getElementById('ttInlineEditRow');
+  if (wrapper && wrapper.parentNode) wrapper.parentNode.removeChild(wrapper);
+}
+
+function inlineEditRestore() {
+  const addSection = document.getElementById('addSection');
+  if (!addSection.classList.contains('inline-edit')) return;
+  addSection.classList.remove('inline-edit');
+  inlineEditClearWrapper();
+  if (_addSectionHome) {
+    if (_addSectionHome.before && _addSectionHome.before.parentNode === _addSectionHome.parent) {
+      _addSectionHome.parent.insertBefore(addSection, _addSectionHome.before);
+    } else {
+      _addSectionHome.parent.appendChild(addSection);
+    }
+  }
 }
 
 function saveEdit() {
@@ -1439,6 +1509,7 @@ function toggleAddForm() {
 
 function cancelEdit() {
   editingId = null; clearForm();
+  inlineEditRestore();
   document.getElementById('addSection').classList.remove('editing');
   document.getElementById('addSection').classList.remove('open');
   document.getElementById('editNotice').classList.remove('vis');
@@ -1615,7 +1686,7 @@ function renderTable() {
       <td style="text-align:center"><span class="tier tier-${tier}">${TIER_LABELS[tier]}</span></td>
       <td style="white-space:nowrap">
         ${e.history?.length ? `<button class="hist-btn" onclick="showHistory(${e.id})" title="${e.history.length} снапшот(ов)">📈</button>` : ''}
-        <button class="edit-btn" onclick="editEntry(${e.id})" title="Редактировать">✎</button>
+        <button class="edit-btn" onclick="editEntry(${e.id}, event)" title="Редактировать">✎</button>
         <button class="del-btn"  onclick="askDelete(${e.id})"  title="Удалить">✕</button>
       </td>
     </tr>`;
@@ -1780,8 +1851,38 @@ function renderAll() {
 // platforms (e.g. picking 'fomo' on TikTok doesn't break YouTube view).
 const ttStates = {};
 function ttS() {
-  if (!ttStates[platform]) ttStates[platform] = { type: '', dateRange: 'all', search: '', view: 'grid' };
+  if (!ttStates[platform]) ttStates[platform] = { type: '', dateRange: 'all', search: '', view: 'grid', sortCol: 'main', sortDir: 'desc' };
   return ttStates[platform];
+}
+
+function ttSortClick(col) {
+  const st = ttS();
+  if (st.sortCol === col) {
+    st.sortDir = st.sortDir === 'desc' ? 'asc' : 'desc';
+  } else {
+    st.sortCol = col;
+    st.sortDir = (col === 'title' || col === 'type' || col === 'hook') ? 'asc' : 'desc';
+  }
+  renderTiktokTracker();
+}
+
+function ttSortEntries(entries, cfg) {
+  const st = ttS();
+  const col = st.sortCol;
+  const dir = st.sortDir === 'asc' ? 1 : -1;
+  const base = cfg.erBase;
+  const numeric = (e, key) => Number(e[key]) || 0;
+  const cmp = (a, b) => {
+    if (col === 'er')    return (ttErOf(a) - ttErOf(b)) * dir;
+    if (col === 'main')  return (numeric(a, base) - numeric(b, base)) * dir;
+    if (col === 'title') return (a.title || '').localeCompare(b.title || '') * dir;
+    if (col === 'type')  return (a.type  || '').localeCompare(b.type  || '') * dir;
+    if (col === 'hook')  return (a.hook  || '').localeCompare(b.hook  || '') * dir;
+    if (col === 'date')  return (a.date  || '').localeCompare(b.date  || '') * dir;
+    // Default: numeric on the column field name
+    return (numeric(a, col) - numeric(b, col)) * dir;
+  };
+  return entries.slice().sort(cmp);
 }
 
 function ttHcls(v, good, great) {
@@ -1963,7 +2064,7 @@ function renderTtTop3() {
     const mainVal = e[mainKey] || 0;
     const mainIcon = mainKey === 'reach' ? '📡' : '👁';
     return `
-      <div class="tt-top-card" onclick="editEntry(${e.id})" style="position:relative">
+      <div class="tt-top-card" onclick="editEntry(${e.id}, event)" style="position:relative">
         <button class="tt-open-link" title="Відкрити в ${esc(ttPlatTitle())}" style="position:absolute;top:8px;right:8px" onclick="event.stopPropagation(); window.open('${url}', '_blank')">↗</button>
         <div class="rank r${rank}">#${rank}</div>
         ${thumb}
@@ -2075,7 +2176,7 @@ function renderTtContent() {
     const typeLbl = cfg.typeLabels[e.type] || e.type || '—';
     const stats = renderTtVcardStats(e, cfg);
     return `
-      <div class="tt-vcard" onclick="editEntry(${e.id})">
+      <div class="tt-vcard" onclick="editEntry(${e.id}, event)">
         ${thumb}
         <div class="vbody">
           <div class="vtitle">${esc((e.title || 'Без назви').slice(0, 90))}</div>
@@ -2126,7 +2227,7 @@ function renderTtTable(entries) {
   let extraCol = { key: 'shares', label: '↗️ Shares' };
   if (cfg.crField) extraCol = { key: cfg.crField, label: `✅ ${cfg.crLabel || cfg.crField}`, fmt: v => `${(v||0).toFixed(1)}%` };
   else if (cfg.fields.some(f => f.id === 'follows')) extraCol = { key: 'follows', label: '➕ Subs' };
-  const sorted = entries.slice().sort((a,b)=>(b[baseField]||0)-(a[baseField]||0));
+  const sorted = ttSortEntries(entries, cfg);
   const rows = sorted.map(e => {
     const er = ttErOf(e);
     const erCls = ttHcls(er, erSig.good, erSig.great);
@@ -2137,7 +2238,7 @@ function renderTtTable(entries) {
     const hookLbl = e.hook ? esc(e.hook) : '<span style="color:#444">—</span>';
     const extraVal = extraCol.fmt ? extraCol.fmt(e[extraCol.key]) : fmt(e[extraCol.key] || 0);
     return `
-      <tr style="cursor:pointer" onclick="editEntry(${e.id})" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
+      <tr style="cursor:pointer" onclick="editEntry(${e.id}, event)" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
         <td style="${td};max-width:280px"><div style="font-size:13px;color:#e0e0e0;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc((e.title || 'Без назви').slice(0, 120))}</div></td>
         <td style="${td};text-align:center"><span style="background:color-mix(in srgb, var(--pc) 12%, transparent);color:var(--pc);padding:2px 8px;border-radius:4px;font-size:11px">${esc(typeLbl)}</span></td>
         <td style="${td};text-align:center;color:#bbb;font-size:12px">${hookLbl}</td>
@@ -2150,20 +2251,27 @@ function renderTtTable(entries) {
         <td style="${td};text-align:center"><button title="Відкрити в ${esc(platTitle)}" onclick="event.stopPropagation(); window.open('${url}', '_blank')" style="background:color-mix(in srgb, var(--pc) 12%, transparent);color:var(--pc);border:1px solid color-mix(in srgb, var(--pc) 30%, transparent);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s" onmouseover="this.style.background='var(--pc)';this.style.color='#fff'" onmouseout="this.style.background='color-mix(in srgb, var(--pc) 12%, transparent)';this.style.color='var(--pc)'">↗</button></td>
       </tr>`;
   }).join('');
+  const st = ttS();
+  const arr = (col, align) => {
+    if (st.sortCol !== col) return '<span style="color:#444;margin-left:6px;font-size:10px">↕</span>';
+    return `<span style="color:var(--pc);margin-left:6px;font-size:11px">${st.sortDir === 'asc' ? '↑' : '↓'}</span>`;
+  };
+  const thStyle = 'padding:10px 14px;cursor:pointer;user-select:none;transition:color .15s';
+  const thHover = `onmouseover="this.style.color='#fff'" onmouseout="this.style.color=''"`;
   return `
     <div style="margin-top:14px;background:#0f0f0f;border:1px solid #1c1c1c;border-radius:12px;overflow:hidden">
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <thead>
           <tr style="background:#161616;color:#888;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px">
-            <th style="text-align:left;padding:10px 14px">Назва</th>
-            <th style="text-align:center;padding:10px 8px">Тип</th>
-            <th style="text-align:center;padding:10px 8px">Hook</th>
-            <th style="text-align:center;padding:10px 8px">Дата</th>
-            <th style="text-align:right;padding:10px 14px">${mainLbl}</th>
-            <th style="text-align:right;padding:10px 14px">❤️ Likes</th>
-            <th style="text-align:right;padding:10px 14px">💬 Com</th>
-            <th style="text-align:right;padding:10px 14px">${extraCol.label}</th>
-            <th style="text-align:right;padding:10px 14px">ER</th>
+            <th style="text-align:left;${thStyle}"  ${thHover} onclick="ttSortClick('title')">Назва${arr('title')}</th>
+            <th style="text-align:center;${thStyle}" ${thHover} onclick="ttSortClick('type')">Тип${arr('type')}</th>
+            <th style="text-align:center;${thStyle}" ${thHover} onclick="ttSortClick('hook')">Hook${arr('hook')}</th>
+            <th style="text-align:center;${thStyle}" ${thHover} onclick="ttSortClick('date')">Дата${arr('date')}</th>
+            <th style="text-align:right;${thStyle}"  ${thHover} onclick="ttSortClick('main')">${mainLbl}${arr('main')}</th>
+            <th style="text-align:right;${thStyle}"  ${thHover} onclick="ttSortClick('likes')">❤️ Likes${arr('likes')}</th>
+            <th style="text-align:right;${thStyle}"  ${thHover} onclick="ttSortClick('comments')">💬 Com${arr('comments')}</th>
+            <th style="text-align:right;${thStyle}"  ${thHover} onclick="ttSortClick('${extraCol.key}')">${extraCol.label}${arr(extraCol.key)}</th>
+            <th style="text-align:right;${thStyle}"  ${thHover} onclick="ttSortClick('er')">ER${arr('er')}</th>
             <th style="text-align:center;padding:10px 8px">Відео</th>
           </tr>
         </thead>
