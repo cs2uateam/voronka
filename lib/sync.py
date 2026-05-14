@@ -82,6 +82,7 @@ def _build_entry(public: dict, analytics: dict | None, url: str, existing: dict 
         "id": (existing or {}).get("id") or _stable_id(vid),
         "title": public.get("title", ""),
         "url": url,
+        "cover_image_url": _yt_cover(vid),
         "vid_group": (existing or {}).get("vid_group", ""),
         "date": (existing or {}).get("date") or pub_date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "type": (existing or {}).get("type") or yt_type,
@@ -103,12 +104,19 @@ def _build_entry(public: dict, analytics: dict | None, url: str, existing: dict 
     return base
 
 
+def _yt_cover(video_id: str) -> str:
+    """hqdefault is the only thumbnail YouTube guarantees for every video
+    (maxres/sd are missing on older uploads). Predictable URL, no API call."""
+    return f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
+
+
 def _bare_entry(video_id: str) -> dict:
     """A placeholder entry for a discovered video; metrics get filled on first refresh."""
     return {
         "id": _stable_id(video_id),
         "title": "",
         "url": f"https://youtube.com/shorts/{video_id}",
+        "cover_image_url": _yt_cover(video_id),
         "vid_group": "",
         "date": "",
         "type": "shorts",
