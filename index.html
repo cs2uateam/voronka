@@ -532,6 +532,9 @@
     <div class="tt-section-label">🏆 Топ-3 за Engagement Rate</div>
     <div class="tt-top3" id="ttTop3"></div>
 
+    <div class="tt-section-label">🚀 Топ-3 за переглядами</div>
+    <div class="tt-top3" id="ttTop3Views"></div>
+
     <div class="tt-section-label">Залученість</div>
     <div class="tt-metrics" id="ttMetrics"></div>
 
@@ -2045,14 +2048,26 @@ function renderTtTop3() {
   const cfg = PLATS[platform];
   const all = (data[platform] || {entries:[]}).entries;
   const entries = ttFilterEntries(all);
-  const top = entries.slice().sort((a,b)=>ttErOf(b)-ttErOf(a)).slice(0, 3);
+  const baseField = cfg.erBase;
 
+  renderTtTop3Into('ttTop3',      entries.slice().sort((a,b)=>ttErOf(b)-ttErOf(a)).slice(0, 3),                'er',    cfg);
+  renderTtTop3Into('ttTop3Views', entries.slice().sort((a,b)=>(b[baseField]||0)-(a[baseField]||0)).slice(0, 3), 'main',  cfg);
+}
+
+// Renders the 3-card strip into `containerId`. `highlight` controls which
+// stat shows in the leading <b> slot ('er' → ER%, 'main' → views/reach).
+function renderTtTop3Into(containerId, top, highlight, cfg) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
   if (!top.length) {
-    document.getElementById('ttTop3').innerHTML = `<div class="empty" style="grid-column:1/-1;padding:24px;border:1px dashed #1f1f1f;border-radius:12px;text-align:center;color:#666">Немає видео за цим фільтром</div>`;
+    container.innerHTML = `<div class="empty" style="grid-column:1/-1;padding:24px;border:1px dashed #1f1f1f;border-radius:12px;text-align:center;color:#666">Немає видео за цим фільтром</div>`;
     return;
   }
 
-  document.getElementById('ttTop3').innerHTML = top.map((e, i) => {
+  const mainKey = cfg.erBase;
+  const mainIcon = mainKey === 'reach' ? '📡' : (mainKey === 'plays' ? '▶' : '👁');
+
+  container.innerHTML = top.map((e, i) => {
     const er = ttErOf(e);
     const rank = i + 1;
     const fallbackIcon = TT_TYPE_ICONS[e.type] || TT_PLAT_FALLBACK[platform] || '🎬';
@@ -2060,9 +2075,14 @@ function renderTtTop3() {
       ? `<div class="thumb" style="background-image:url('${esc(e.cover_image_url)}')"></div>`
       : `<div class="thumb">${fallbackIcon}</div>`;
     const url = esc(e.url || '#');
-    const mainKey = cfg.erBase;
     const mainVal = e[mainKey] || 0;
-    const mainIcon = mainKey === 'reach' ? '📡' : '👁';
+    // Lead with the metric this strip is sorted by — that's the headline number.
+    const lead = highlight === 'main'
+      ? `<span style="color:var(--pc);font-weight:700">${mainIcon} ${fmt(mainVal)}</span>`
+      : `<span style="color:var(--pc);font-weight:700">ER ${er.toFixed(1)}%</span>`;
+    const sec = highlight === 'main'
+      ? `<span>ER <b>${er.toFixed(1)}%</b></span>`
+      : `<span>${mainIcon} <b>${fmt(mainVal)}</b></span>`;
     return `
       <div class="tt-top-card" onclick="editEntry(${e.id}, event)" style="position:relative">
         <button class="tt-open-link" title="Відкрити в ${esc(ttPlatTitle())}" style="position:absolute;top:8px;right:8px" onclick="event.stopPropagation(); window.open('${url}', '_blank')">↗</button>
@@ -2071,8 +2091,8 @@ function renderTtTop3() {
         <div class="body">
           <div class="title">${esc((e.title || 'Без назви').slice(0, 80))}</div>
           <div class="stats">
-            <span>ER <b>${er.toFixed(1)}%</b></span>
-            <span>${mainIcon} <b>${fmt(mainVal)}</b></span>
+            ${lead}
+            ${sec}
             <span>❤️ <b>${fmt(e.likes||0)}</b></span>
           </div>
         </div>
