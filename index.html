@@ -359,6 +359,20 @@
   .tt-vcard .vstats .v { font-size: 12px; color: #fff; font-weight: 600; line-height: 1.2; }
   .tt-vcard .vstats .l { font-size: 9.5px; color: #666; text-transform: uppercase; letter-spacing: .3px; }
 
+  /* Data-freshness banner — shows whether metrics came from CSV or API */
+  .tt-freshness { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0 14px 0; }
+  .tt-freshness:empty { display: none; }
+  .tt-fr-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 4px; }
+  .tt-fr-studio { color: #2ecc71; background: rgba(46,204,113,.12); border: 1px solid rgba(46,204,113,.25); }
+  .tt-fr-api    { color: #f1c40f; background: rgba(241,196,15,.10); border: 1px solid rgba(241,196,15,.20); }
+  .tt-fr-hint   { font-size: 11.5px; color: #888; }
+  .tt-fr-hint b { color: #ccc; font-weight: 600; }
+
+  /* Per-card source badge — small dot on the bottom-right of a video card */
+  .tt-src-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; vertical-align: middle; }
+  .tt-src-studio { color: #2ecc71; background: rgba(46,204,113,.12); }
+  .tt-src-api    { color: #888;    background: rgba(136,136,136,.10); }
+
   /* Inline edit form — when placed inside the grid/table after a card/row */
   .add-section.inline-edit { grid-column: 1 / -1; margin-top: 0; margin-bottom: 0; border: 1px solid var(--pc); border-radius: 12px; padding: 14px 16px; background: #0f0f0f; box-shadow: 0 4px 20px rgba(0,0,0,.5); }
   .add-section.inline-edit .sh { color: var(--pc); }
@@ -481,6 +495,8 @@
       <span id="syncConnDot" class="sync-conn">●</span>
       <button class="btn btn-primary btn-sm" id="syncRefreshBtn" onclick="syncRefreshAll()">↻ Sync канал</button>
       <button class="btn btn-ghost btn-sm" id="syncAddToggleBtn" onclick="syncToggleAdd()">+ URL</button>
+      <button class="btn btn-ghost btn-sm" id="syncCsvBtn" onclick="syncCsvImport()" style="display:none" title="Імпорт повних метрик з TikTok Studio">📊 Імпорт з Studio</button>
+      <input type="file" id="syncCsvFile" accept=".csv" style="display:none" onchange="syncCsvUpload(this.files[0])" />
       <span id="syncStatus" class="sync-status"></span>
       <button class="sync-icon-btn" onclick="syncToggleLog()" title="Лог" aria-label="Лог">≡</button>
     </div>
@@ -527,6 +543,7 @@
   <!-- TikTok-specific tracker view -->
   <div id="tiktokTracker" style="display:none">
     <div class="tt-section-label">Огляд</div>
+    <div id="ttFreshness" class="tt-freshness"></div>
     <div class="tt-hero" id="ttHero"></div>
 
     <div class="tt-section-label">🏆 Топ-3 за Engagement Rate</div>
@@ -581,8 +598,8 @@ const PLATS = {
       { id:'shares',   label:'↗️ Репосты',   parse:'int' },
     ],
     mainMetric: 'views',
-    crField: null,
-    crLabel: null,
+    crField: 'completion_rate',
+    crLabel: 'CR',
     erBase: 'views',
     funnelSteps: [
       { key:'views',    label:'Просмотры', cls:'bar-views',    mode:'top',   bench:null              },
@@ -590,12 +607,23 @@ const PLATS = {
       { key:'comments', label:'Комменты',  cls:'bar-comments', mode:'ratio', bench:'норма 0.5-1.5%'  },
       { key:'shares',   label:'Репосты',   cls:'bar-shares',   mode:'ratio', bench:'норма 0.1-0.3%'  },
     ],
+    // Signals fall into two groups: the 5 base ones below are always shown
+    // because they're derived from the 4 metrics the Display API exposes.
+    // The Studio-only signals (cr, sr, slr, pvr, fc) are auto-hidden when
+    // no entry has data for the underlying field — they light up after a
+    // CSV import from TikTok Studio brings in saves / completion_rate /
+    // profile_visits which the public API doesn't return.
     signals: [
       { key:'er',    label:'Avg ER',           bench:'Хорошо >5% · Отлично >10%',   good:5,   great:10,  tip:'Engagement Rate = (лайки + комменты + репосты) / просмотры × 100. Сумарна залученість на одне відео.' },
       { key:'lr',    label:'Like Rate',        bench:'Хорошо >5% · Отлично >10%',   good:5,   great:10,  tip:'Likes / Views × 100. Базовий сигнал що контент подобається — TikTok його використовує як швидкий feedback на перших секундах розповсюдження.' },
       { key:'comr',  label:'Comment Rate',     bench:'Хорошо >0.5% · Отлично >1.5%',good:.5,  great:1.5, tip:'Comments / Views × 100. Коменти важать більше за лайки — глибше залучення, провокує дискусію.' },
       { key:'shr',   label:'Share Rate',       bench:'Хорошо >0.1% · Отлично >0.3%',good:.1,  great:.3,  tip:'Shares / Views × 100. Найважчий алгоритмічний сигнал — репости в TikTok мають ~×3 вагу від лайків.' },
       { key:'shlr',  label:'Share:Like ratio', bench:'Хорошо >0.1 · Отлично >0.3',  good:.1,  great:.3,  tip:'Shares / Likes. Швидкий сигнал віральності — наскільки часто люди шерять відносно того як часто лайкають.' },
+      { key:'cr',    label:'Avg CR (Studio)',  bench:'Хорошо >50% · Отлично >70%',  good:50,  great:70,  tip:'Completion Rate — % людей що додивились видео до кінця. Доступний лише після імпорту CSV з TikTok Studio (Display API не віддає).' },
+      { key:'sr',    label:'Save Rate',        bench:'Хорошо >0.5% · Отлично >1.5%',good:.5,  great:1.5, tip:'Saves / Views × 100. Доступно після CSV-імпорту з Studio.' },
+      { key:'slr',   label:'Save:Like ratio',  bench:'Хорошо >0.2 · Отлично >0.5',  good:.2,  great:.5,  tip:'Saves / Likes. Високий = контент цінний, його хочуть зберегти.' },
+      { key:'pvr',   label:'Profile Visit %',  bench:'Хорошо >1% · Отлично >3%',    good:1,   great:3,   tip:'Profile Visits / Views × 100. Доступно після CSV-імпорту з Studio.' },
+      { key:'fc',    label:'Follow Conv.',     bench:'Хорошо >10% · Отлично >20%',  good:10,  great:20,  tip:'Follows / Profile Visits × 100. Конверсія візиту в підписку.' },
     ],
   },
 
@@ -1949,10 +1977,22 @@ function signalValue(key, entries, cfg) {
   if (key==='comr') return entries.reduce((s,e)=>s+(e[base]?(e.comments||0)/e[base]*100:0),0)/entries.length;
   if (key==='shr')  return entries.reduce((s,e)=>s+(e[base]?(e.shares||0)/e[base]*100:0),0)/entries.length;
   if (key==='shlr') return entries.reduce((s,e)=>s+(e.likes?(e.shares||0)/e.likes:0),0)/entries.length;
-  if (key==='slr')  return entries.reduce((s,e)=>s+(e.likes?(e.saves||0)/e.likes:0),0)/entries.length;
-  if (key==='fr')   return entries.reduce((s,e)=>s+(e.views?(e.follows||0)/e.views*100:0),0)/entries.length;
-  if (key==='sr')   return entries.reduce((s,e)=>s+(e[base]?(e.saves||0)/e[base]*100:0),0)/entries.length;
-  if (key==='pvr')  return entries.reduce((s,e)=>s+(e[base]?(e.profile_visits||0)/e[base]*100:0),0)/entries.length;
+  if (key==='slr')  {
+    if (!entries.some(e => (e.saves||0) > 0)) return null;
+    return entries.reduce((s,e)=>s+(e.likes?(e.saves||0)/e.likes:0),0)/entries.length;
+  }
+  if (key==='fr')   {
+    if (!entries.some(e => (e.follows||0) > 0)) return null;
+    return entries.reduce((s,e)=>s+(e.views?(e.follows||0)/e.views*100:0),0)/entries.length;
+  }
+  if (key==='sr')   {
+    if (!entries.some(e => (e.saves||0) > 0)) return null;
+    return entries.reduce((s,e)=>s+(e[base]?(e.saves||0)/e[base]*100:0),0)/entries.length;
+  }
+  if (key==='pvr')  {
+    if (!entries.some(e => (e.profile_visits||0) > 0)) return null;
+    return entries.reduce((s,e)=>s+(e[base]?(e.profile_visits||0)/e[base]*100:0),0)/entries.length;
+  }
   if (key==='fc')   {
     const w = entries.filter(e=>e.profile_visits>0);
     return w.length ? w.reduce((s,e)=>s+(e.follows||0)/e.profile_visits*100, 0) / w.length : null;
@@ -1961,11 +2001,50 @@ function signalValue(key, entries, cfg) {
 }
 
 function renderTiktokTracker() {
+  renderTtFreshness();
   renderTtHero();
   renderTtTop3();
   renderTtMetrics();
   renderTtFilters();
   renderTtContent();
+}
+
+// Tells you which data is fresh vs stale. Studio truth ages out quickly
+// (analytics shift daily), so flag the import age in the hero strip.
+function renderTtFreshness() {
+  const host = document.getElementById('ttFreshness');
+  if (!host) return;
+  // Only TikTok currently has CSV-import data — short-circuit for everything else.
+  if (platform !== 'tiktok') { host.innerHTML = ''; return; }
+  const all = (data.tiktok || {entries:[]}).entries;
+  if (!all.length) { host.innerHTML = ''; return; }
+  const stamps = all.map(e => e.last_studio_import).filter(Boolean).sort();
+  const newest = stamps[stamps.length - 1];
+  const oldest = stamps[0];
+  const csvCount = stamps.length;
+  const apiCount = all.length - csvCount;
+
+  if (!newest) {
+    host.innerHTML = `<span class="tt-fr-badge tt-fr-api">🔌 API only</span><span class="tt-fr-hint">Імпорт CSV з TikTok Studio дасть повні метрики (saves, completion rate, profile visits)</span>`;
+    return;
+  }
+  const ago = ttHumanAgo(newest);
+  const oldestAgo = oldest && oldest !== newest ? ` · найстаріший імпорт: ${ttHumanAgo(oldest)} тому` : '';
+  host.innerHTML = `
+    <span class="tt-fr-badge tt-fr-studio">📊 Studio</span>
+    <span class="tt-fr-hint">Останній CSV-імпорт: <b>${ago}</b> тому · ${csvCount}/${all.length} відео з Studio${apiCount?` · ${apiCount} лише з API`:''}${oldestAgo}</span>`;
+}
+
+function ttHumanAgo(iso) {
+  try {
+    const sec = Math.max(0, (Date.now() - Date.parse(iso)) / 1000);
+    if (sec < 60)        return `${Math.round(sec)} сек`;
+    if (sec < 3600)      return `${Math.round(sec/60)} хв`;
+    if (sec < 86400)     return `${Math.round(sec/3600)} год`;
+    if (sec < 86400*30)  return `${Math.round(sec/86400)} дн`;
+    if (sec < 86400*365) return `${Math.round(sec/(86400*30))} міс`;
+    return `${Math.round(sec/(86400*365))} р`;
+  } catch { return '?'; }
 }
 
 function ttColorOf(cls) {
@@ -2107,19 +2186,23 @@ function renderTtMetrics() {
   if (!entries.length) { document.getElementById('ttMetrics').innerHTML = ''; return; }
 
   const signals = cfg.signals || [];
-  const cards = signals.map(sig => {
-    const v = signalValue(sig.key, entries, cfg);
-    const cls = ttHcls(v, sig.good, sig.great);
-    const isRatio = sig.key === 'slr' || sig.key === 'shlr';
-    const valStr = v == null ? '—' : (isRatio ? v.toFixed(2) : v.toFixed(2) + '%');
-    return `
-      <div class="tt-mcard ${cls}">
-        <div class="badge">${ttHlabel(cls)}</div>
-        <div class="lbl">${esc(sig.label)}</div>
-        <div class="val">${valStr}</div>
-        <div class="sub">${esc(sig.bench || '')}</div>
-      </div>`;
-  });
+  // Skip signals whose value is null (no data yet — e.g. Studio-only metrics
+  // before CSV import). They light up automatically once data shows up.
+  const cards = signals
+    .map(sig => ({ sig, v: signalValue(sig.key, entries, cfg) }))
+    .filter(({v}) => v !== null && !Number.isNaN(v))
+    .map(({sig, v}) => {
+      const cls = ttHcls(v, sig.good, sig.great);
+      const isRatio = sig.key === 'slr' || sig.key === 'shlr';
+      const valStr = isRatio ? v.toFixed(2) : v.toFixed(2) + '%';
+      return `
+        <div class="tt-mcard ${cls}">
+          <div class="badge">${ttHlabel(cls)}</div>
+          <div class="lbl">${esc(sig.label)}</div>
+          <div class="val">${valStr}</div>
+          <div class="sub">${esc(sig.bench || '')}</div>
+        </div>`;
+    });
 
   document.getElementById('ttMetrics').innerHTML = cards.join('');
 }
@@ -2195,6 +2278,7 @@ function renderTtContent() {
       : `<div class="thumb-wrap placeholder">${fallback}${overlay}</div>`;
     const typeLbl = cfg.typeLabels[e.type] || e.type || '—';
     const stats = renderTtVcardStats(e, cfg);
+    const srcBadge = ttSrcBadge(e);
     return `
       <div class="tt-vcard" onclick="editEntry(${e.id}, event)">
         ${thumb}
@@ -2204,12 +2288,25 @@ function renderTtContent() {
             <span class="typ">${esc(typeLbl)}</span>
             <span>${esc(e.date || '')}</span>
             ${e.hook ? `<span>· ${esc(e.hook)}</span>` : ''}
+            ${srcBadge}
           </div>
           ${stats}
         </div>
       </div>`;
   }).join('');
   container.innerHTML = `<div class="tt-grid">${cards}</div>`;
+}
+
+// Tiny per-entry badge showing whether the metrics on this row are from
+// Studio CSV (authoritative, includes saves/CR/profile_visits) or from the
+// Display API (4 base metrics, slightly inflated views).
+function ttSrcBadge(e) {
+  // Only TikTok has Studio CSV — for other platforms there's nothing to flag.
+  if (platform !== 'tiktok') return '';
+  if (e.last_studio_import) {
+    return `<span class="tt-src-badge tt-src-studio" title="Метрики з TikTok Studio CSV (${ttHumanAgo(e.last_studio_import)} тому)">📊</span>`;
+  }
+  return `<span class="tt-src-badge tt-src-api" title="Метрики з Display API. Імпортуй CSV з Studio для повних даних.">🔌</span>`;
 }
 
 // Picks 4 numeric fields to show under each card's stat strip. Prefers the
@@ -2259,7 +2356,7 @@ function renderTtTable(entries) {
     const extraVal = extraCol.fmt ? extraCol.fmt(e[extraCol.key]) : fmt(e[extraCol.key] || 0);
     return `
       <tr style="cursor:pointer" onclick="editEntry(${e.id}, event)" onmouseover="this.style.background='#161616'" onmouseout="this.style.background=''">
-        <td style="${td};max-width:280px"><div style="font-size:13px;color:#e0e0e0;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc((e.title || 'Без назви').slice(0, 120))}</div></td>
+        <td style="${td};max-width:280px"><div style="font-size:13px;color:#e0e0e0;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc((e.title || 'Без назви').slice(0, 120))} ${ttSrcBadge(e)}</div></td>
         <td style="${td};text-align:center"><span style="background:color-mix(in srgb, var(--pc) 12%, transparent);color:var(--pc);padding:2px 8px;border-radius:4px;font-size:11px">${esc(typeLbl)}</span></td>
         <td style="${td};text-align:center;color:#bbb;font-size:12px">${hookLbl}</td>
         <td style="${td};text-align:center;color:#888;font-size:12px">${esc(e.date || '')}</td>
@@ -2360,6 +2457,47 @@ function updateSyncAuthBox() {
   if (refreshBtn) refreshBtn.textContent = cfg.syncBtn;
   const addBtn = document.getElementById('syncAddToggleBtn');
   if (addBtn) addBtn.style.display = cfg.canAddUrls ? '' : 'none';
+  // CSV import is currently TikTok-only (Production review was rejected for
+  // internal use; CSV from Studio is the supported workaround).
+  const csvBtn = document.getElementById('syncCsvBtn');
+  if (csvBtn) csvBtn.style.display = platform === 'tiktok' ? '' : 'none';
+}
+
+function syncCsvImport() {
+  document.getElementById('syncCsvFile').click();
+}
+
+async function syncCsvUpload(file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  syncSetStatus('завантажую...', 'loading');
+  syncSetLog('');
+  try {
+    const r = await fetch('/api/tiktok/import-csv', { method: 'POST', body: fd });
+    const j = await r.json();
+    if (!j.ok) {
+      syncSetStatus('✗ помилка', 'err');
+      const detail = j.error || 'unknown';
+      const warns = (j.warnings || []).join(' • ');
+      const cols = j.columns_detected ? `\nрозпізнані колонки: ${Object.keys(j.columns_detected).join(', ')}` : '';
+      syncSetLog(`Ошибка: ${detail}${warns ? '\nWarnings: '+warns : ''}${cols}`);
+      return;
+    }
+    syncSetStatus(`✓ Studio: ${j.matched} оновлено · ${j.added} нових`, 'ok');
+    const warns = (j.warnings || []).length ? '\nWarnings: ' + j.warnings.join(' • ') : '';
+    const cols = j.columns_detected ? `\nрозпізнані колонки: ${Object.keys(j.columns_detected).join(', ')}` : '';
+    syncSetLog(`Імпорт завершено\n  • розпарсено рядків: ${j.rows_parsed}\n  • оновлено існуючих: ${j.matched}\n  • додано нових: ${j.added}${cols}${warns}`);
+    // Refresh data so the UI shows new metrics + lock badges
+    await loadData();
+    renderAll();
+  } catch (e) {
+    syncSetStatus('✗ помилка', 'err');
+    syncSetLog('Network error: ' + e);
+  } finally {
+    // Reset the file input so the same file can be re-uploaded if needed
+    document.getElementById('syncCsvFile').value = '';
+  }
 }
 
 function syncShowAuthState(authed) {

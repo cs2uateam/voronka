@@ -12,7 +12,7 @@ from lib.oauth_web import (
 from lib.store import read_full_record, write_full_record
 from lib.sync import add_urls, refresh_slice
 from lib import (
-    tiktok_oauth, tiktok_sync,
+    tiktok_oauth, tiktok_sync, tiktok_csv,
     instagram_oauth, instagram_sync,
     telegram_oauth, telegram_sync,
 )
@@ -200,6 +200,47 @@ def api_tiktok_auth():
         except Exception as e:
             return _html(f"<h1>TikTok token exchange failed</h1><p>{e}</p>", 500)
     return redirect(tiktok_oauth.authorization_url(_tiktok_redirect_uri()), code=302)
+
+
+@app.post("/api/tiktok/import-csv")
+def api_tiktok_csv_import():
+    """Accepts a TikTok Studio Content Data CSV (multipart/form-data, field=file).
+
+    Returns summary {matched, added, rows_parsed, warnings, columns_detected}.
+    Entries touched here get last_studio_import = now() — subsequent /refresh
+    calls will preserve their metric values."""
+    f = request.files.get("file")
+    if f is None:
+        return jsonify(ok=False, error="No file uploaded (expected form field 'file')"), 400
+    try:
+        raw = f.read()
+        for enc in ("utf-8-sig", "utf-8", "cp1251"):
+            try:
+                content = raw.decode(enc)
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            return jsonify(ok=False, error="Cannot decode file — save the CSV as UTF-8."), 400
+
+        rows, col_map, warnings = tiktok_csv.parse_csv(content)
+        if not rows:
+            return jsonify(
+                ok=False,
+                error="No usable rows parsed. " + (warnings[0] if warnings else "Verify this is the per-video Content Data export."),
+                columns_detected=col_map,
+                warnings=warnings,
+            ), 400
+
+        summary = tiktok_csv.apply_to_db(rows)
+        return jsonify(
+            ok=True,
+            **summary,
+            warnings=warnings,
+            columns_detected=col_map,
+        )
+    except Exception as e:
+        return jsonify(ok=False, error=f"{type(e).__name__}: {e}"), 500
 
 
 @app.post("/api/tiktok/refresh")

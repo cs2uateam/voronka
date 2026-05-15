@@ -46,6 +46,14 @@ def _build_entry(video: dict, existing: dict | None = None) -> dict:
     # across the channel, so they make a fine primary key when we're inserting
     # a never-before-seen video. Existing entries keep their original id.
     new_id = int(video.get("id") or 0) or int(time.time() * 1000)
+    # Entries previously refreshed from a TikTok Studio CSV are marked with
+    # last_studio_import. Sync still updates *cosmetic* fields (title/cover/url)
+    # so the page stays fresh, but it leaves their metric numbers alone — the
+    # CSV truth has saves/completion_rate/profile_visits that the public Display
+    # API doesn't even expose, plus its view counts use Studio's filtered
+    # definition (>=3s plays, bot filtering) which we want to keep authoritative.
+    csv_locked = bool((existing or {}).get("last_studio_import"))
+
     base: dict = {
         "id": (existing or {}).get("id") or new_id,
         "title": title,
@@ -55,11 +63,27 @@ def _build_entry(video: dict, existing: dict | None = None) -> dict:
         "date": (existing or {}).get("date") or pub_date or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "type": (existing or {}).get("type") or "fomo",
         "hook": (existing or {}).get("hook", ""),
-        "views": int(video.get("view_count") or 0),
-        "likes": int(video.get("like_count") or 0),
-        "comments": int(video.get("comment_count") or 0),
-        "shares": int(video.get("share_count") or 0),
     }
+
+    if csv_locked:
+        # Carry over every metric / studio-only field; never overwrite from API.
+        for k in ("views", "likes", "comments", "shares",
+                  "saves", "profile_visits", "follows",
+                  "completion_rate", "avg_watch_time", "reach",
+                  "last_studio_import"):
+            if k in existing:
+                base[k] = existing[k]
+    else:
+        base["views"]    = int(video.get("view_count") or 0)
+        base["likes"]    = int(video.get("like_count") or 0)
+        base["comments"] = int(video.get("comment_count") or 0)
+        base["shares"]   = int(video.get("share_count") or 0)
+        # Preserve any Studio-only fields still hanging around from prior imports
+        for k in ("saves", "profile_visits", "follows",
+                  "completion_rate", "avg_watch_time", "reach",
+                  "last_studio_import"):
+            if k in (existing or {}):
+                base[k] = existing[k]
     history = list((existing or {}).get("history") or [])
     if existing:
         history.append(_snapshot(existing))
