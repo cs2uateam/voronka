@@ -495,8 +495,8 @@
       <span id="syncConnDot" class="sync-conn">●</span>
       <button class="btn btn-primary btn-sm" id="syncRefreshBtn" onclick="syncRefreshAll()">↻ Sync канал</button>
       <button class="btn btn-ghost btn-sm" id="syncAddToggleBtn" onclick="syncToggleAdd()">+ URL</button>
-      <button class="btn btn-ghost btn-sm" id="syncCsvBtn" onclick="syncCsvImport()" style="display:none" title="Імпорт повних метрик з TikTok Studio">📊 Імпорт з Studio</button>
-      <input type="file" id="syncCsvFile" accept=".csv" style="display:none" onchange="syncCsvUpload(this.files[0])" />
+      <button class="btn btn-ghost btn-sm" id="syncCsvBtn" onclick="syncCsvImport()" style="display:none" title="Імпорт повних метрик з TikTok Studio. Закинь ZIP з 'Download data' або окремий CSV — сервер сам знайде потрібний файл всередині архіву.">📊 Імпорт з Studio</button>
+      <input type="file" id="syncCsvFile" accept=".csv,.zip,application/zip" style="display:none" onchange="syncCsvUpload(this.files[0])" />
       <span id="syncStatus" class="sync-status"></span>
       <button class="sync-icon-btn" onclick="syncToggleLog()" title="Лог" aria-label="Лог">≡</button>
     </div>
@@ -2487,7 +2487,8 @@ async function syncCsvUpload(file) {
     syncSetStatus(`✓ Studio: ${j.matched} оновлено · ${j.added} нових`, 'ok');
     const warns = (j.warnings || []).length ? '\nWarnings: ' + j.warnings.join(' • ') : '';
     const cols = j.columns_detected ? `\nрозпізнані колонки: ${Object.keys(j.columns_detected).join(', ')}` : '';
-    syncSetLog(`Імпорт завершено\n  • розпарсено рядків: ${j.rows_parsed}\n  • оновлено існуючих: ${j.matched}\n  • додано нових: ${j.added}${cols}${warns}`);
+    const src  = j.source ? `\nджерело: ${j.source}` : '';
+    syncSetLog(`Імпорт завершено${src}\n  • розпарсено рядків: ${j.rows_parsed}\n  • оновлено існуючих: ${j.matched}\n  • додано нових: ${j.added}${cols}${warns}`);
     // Refresh data so the UI shows new metrics + lock badges
     await loadData();
     renderAll();

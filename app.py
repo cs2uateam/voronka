@@ -204,38 +204,40 @@ def api_tiktok_auth():
 
 @app.post("/api/tiktok/import-csv")
 def api_tiktok_csv_import():
-    """Accepts a TikTok Studio Content Data CSV (multipart/form-data, field=file).
+    """Accepts the Studio Content Data CSV *or* the full 'Download data' ZIP.
 
-    Returns summary {matched, added, rows_parsed, warnings, columns_detected}.
-    Entries touched here get last_studio_import = now() — subsequent /refresh
-    calls will preserve their metric values."""
+    When a ZIP is uploaded, the parser tries every .csv inside and picks the
+    one with the most rows containing a recognizable video id — that's the
+    per-video Content Data file. Overview / Followers / LIVE CSVs are
+    skipped automatically.
+
+    Returns summary {matched, added, rows_parsed, source, warnings,
+    columns_detected}. Entries touched here get last_studio_import = now()
+    — subsequent /refresh calls will preserve their metric values."""
     f = request.files.get("file")
     if f is None:
         return jsonify(ok=False, error="No file uploaded (expected form field 'file')"), 400
     try:
         raw = f.read()
-        for enc in ("utf-8-sig", "utf-8", "cp1251"):
-            try:
-                content = raw.decode(enc)
-                break
-            except UnicodeDecodeError:
-                continue
-        else:
-            return jsonify(ok=False, error="Cannot decode file — save the CSV as UTF-8."), 400
+        try:
+            rows, col_map, warnings, source = tiktok_csv.parse_upload(raw)
+        except ValueError as e:
+            return jsonify(ok=False, error=str(e)), 400
 
-        rows, col_map, warnings = tiktok_csv.parse_csv(content)
         if not rows:
             return jsonify(
                 ok=False,
                 error="No usable rows parsed. " + (warnings[0] if warnings else "Verify this is the per-video Content Data export."),
                 columns_detected=col_map,
                 warnings=warnings,
+                source=source,
             ), 400
 
         summary = tiktok_csv.apply_to_db(rows)
         return jsonify(
             ok=True,
             **summary,
+            source=source,
             warnings=warnings,
             columns_detected=col_map,
         )

@@ -17,6 +17,7 @@ from __future__ import annotations
 import csv
 import io
 import re
+import zipfile
 from datetime import datetime, timezone
 
 from .store import read_entries, upsert_entries
@@ -150,6 +151,76 @@ def parse_csv(content: str) -> tuple[list[dict], dict[str, int], list[str]]:
         out.append(rec)
 
     return out, col_map, warnings
+
+
+def _decode_bytes(raw: bytes) -> str:
+    """Tries common encodings TikTok Studio uses — UTF-8 (with/without BOM)
+    is most common, but Windows clients sometimes save CSV as cp1251."""
+    for enc in ("utf-8-sig", "utf-8", "cp1251"):
+        try:
+            return raw.decode(enc)
+        except UnicodeDecodeError:
+            continue
+    raise ValueError("Cannot decode file — save as UTF-8 or upload the ZIP as-is.")
+
+
+def parse_upload(raw: bytes) -> tuple[list[dict], dict[str, int], list[str], str]:
+    """Single entry point for an uploaded file. Handles both raw CSVs and the
+    Studio 'Download data' ZIP. Returns (rows, col_map, warnings, source_name).
+
+    When given a ZIP, tries every .csv inside and picks the one that yields
+    the most rows with a recognizable video_id — Studio archives typically
+    bundle Overview / Content / Followers / LIVE CSVs but only Content has
+    per-video data with URLs.
+    """
+    if raw[:2] == b"PK":
+        return _parse_from_zip(raw)
+    content = _decode_bytes(raw)
+    rows, col_map, warnings = parse_csv(content)
+    return rows, col_map, warnings, "uploaded.csv"
+
+
+def _parse_from_zip(raw: bytes) -> tuple[list[dict], dict[str, int], list[str], str]:
+    candidates: list[tuple[str, list[dict], dict[str, int], list[str]]] = []
+    try:
+        zf = zipfile.ZipFile(io.BytesIO(raw))
+    except zipfile.BadZipFile:
+        return [], {}, ["File looks like ZIP but failed to open — re-download from Studio."], "<bad zip>"
+
+    names = [n for n in zf.namelist() if n.lower().endswith(".csv") and not n.startswith("__MACOSX")]
+    if not names:
+        return [], {}, ["ZIP contains no .csv files."], "<no csv>"
+
+    for name in names:
+        try:
+            with zf.open(name) as f:
+                content = _decode_bytes(f.read())
+        except Exception:
+            continue
+        try:
+            rows, col_map, warnings = parse_csv(content)
+        except Exception:
+            continue
+        candidates.append((name, rows, col_map, warnings))
+
+    if not candidates:
+        return [], {}, [f"None of the {len(names)} CSVs inside the ZIP could be parsed."], "<no parse>"
+
+    # Pick the CSV with the most rows containing a recognizable video_id —
+    # that's the per-video Content Data file. Overview/Followers CSVs typically
+    # have 0 such rows because they lack URL columns.
+    candidates.sort(key=lambda c: len(c[1]), reverse=True)
+    name, rows, col_map, warnings = candidates[0]
+    others = [c[0] for c in candidates[1:]]
+    enriched = list(warnings)
+    if others:
+        enriched.append(f"Picked '{name}' from the ZIP (also tried: {', '.join(others)}).")
+    if not rows:
+        return [], col_map, [
+            f"ZIP contained {len(candidates)} CSVs but none had per-video rows. "
+            f"Tried: {', '.join(c[0] for c in candidates)}."
+        ], name
+    return rows, col_map, enriched, name
 
 
 def apply_to_db(parsed_rows: list[dict]) -> dict:
